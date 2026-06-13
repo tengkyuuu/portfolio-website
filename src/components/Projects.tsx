@@ -92,7 +92,7 @@ function SingleImage({ project, image }: { project: Project; image: ProjectImage
         alt={image.alt || project.title}
         loading="lazy"
         decoding="async"
-        className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+        className="w-full h-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.02]"
       />
       <div className="pointer-events-none absolute top-2 right-2 font-ui text-[10px] uppercase tracking-[0.15em] bg-paper/85 text-ink px-1.5 py-0.5 rounded-sm border border-rule">
         FIG {parseInt(project.index, 10)}.1
@@ -132,7 +132,7 @@ function ImageCarousel({
         alt={current.alt || `${project.title} — screenshot ${idx + 1} of ${count}`}
         loading="lazy"
         decoding="async"
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain"
       />
 
       {/* FIG badge */}
