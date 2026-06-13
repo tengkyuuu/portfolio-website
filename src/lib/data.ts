@@ -195,7 +195,7 @@ export const certs: Cert[] = [
   {
     title: "Champion — Regional Programming Competition (C++)",
     issuer: "ICpEP.SE",
-    date: "",
+    date: "2023",
   },
   {
     title: "Service Award — VP for External Affairs",
@@ -211,7 +211,7 @@ export const certs: Cert[] = [
   {
     title: "Establishing & Operating Micro, Small & Medium Enterprises",
     issuer: "TESDA",
-    date: "",
+    date: "2025",
     href: "/credentials/Certificate_of_Completion.pdf",
   },
   // Sololearn course certificates — rendered as an image gallery
