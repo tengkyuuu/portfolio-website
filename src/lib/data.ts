@@ -208,6 +208,12 @@ export const certs: Cert[] = [
     date: "2024",
     href: "/credentials/ibm-ai-fundamentals.pdf",
   },
+  {
+    title: "Establishing & Operating Micro, Small & Medium Enterprises",
+    issuer: "TESDA",
+    date: "",
+    href: "/credentials/Certificate_of_Completion.pdf",
+  },
   // Sololearn course certificates — rendered as an image gallery
   { title: "Python", issuer: "Sololearn", date: "", image: "/credentials/sololearn-python.webp" },
   { title: "C", issuer: "Sololearn", date: "", image: "/credentials/sololearn-c.webp" },
