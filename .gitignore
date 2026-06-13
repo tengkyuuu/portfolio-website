@@ -1,0 +1,19 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.env
+.env.*
+!.env.example
+.vscode/*
+!.vscode/extensions.json
+
+# Vercel
+.vercel
+
+# TypeScript incremental build
+*.tsbuildinfo
+
+# Runtime content store (local dev server only — not deployed)
+server/data/

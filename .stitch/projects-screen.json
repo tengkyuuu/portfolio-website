@@ -1,0 +1,272 @@
+{
+  "screenshot": {
+    "name": "projects/5358784834528889559/files/31abac599eb646599b8b63059ebc729b",
+    "downloadUrl": "https://lh3.googleusercontent.com/aida/ADBb0ugmw2xsdv2FN_8zs4SxAGxoegO0rd8cvOAPvwXMFeL9WWSdUI9y4TCsKinr0FfPdtH_btkMKhg0MKd1Nhy_twWQB4YV57J7MVwSF-nvGenhgWZ8t7-0a2z4qilJLLvfoR1jZhroKVqRH57WJASFEVqtQe9BiIwhOEYi3lyJeGZB9OFNBWipKRf9-vp71huKAKmZFBWE2ONh9Ha9RX3miB7RJ-RJJd4MAZUYQt_yg1THKxjeEJbgQhLEvg"
+  },
+  "htmlCode": {
+    "name": "projects/5358784834528889559/files/77f8cde0c48f46018e74b0c8f1ac5542",
+    "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sX2I0MDFlNjRkZjYwODRjYWM4ZDk3MWVjYjA5OTcxZDY3EgsSBxCY5PKgtwwYAZIBIwoKcHJvamVjdF9pZBIVQhM1MzU4Nzg0ODM0NTI4ODg5NTU5&filename=&opi=89354086",
+    "mimeType": "text/html"
+  },
+  "id": "ced138f48f7e41ae826757fdf8ecc018",
+  "generatedBy": "HatterAgent",
+  "width": "2560",
+  "height": "5294",
+  "title": "Projects - Word Style with Loader",
+  "prompt": "Add a unique, elegant CSS loader to the screen. \nThe loader should appear as an overlay that fades out once the page is \"ready\". \nDesign the loader to match the Microsoft Word theme: \n- Use a centered \"bond paper\" icon or a subtle \"Saving...\" / \"Document Opening...\" animation.\n- A slim, professional blue progress bar at the top (like Word's save bar).\n- Ensure it respects the design system {{DATA:DESIGN_SYSTEM:DESIGN_SYSTEM_1}} and the dark mode toggle.\n- Include the JavaScript to hide the loader after a brief simulated delay (e.g., 1.5 seconds) or when the DOM is fully loaded.\n- Keep all existing content, the paper-style layout, and the sunglasses hover effect on the portrait.",
+  "name": "projects/5358784834528889559/screens/ced138f48f7e41ae826757fdf8ecc018",
+  "theme": {
+    "colorMode": "LIGHT",
+    "font": "INTER",
+    "roundness": "ROUND_FOUR",
+    "customColor": "#2b579a",
+    "headlineFont": "INTER",
+    "bodyFont": "SOURCE_SERIF_FOUR",
+    "labelFont": "INTER",
+    "namedColors": {
+      "outline_variant": "#c3c6d2",
+      "secondary_fixed": "#e2e2e2",
+      "primary_fixed": "#d7e3ff",
+      "primary": "#063f81",
+      "secondary": "#5d5f5f",
+      "on_error_container": "#93000a",
+      "on_primary_fixed": "#001b3f",
+      "tertiary_fixed": "#ffdcc1",
+      "background": "#f9f9f9",
+      "on_primary_fixed_variant": "#134688",
+      "primary_fixed_dim": "#abc7ff",
+      "surface_tint": "#335ea1",
+      "surface": "#f9f9f9",
+      "surface_dim": "#dadada",
+      "surface_container_lowest": "#ffffff",
+      "on_secondary_container": "#5f6161",
+      "on_error": "#ffffff",
+      "on_tertiary_fixed_variant": "#6c3a00",
+      "secondary_container": "#dcdddd",
+      "surface_bright": "#f9f9f9",
+      "surface_container_low": "#f3f3f4",
+      "tertiary_container": "#844900",
+      "primary_container": "#2b579a",
+      "surface_container_high": "#e8e8e8",
+      "surface_variant": "#e2e2e2",
+      "on_primary_container": "#b7cfff",
+      "on_secondary": "#ffffff",
+      "surface_container_highest": "#e2e2e2",
+      "secondary_fixed_dim": "#c6c6c7",
+      "tertiary_fixed_dim": "#ffb877",
+      "on_secondary_fixed": "#1a1c1c",
+      "inverse_on_surface": "#f0f1f1",
+      "on_tertiary_fixed": "#2e1600",
+      "on_primary": "#ffffff",
+      "inverse_primary": "#abc7ff",
+      "on_secondary_fixed_variant": "#454747",
+      "on_tertiary": "#ffffff",
+      "tertiary": "#633500",
+      "on_background": "#1a1c1c",
+      "on_surface_variant": "#434750",
+      "on_tertiary_container": "#ffc28d",
+      "inverse_surface": "#2f3131",
+      "error_container": "#ffdad6",
+      "error": "#ba1a1a",
+      "on_surface": "#1a1c1c",
+      "surface_container": "#eeeeee",
+      "outline": "#737782"
+    },
+    "designMd": "---\nname: Professional Document System\ncolors:\n  surface: '#f9f9f9'\n  surface-dim: '#dadada'\n  surface-bright: '#f9f9f9'\n  surface-container-lowest: '#ffffff'\n  surface-container-low: '#f3f3f4'\n  surface-container: '#eeeeee'\n  surface-container-high: '#e8e8e8'\n  surface-container-highest: '#e2e2e2'\n  on-surface: '#1a1c1c'\n  on-surface-variant: '#434750'\n  inverse-surface: '#2f3131'\n  inverse-on-surface: '#f0f1f1'\n  outline: '#737782'\n  outline-variant: '#c3c6d2'\n  surface-tint: '#335ea1'\n  primary: '#063f81'\n  on-primary: '#ffffff'\n  primary-container: '#2b579a'\n  on-primary-container: '#b7cfff'\n  inverse-primary: '#abc7ff'\n  secondary: '#5d5f5f'\n  on-secondary: '#ffffff'\n  secondary-container: '#dcdddd'\n  on-secondary-container: '#5f6161'\n  tertiary: '#633500'\n  on-tertiary: '#ffffff'\n  tertiary-container: '#844900'\n  on-tertiary-container: '#ffc28d'\n  error: '#ba1a1a'\n  on-error: '#ffffff'\n  error-container: '#ffdad6'\n  on-error-container: '#93000a'\n  primary-fixed: '#d7e3ff'\n  primary-fixed-dim: '#abc7ff'\n  on-primary-fixed: '#001b3f'\n  on-primary-fixed-variant: '#134688'\n  secondary-fixed: '#e2e2e2'\n  secondary-fixed-dim: '#c6c6c7'\n  on-secondary-fixed: '#1a1c1c'\n  on-secondary-fixed-variant: '#454747'\n  tertiary-fixed: '#ffdcc1'\n  tertiary-fixed-dim: '#ffb877'\n  on-tertiary-fixed: '#2e1600'\n  on-tertiary-fixed-variant: '#6c3a00'\n  background: '#f9f9f9'\n  on-background: '#1a1c1c'\n  surface-variant: '#e2e2e2'\ntypography:\n  display-doc:\n    fontFamily: Source Serif 4\n    fontSize: 48px\n    fontWeight: '700'\n    lineHeight: '1.2'\n    letterSpacing: -0.02em\n  headline-lg:\n    fontFamily: Inter\n    fontSize: 32px\n    fontWeight: '600'\n    lineHeight: 40px\n  headline-md:\n    fontFamily: Inter\n    fontSize: 24px\n    fontWeight: '600'\n    lineHeight: 32px\n  body-doc:\n    fontFamily: Source Serif 4\n    fontSize: 16px\n    fontWeight: '400'\n    lineHeight: '1.6'\n  body-ui:\n    fontFamily: Inter\n    fontSize: 14px\n    fontWeight: '400'\n    lineHeight: 20px\n  label-sm:\n    fontFamily: Inter\n    fontSize: 12px\n    fontWeight: '500'\n    lineHeight: 16px\n    letterSpacing: 0.05em\n  button:\n    fontFamily: Inter\n    fontSize: 14px\n    fontWeight: '500'\n    lineHeight: 20px\nrounded:\n  sm: 0.125rem\n  DEFAULT: 0.25rem\n  md: 0.375rem\n  lg: 0.5rem\n  xl: 0.75rem\n  full: 9999px\nspacing:\n  paper-margin-x: 2.5rem\n  paper-margin-y: 3rem\n  toolbar-gap: 0.5rem\n  workspace-padding: 2rem\n  container-max-width: 816px\n---\n\n## Brand & Style\nThe design system is centered on the \"Document-as-Interface\" metaphor. It prioritizes high-focus productivity by replicating the familiar experience of a physical sheet of bond paper centered within a digital workspace. The aesthetic is clean, authoritative, and functional, drawing heavily from classic office productivity suites.\n\nThe style is **Corporate / Modern** with a strong emphasis on structural clarity. It evokes a sense of order and reliability, making it ideal for word processing, legal tech, or administrative tools where the content—the \"document\"—is the primary focus and the UI acts as a supportive frame.\n\n## Colors\nThe palette is dominated by the contrast between the active \"Paper\" and the surrounding \"Workspace.\" \n\n- **Primary:** The signature blue (#2B579A) is reserved for the Title Bar, primary actions, and active states.\n- **Surface:** In Light Mode, the workspace uses a soft gray (#F3F3F3) to provide depth, while the document canvas remains pure white (#FFFFFF). \n- **Dark Mode:** The workspace shifts to a deep charcoal (#1E1E1E). To maintain the document metaphor, the \"paper\" becomes a slightly lighter charcoal (#2D2D2D) and utilizes a subtle 1px border (#3E3E3E) to define its edges against the darker background.\n\n## Typography\nThis design system utilizes a dual-font strategy to distinguish between the \"Application Interface\" and the \"Document Content.\"\n\n- **UI & Labels:** Uses **Inter**. This provides a neutral, systematic, and highly legible framework for toolbars, menus, and sidebars. It feels modern and efficient.\n- **Document Content:** Uses **Source Serif 4**. This replicates the authoritative and literary feel of classic document fonts like Times New Roman. It is optimized for long-form reading and professional printing.\n\nHierarchy is strictly enforced through weight and scale. Document headings within the \"paper\" area should use serif styles, while functional interface headings use the sans-serif variable.\n\n## Layout & Spacing\nThe layout follows a **Fixed Grid** philosophy centered on the document canvas.\n\n- **The Canvas:** The \"Paper\" has a maximum width of 816px (simulating a standard A4/Letter width) and is centered horizontally within the workspace.\n- **Margins:** Within the paper, content is contained by generous internal padding (40px–48px) to mimic standard document margins.\n- **The Workspace:** The background workspace uses a fluid model but maintains a minimum safety padding of 32px on all sides of the paper.\n- **Toolbars:** Horizontal toolbars are pinned to the top of the viewport, utilizing a tight 8px (0.5rem) grid for icon density and tool grouping.\n\n## Elevation & Depth\nDepth is created through the \"Stacking\" of layers rather than aggressive shadows.\n\n1.  **Level 0 (Workspace):** The base background.\n2.  **Level 1 (The Paper):** Uses a very subtle, diffused shadow in light mode (e.g., `0px 2px 8px rgba(0,0,0,0.08)`) to lift it slightly from the workspace. In dark mode, depth is achieved via a 1px border.\n3.  **Level 2 (Toolbars/Ribbons):** These sit at the top of the stack, often using a solid white or very light gray background with a thin bottom border to separate them from the workspace.\n4.  **Level 3 (Context Menus/Popovers):** These use a standard soft shadow to indicate they are temporary overlays floating above both the paper and the UI.\n\n## Shapes\nThe design system uses a **Soft (0.25rem)** roundedness approach for UI components to bridge the gap between traditional sharp-edged documents and modern software.\n\n- **The Paper:** Remains sharp (0px) at the corners to maintain the \"sheet of paper\" metaphor.\n- **UI Elements:** Buttons, input fields, and dropdowns use a 4px (0.25rem) radius. This provides a professional but approachable feel that isn't as severe as 0px \"Brutalist\" styles.\n- **Active States:** Selection highlights in lists or menus should use the same 4px radius.\n\n## Components\n- **Buttons:** Primary buttons use the MS Word Blue (#2B579A) with white text. Secondary buttons use a light gray ghost style with the primary color as the text.\n- **Toolbars:** Group related icons with a vertical divider. Icons should be monochrome and sized consistently (20px or 24px).\n- **Input Fields:** Within the UI, inputs should have a subtle border that darkens on focus. Within the \"Paper,\" inputs should be invisible or underlined to mimic a form to be filled out.\n- **Tabs:** Use \"Ribbon\" style tabs where the active tab is white (matching the paper or toolbar) and connected to the panel below, while inactive tabs blend into the background.\n- **The Status Bar:** A thin, full-width bar at the bottom of the viewport using the primary blue color, displaying document stats (word count, page number) in small, white Inter text.\n- **Cards:** Cards are rarely used; instead, use \"Document Sections\" defined by horizontal rules or subtle background tints within the paper.",
+    "colorVariant": "FIDELITY",
+    "overridePrimaryColor": "#2b579a",
+    "overrideSecondaryColor": "#f3f3f3",
+    "overrideNeutralColor": "#ffffff",
+    "spacingScale": 2,
+    "typography": {
+      "headline-lg": {
+        "fontFamily": "Inter",
+        "fontSize": "32px",
+        "fontWeight": "600",
+        "lineHeight": "40px"
+      },
+      "label-sm": {
+        "fontFamily": "Inter",
+        "fontSize": "12px",
+        "fontWeight": "500",
+        "lineHeight": "16px",
+        "letterSpacing": "0.05em"
+      },
+      "body-doc": {
+        "fontFamily": "Source Serif 4",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "1.6"
+      },
+      "display-doc": {
+        "fontFamily": "Source Serif 4",
+        "fontSize": "48px",
+        "fontWeight": "700",
+        "lineHeight": "1.2",
+        "letterSpacing": "-0.02em"
+      },
+      "body-ui": {
+        "fontFamily": "Inter",
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "20px"
+      },
+      "headline-md": {
+        "fontFamily": "Inter",
+        "fontSize": "24px",
+        "fontWeight": "600",
+        "lineHeight": "32px"
+      },
+      "button": {
+        "fontFamily": "Inter",
+        "fontSize": "14px",
+        "fontWeight": "500",
+        "lineHeight": "20px"
+      }
+    },
+    "spacing": {
+      "paper-margin-x": "2.5rem",
+      "workspace-padding": "2rem",
+      "container-max-width": "816px",
+      "toolbar-gap": "0.5rem",
+      "paper-margin-y": "3rem"
+    },
+    "headlineFontFamily": "Inter",
+    "bodyFontFamily": "Source Serif Four",
+    "labelFontFamily": "Inter"
+  },
+  "deviceType": "DESKTOP",
+  "screenType": "DESIGN",
+  "screenMetadata": {
+    "agentType": "PRO_AGENT",
+    "status": "COMPLETE"
+  },
+  "designSystem": {
+    "name": "assets/372863e5c89c42deaeb1267807324d23",
+    "designSystem": {
+      "displayName": "Professional Document System",
+      "styleGuidelines": "## Brand & Style\nThe design system is centered on the \"Document-as-Interface\" metaphor. It prioritizes high-focus productivity by replicating the familiar experience of a physical sheet of bond paper centered within a digital workspace. The aesthetic is clean, authoritative, and functional, drawing heavily from classic office productivity suites.\n\nThe style is **Corporate / Modern** with a strong emphasis on structural clarity. It evokes a sense of order and reliability, making it ideal for word processing, legal tech, or administrative tools where the content—the \"document\"—is the primary focus and the UI acts as a supportive frame.\n\n## Layout & Spacing\nThe layout follows a **Fixed Grid** philosophy centered on the document canvas.\n\n- **The Canvas:** The \"Paper\" has a maximum width of 816px (simulating a standard A4/Letter width) and is centered horizontally within the workspace.\n- **Margins:** Within the paper, content is contained by generous internal padding (40px–48px) to mimic standard document margins.\n- **The Workspace:** The background workspace uses a fluid model but maintains a minimum safety padding of 32px on all sides of the paper.\n- **Toolbars:** Horizontal toolbars are pinned to the top of the viewport, utilizing a tight 8px (0.5rem) grid for icon density and tool grouping.\n\n## Elevation & Depth\nDepth is created through the \"Stacking\" of layers rather than aggressive shadows.\n\n1.  **Level 0 (Workspace):** The base background.\n2.  **Level 1 (The Paper):** Uses a very subtle, diffused shadow in light mode (e.g., `0px 2px 8px rgba(0,0,0,0.08)`) to lift it slightly from the workspace. In dark mode, depth is achieved via a 1px border.\n3.  **Level 2 (Toolbars/Ribbons):** These sit at the top of the stack, often using a solid white or very light gray background with a thin bottom border to separate them from the workspace.\n4.  **Level 3 (Context Menus/Popovers):** These use a standard soft shadow to indicate they are temporary overlays floating above both the paper and the UI.\n\n## Components\n- **Buttons:** Primary buttons use the MS Word Blue (#2B579A) with white text. Secondary buttons use a light gray ghost style with the primary color as the text.\n- **Toolbars:** Group related icons with a vertical divider. Icons should be monochrome and sized consistently (20px or 24px).\n- **Input Fields:** Within the UI, inputs should have a subtle border that darkens on focus. Within the \"Paper,\" inputs should be invisible or underlined to mimic a form to be filled out.\n- **Tabs:** Use \"Ribbon\" style tabs where the active tab is white (matching the paper or toolbar) and connected to the panel below, while inactive tabs blend into the background.\n- **The Status Bar:** A thin, full-width bar at the bottom of the viewport using the primary blue color, displaying document stats (word count, page number) in small, white Inter text.\n- **Cards:** Cards are rarely used; instead, use \"Document Sections\" defined by horizontal rules or subtle background tints within the paper.",
+      "theme": {
+        "colorMode": "LIGHT",
+        "font": "INTER",
+        "roundness": "ROUND_FOUR",
+        "customColor": "#2b579a",
+        "headlineFont": "INTER",
+        "bodyFont": "SOURCE_SERIF_FOUR",
+        "labelFont": "INTER",
+        "namedColors": {
+          "surface_variant": "#e2e2e2",
+          "surface_container_high": "#e8e8e8",
+          "on_secondary": "#ffffff",
+          "on_primary_container": "#b7cfff",
+          "primary_container": "#2b579a",
+          "surface_container_low": "#f3f3f4",
+          "tertiary_container": "#844900",
+          "on_error": "#ffffff",
+          "on_tertiary_fixed_variant": "#6c3a00",
+          "secondary_container": "#dcdddd",
+          "surface_bright": "#f9f9f9",
+          "surface": "#f9f9f9",
+          "on_secondary_container": "#5f6161",
+          "surface_container_lowest": "#ffffff",
+          "surface_dim": "#dadada",
+          "primary_fixed_dim": "#abc7ff",
+          "surface_tint": "#335ea1",
+          "background": "#f9f9f9",
+          "on_primary_fixed_variant": "#134688",
+          "primary": "#063f81",
+          "secondary": "#5d5f5f",
+          "on_error_container": "#93000a",
+          "on_primary_fixed": "#001b3f",
+          "tertiary_fixed": "#ffdcc1",
+          "primary_fixed": "#d7e3ff",
+          "outline_variant": "#c3c6d2",
+          "secondary_fixed": "#e2e2e2",
+          "surface_container": "#eeeeee",
+          "outline": "#737782",
+          "on_surface": "#1a1c1c",
+          "error": "#ba1a1a",
+          "error_container": "#ffdad6",
+          "on_tertiary_container": "#ffc28d",
+          "inverse_surface": "#2f3131",
+          "on_surface_variant": "#434750",
+          "on_background": "#1a1c1c",
+          "tertiary": "#633500",
+          "on_tertiary": "#ffffff",
+          "on_secondary_fixed_variant": "#454747",
+          "on_tertiary_fixed": "#2e1600",
+          "on_primary": "#ffffff",
+          "inverse_primary": "#abc7ff",
+          "on_secondary_fixed": "#1a1c1c",
+          "inverse_on_surface": "#f0f1f1",
+          "surface_container_highest": "#e2e2e2",
+          "tertiary_fixed_dim": "#ffb877",
+          "secondary_fixed_dim": "#c6c6c7"
+        },
+        "designMd": "---\nname: Professional Document System\ncolors:\n  surface: '#f9f9f9'\n  surface-dim: '#dadada'\n  surface-bright: '#f9f9f9'\n  surface-container-lowest: '#ffffff'\n  surface-container-low: '#f3f3f4'\n  surface-container: '#eeeeee'\n  surface-container-high: '#e8e8e8'\n  surface-container-highest: '#e2e2e2'\n  on-surface: '#1a1c1c'\n  on-surface-variant: '#434750'\n  inverse-surface: '#2f3131'\n  inverse-on-surface: '#f0f1f1'\n  outline: '#737782'\n  outline-variant: '#c3c6d2'\n  surface-tint: '#335ea1'\n  primary: '#063f81'\n  on-primary: '#ffffff'\n  primary-container: '#2b579a'\n  on-primary-container: '#b7cfff'\n  inverse-primary: '#abc7ff'\n  secondary: '#5d5f5f'\n  on-secondary: '#ffffff'\n  secondary-container: '#dcdddd'\n  on-secondary-container: '#5f6161'\n  tertiary: '#633500'\n  on-tertiary: '#ffffff'\n  tertiary-container: '#844900'\n  on-tertiary-container: '#ffc28d'\n  error: '#ba1a1a'\n  on-error: '#ffffff'\n  error-container: '#ffdad6'\n  on-error-container: '#93000a'\n  primary-fixed: '#d7e3ff'\n  primary-fixed-dim: '#abc7ff'\n  on-primary-fixed: '#001b3f'\n  on-primary-fixed-variant: '#134688'\n  secondary-fixed: '#e2e2e2'\n  secondary-fixed-dim: '#c6c6c7'\n  on-secondary-fixed: '#1a1c1c'\n  on-secondary-fixed-variant: '#454747'\n  tertiary-fixed: '#ffdcc1'\n  tertiary-fixed-dim: '#ffb877'\n  on-tertiary-fixed: '#2e1600'\n  on-tertiary-fixed-variant: '#6c3a00'\n  background: '#f9f9f9'\n  on-background: '#1a1c1c'\n  surface-variant: '#e2e2e2'\ntypography:\n  display-doc:\n    fontFamily: Source Serif 4\n    fontSize: 48px\n    fontWeight: '700'\n    lineHeight: '1.2'\n    letterSpacing: -0.02em\n  headline-lg:\n    fontFamily: Inter\n    fontSize: 32px\n    fontWeight: '600'\n    lineHeight: 40px\n  headline-md:\n    fontFamily: Inter\n    fontSize: 24px\n    fontWeight: '600'\n    lineHeight: 32px\n  body-doc:\n    fontFamily: Source Serif 4\n    fontSize: 16px\n    fontWeight: '400'\n    lineHeight: '1.6'\n  body-ui:\n    fontFamily: Inter\n    fontSize: 14px\n    fontWeight: '400'\n    lineHeight: 20px\n  label-sm:\n    fontFamily: Inter\n    fontSize: 12px\n    fontWeight: '500'\n    lineHeight: 16px\n    letterSpacing: 0.05em\n  button:\n    fontFamily: Inter\n    fontSize: 14px\n    fontWeight: '500'\n    lineHeight: 20px\nrounded:\n  sm: 0.125rem\n  DEFAULT: 0.25rem\n  md: 0.375rem\n  lg: 0.5rem\n  xl: 0.75rem\n  full: 9999px\nspacing:\n  paper-margin-x: 2.5rem\n  paper-margin-y: 3rem\n  toolbar-gap: 0.5rem\n  workspace-padding: 2rem\n  container-max-width: 816px\n---\n\n## Brand & Style\nThe design system is centered on the \"Document-as-Interface\" metaphor. It prioritizes high-focus productivity by replicating the familiar experience of a physical sheet of bond paper centered within a digital workspace. The aesthetic is clean, authoritative, and functional, drawing heavily from classic office productivity suites.\n\nThe style is **Corporate / Modern** with a strong emphasis on structural clarity. It evokes a sense of order and reliability, making it ideal for word processing, legal tech, or administrative tools where the content—the \"document\"—is the primary focus and the UI acts as a supportive frame.\n\n## Colors\nThe palette is dominated by the contrast between the active \"Paper\" and the surrounding \"Workspace.\" \n\n- **Primary:** The signature blue (#2B579A) is reserved for the Title Bar, primary actions, and active states.\n- **Surface:** In Light Mode, the workspace uses a soft gray (#F3F3F3) to provide depth, while the document canvas remains pure white (#FFFFFF). \n- **Dark Mode:** The workspace shifts to a deep charcoal (#1E1E1E). To maintain the document metaphor, the \"paper\" becomes a slightly lighter charcoal (#2D2D2D) and utilizes a subtle 1px border (#3E3E3E) to define its edges against the darker background.\n\n## Typography\nThis design system utilizes a dual-font strategy to distinguish between the \"Application Interface\" and the \"Document Content.\"\n\n- **UI & Labels:** Uses **Inter**. This provides a neutral, systematic, and highly legible framework for toolbars, menus, and sidebars. It feels modern and efficient.\n- **Document Content:** Uses **Source Serif 4**. This replicates the authoritative and literary feel of classic document fonts like Times New Roman. It is optimized for long-form reading and professional printing.\n\nHierarchy is strictly enforced through weight and scale. Document headings within the \"paper\" area should use serif styles, while functional interface headings use the sans-serif variable.\n\n## Layout & Spacing\nThe layout follows a **Fixed Grid** philosophy centered on the document canvas.\n\n- **The Canvas:** The \"Paper\" has a maximum width of 816px (simulating a standard A4/Letter width) and is centered horizontally within the workspace.\n- **Margins:** Within the paper, content is contained by generous internal padding (40px–48px) to mimic standard document margins.\n- **The Workspace:** The background workspace uses a fluid model but maintains a minimum safety padding of 32px on all sides of the paper.\n- **Toolbars:** Horizontal toolbars are pinned to the top of the viewport, utilizing a tight 8px (0.5rem) grid for icon density and tool grouping.\n\n## Elevation & Depth\nDepth is created through the \"Stacking\" of layers rather than aggressive shadows.\n\n1.  **Level 0 (Workspace):** The base background.\n2.  **Level 1 (The Paper):** Uses a very subtle, diffused shadow in light mode (e.g., `0px 2px 8px rgba(0,0,0,0.08)`) to lift it slightly from the workspace. In dark mode, depth is achieved via a 1px border.\n3.  **Level 2 (Toolbars/Ribbons):** These sit at the top of the stack, often using a solid white or very light gray background with a thin bottom border to separate them from the workspace.\n4.  **Level 3 (Context Menus/Popovers):** These use a standard soft shadow to indicate they are temporary overlays floating above both the paper and the UI.\n\n## Shapes\nThe design system uses a **Soft (0.25rem)** roundedness approach for UI components to bridge the gap between traditional sharp-edged documents and modern software.\n\n- **The Paper:** Remains sharp (0px) at the corners to maintain the \"sheet of paper\" metaphor.\n- **UI Elements:** Buttons, input fields, and dropdowns use a 4px (0.25rem) radius. This provides a professional but approachable feel that isn't as severe as 0px \"Brutalist\" styles.\n- **Active States:** Selection highlights in lists or menus should use the same 4px radius.\n\n## Components\n- **Buttons:** Primary buttons use the MS Word Blue (#2B579A) with white text. Secondary buttons use a light gray ghost style with the primary color as the text.\n- **Toolbars:** Group related icons with a vertical divider. Icons should be monochrome and sized consistently (20px or 24px).\n- **Input Fields:** Within the UI, inputs should have a subtle border that darkens on focus. Within the \"Paper,\" inputs should be invisible or underlined to mimic a form to be filled out.\n- **Tabs:** Use \"Ribbon\" style tabs where the active tab is white (matching the paper or toolbar) and connected to the panel below, while inactive tabs blend into the background.\n- **The Status Bar:** A thin, full-width bar at the bottom of the viewport using the primary blue color, displaying document stats (word count, page number) in small, white Inter text.\n- **Cards:** Cards are rarely used; instead, use \"Document Sections\" defined by horizontal rules or subtle background tints within the paper.",
+        "colorVariant": "FIDELITY",
+        "overridePrimaryColor": "#2b579a",
+        "overrideSecondaryColor": "#f3f3f3",
+        "overrideNeutralColor": "#ffffff",
+        "spacingScale": 2,
+        "typography": {
+          "headline-lg": {
+            "fontFamily": "Inter",
+            "fontSize": "32px",
+            "fontWeight": "600",
+            "lineHeight": "40px"
+          },
+          "label-sm": {
+            "fontFamily": "Inter",
+            "fontSize": "12px",
+            "fontWeight": "500",
+            "lineHeight": "16px",
+            "letterSpacing": "0.05em"
+          },
+          "body-doc": {
+            "fontFamily": "Source Serif 4",
+            "fontSize": "16px",
+            "fontWeight": "400",
+            "lineHeight": "1.6"
+          },
+          "display-doc": {
+            "fontFamily": "Source Serif 4",
+            "fontSize": "48px",
+            "fontWeight": "700",
+            "lineHeight": "1.2",
+            "letterSpacing": "-0.02em"
+          },
+          "body-ui": {
+            "fontFamily": "Inter",
+            "fontSize": "14px",
+            "fontWeight": "400",
+            "lineHeight": "20px"
+          },
+          "headline-md": {
+            "fontFamily": "Inter",
+            "fontSize": "24px",
+            "fontWeight": "600",
+            "lineHeight": "32px"
+          },
+          "button": {
+            "fontFamily": "Inter",
+            "fontSize": "14px",
+            "fontWeight": "500",
+            "lineHeight": "20px"
+          }
+        },
+        "spacing": {
+          "paper-margin-x": "2.5rem",
+          "workspace-padding": "2rem",
+          "container-max-width": "816px",
+          "toolbar-gap": "0.5rem",
+          "paper-margin-y": "3rem"
+        },
+        "headlineFontFamily": "Inter",
+        "bodyFontFamily": "Source Serif Four",
+        "labelFontFamily": "Inter"
+      }
+    },
+    "version": "1"
+  }
+}

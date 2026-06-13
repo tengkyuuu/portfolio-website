@@ -1,0 +1,244 @@
+export type Metric = {
+  label: string;
+  pre: string;
+  post: string;
+  delta: string;
+};
+
+export type ProjectImage = {
+  /** URL/path (e.g. "/projects/foo.jpg") or a data URL from admin upload. */
+  src: string;
+  alt?: string;
+};
+
+export type Project = {
+  id: string;
+  index: string;
+  title: string;
+  blurb: string;
+  tags: string[];
+  kind: "embedded" | "web" | "mobile" | "desktop" | "design";
+  links: { label: string; href: string }[];
+  ref?: string;
+  year?: string;
+  page?: string;
+  figCaption?: string;
+  challenge?: string;
+  solution?: string;
+  metrics?: Metric[];
+  /** Tech stack, shown as a labelled chip row. */
+  stack?: string[];
+  /** Single screenshot displayed in the project's figure. Either a URL/path
+   *  (e.g. "/projects/foo.jpg") or a data URL produced by admin upload.
+   *  Superseded by `gallery` when that has entries. */
+  image?: string;
+  imageAlt?: string;
+  /** Multiple screenshots. When more than one, the figure becomes a
+   *  carousel with left/right arrows. */
+  gallery?: ProjectImage[];
+};
+
+export const projects: Project[] = [
+  {
+    id: "physiopano-app",
+    index: "01",
+    title: "Physiopaño App",
+    blurb:
+      "Flutter companion app for the Physiopaño wearable — pairs over Bluetooth, streams physiological signals in real time, and turns them into a daily well-being score.",
+    tags: ["Flutter", "BLE", "Firebase"],
+    stack: [
+      "Flutter",
+      "Dart",
+      "BLE (flutter_blue_plus)",
+      "Firebase Auth",
+      "Cloud Firestore",
+      "Riverpod",
+    ],
+    kind: "mobile",
+    ref: "REF: JVC-2026-01",
+    year: "2026",
+    page: "02",
+    figCaption:
+      "FIG 1.1: Physiopaño companion app — live session view with the real-time well-being ring and sensor readouts.",
+    challenge:
+      "The Physiopaño wearable produces a continuous stream of physiological data — GSR, PPG, skin temperature, and motion — but raw signals mean nothing to the person wearing it. The companion app had to pair reliably over Bluetooth, stay legible for non-technical users, and keep working when the phone is offline in the field.",
+    solution:
+      "A Flutter app that pairs with the Physiopaño band over BLE, streams the four sensor channels in real time, and distils them into a single daily well-being score with trends and gentle nudges. Sessions are cached on-device and sync to Firebase when a connection returns, so a dropped signal never loses a reading.",
+    gallery: [
+      {
+        src: "/projects/physiopano-app.png",
+        alt: "Physiopaño mobile app on a phone, showing a green well-being ring, live sensor readouts, and session controls on a dark UI.",
+      },
+    ],
+    links: [
+      { label: "Repo", href: "#" },
+      { label: "Case study", href: "#" },
+    ],
+  },
+  {
+    id: "physiopano-admin",
+    index: "02",
+    title: "Physiopaño Admin Web Portal",
+    blurb:
+      "React + TypeScript dashboard behind the Physiopaño wearable — enrol participants, monitor live sessions across devices, and export labelled data to retrain the on-device model.",
+    tags: ["React", "TypeScript", "Firebase"],
+    stack: [
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Firebase",
+      "Cloud Functions",
+      "Recharts",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-02",
+    year: "2026",
+    page: "03",
+    figCaption:
+      "FIG 2.1: Admin portal — marketing landing page and Firebase-backed research sign-in.",
+    challenge:
+      "Behind the wearable sits a research workflow: enrolling participants, watching sessions across many devices, and exporting clean, labelled data to retrain the on-device classifier. Doing that from a phone is hopeless — clinicians and researchers needed a real dashboard.",
+    solution:
+      "A React + TypeScript portal with role-based auth, a participant roster, and live session monitoring across every paired device. Researchers review and label sessions inline, then export the curated set as training data for the Random Forest model — closing the loop between the field and the firmware.",
+    gallery: [
+      {
+        src: "/projects/physiopano-admin-landing.png",
+        alt: "Physiopaño admin portal landing page — 'Listen to what your body is telling you' hero with a live session dashboard preview.",
+      },
+      {
+        src: "/projects/physiopano-admin-login.png",
+        alt: "Physiopaño admin portal sign-in page — 'Stress, made visible.' panel with a live PPG signal beside a Firebase-backed research login form.",
+      },
+    ],
+    links: [
+      { label: "Repo", href: "#" },
+      { label: "Live demo", href: "#" },
+    ],
+  },
+];
+
+export type SkillGroup = {
+  label: string;
+  items: string[];
+};
+
+export const skillGroups: SkillGroup[] = [
+  {
+    label: "Embedded",
+    items: [
+      "ESP32",
+      "Arduino",
+      "PIC MCU",
+      "FPGA / Verilog",
+      "PCB Design",
+      "Firmware",
+      "I2C / SPI / UART",
+      "Sensor Integration",
+    ],
+  },
+  {
+    label: "Frontend",
+    items: [
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Flutter",
+      "HTML / CSS / JS",
+      "Responsive Design",
+      "Web APIs",
+      "Three.js",
+    ],
+  },
+  {
+    label: "Design",
+    items: [
+      "Figma",
+      "Adobe Photoshop",
+      "Illustrator",
+      "UI / UX",
+      "Branding",
+      "Typography",
+      "Motion",
+      "Print",
+    ],
+  },
+  {
+    label: "Tools & Backend",
+    items: [
+      "Python",
+      "C / C++",
+      "Git",
+      "Firebase",
+      "SQL",
+      "Node.js",
+      "Linux",
+      "VS Code",
+    ],
+  },
+];
+
+export type Cert = {
+  title: string;
+  issuer: string;
+  date: string;
+  href?: string;
+};
+
+export const certs: Cert[] = [
+  {
+    title: "AI Fundamentals",
+    issuer: "IBM SkillsBuild",
+    date: "2024",
+    href: "#",
+  },
+  {
+    title: "Certificate Title",
+    issuer: "Issuing Organization",
+    date: "Month Year",
+    href: "#",
+  },
+  {
+    title: "Certificate Title",
+    issuer: "Issuing Organization",
+    date: "Month Year",
+    href: "#",
+  },
+  {
+    title: "Award Title",
+    issuer: "Awarding Body",
+    date: "Month Year",
+    href: "#",
+  },
+];
+
+export type TimelineEntry = {
+  range: string;
+  title: string;
+  org: string;
+  blurb: string;
+};
+
+export const timeline: TimelineEntry[] = [
+  {
+    range: "2021 — Present",
+    title: "BS Computer Engineering",
+    org: "Jose Rizal Memorial State University, Dapitan",
+    blurb:
+      "Major in Embedded Systems Engineering. Dean's lister. Active thesis work on wearable health tech and physiological signal processing.",
+  },
+  {
+    range: "2023 — Present",
+    title: "Freelance Frontend Dev & Designer",
+    org: "Self-employed",
+    blurb:
+      "Building responsive websites, UI/UX, and visual identities for clients and personal projects. Focused on modern web stacks and clean systems.",
+  },
+];
+
+export const navLinks = [
+  { label: "About", href: "#about" },
+  { label: "Work", href: "#work" },
+  { label: "Stack", href: "#stack" },
+  { label: "Credentials", href: "#credentials" },
+  { label: "Contact", href: "#contact" },
+];

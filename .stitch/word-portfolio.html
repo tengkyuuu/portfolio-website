@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Portfolio.docx</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-container": "#5f6161",
+                      "tertiary-fixed-dim": "#ffb877",
+                      "secondary": "#5d5f5f",
+                      "error-container": "#ffdad6",
+                      "error": "#ba1a1a",
+                      "surface-bright": "#f9f9f9",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "on-background": "#1a1c1c",
+                      "on-primary-container": "#b7cfff",
+                      "secondary-container": "#dcdddd",
+                      "on-primary-fixed": "#001b3f",
+                      "on-error-container": "#93000a",
+                      "tertiary-container": "#844900",
+                      "primary-fixed-dim": "#abc7ff",
+                      "surface-container-high": "#e8e8e8",
+                      "on-tertiary-container": "#ffc28d",
+                      "on-secondary-fixed": "#1a1c1c",
+                      "on-tertiary-fixed": "#2e1600",
+                      "primary-container": "#2b579a",
+                      "inverse-primary": "#abc7ff",
+                      "surface-container-highest": "#e2e2e2",
+                      "outline-variant": "#c3c6d2",
+                      "primary": "#063f81",
+                      "on-surface-variant": "#434750",
+                      "background": "#f9f9f9",
+                      "on-primary-fixed-variant": "#134688",
+                      "secondary-fixed-dim": "#c6c6c7",
+                      "primary-fixed": "#d7e3ff",
+                      "tertiary-fixed": "#ffdcc1",
+                      "on-secondary-fixed-variant": "#454747",
+                      "on-error": "#ffffff",
+                      "surface-tint": "#335ea1",
+                      "inverse-surface": "#2f3131",
+                      "surface-container-low": "#f3f3f4",
+                      "surface-container": "#eeeeee",
+                      "on-tertiary-fixed-variant": "#6c3a00",
+                      "surface-dim": "#dadada",
+                      "on-surface": "#1a1c1c",
+                      "secondary-fixed": "#e2e2e2",
+                      "on-primary": "#ffffff",
+                      "surface": "#f9f9f9",
+                      "tertiary": "#633500",
+                      "outline": "#737782",
+                      "inverse-on-surface": "#f0f1f1",
+                      "surface-variant": "#e2e2e2",
+                      "surface-container-lowest": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "toolbar-gap": "0.5rem",
+                      "container-max-width": "816px",
+                      "workspace-padding": "2rem",
+                      "paper-margin-x": "2.5rem",
+                      "paper-margin-y": "3rem"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-ui": [
+                              "Inter"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "body-doc": [
+                              "Source Serif 4"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "display-doc": [
+                              "Source Serif 4"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-ui": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "button": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-doc": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "display-doc": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+
+        /* Document-like paper shadow */
+        .paper-shadow {
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1), 0px 1px 3px rgba(0,0,0,0.05);
+        }
+        .dark .paper-shadow {
+            box-shadow: none;
+            border: 1px solid theme('colors.outline');
+        }
+
+        /* Group hover for image swap */
+        .group:hover .hover-image {
+            opacity: 1;
+        }
+        .group:hover .default-image {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="bg-surface-container dark:bg-surface-dim min-h-screen flex flex-col font-body-ui text-body-ui text-on-surface pb-8">
+<!-- TopNavBar -->
+<nav class="bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed text-headline-md font-headline-md border-b border-outline-variant dark:border-outline fixed top-0 w-full z-50 flex justify-between items-center px-toolbar-gap h-12 shadow-sm dark:shadow-none">
+<!-- Left Side: Tools/Menu -->
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-secondary-container dark:hover:bg-secondary transition-colors rounded text-on-surface-variant dark:text-on-secondary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="menu">menu</span>
+</button>
+<div class="flex items-center gap-1 border-r border-outline-variant dark:border-outline pr-2 mr-2">
+<button class="p-1 hover:bg-secondary-container dark:hover:bg-secondary transition-colors rounded text-on-surface-variant dark:text-on-secondary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="save">save</span>
+</button>
+<button class="p-1 hover:bg-secondary-container dark:hover:bg-secondary transition-colors rounded text-on-surface-variant dark:text-on-secondary-container opacity-50 cursor-not-allowed">
+<span class="material-symbols-outlined text-[20px]" data-icon="undo">undo</span>
+</button>
+</div>
+<!-- Navigation Links as Ribbon Tabs -->
+<div class="hidden md:flex gap-4 items-end h-full">
+<button class="text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1 px-2 opacity-80 transition-opacity font-button text-button">Home</button>
+<button class="text-on-surface-variant dark:text-on-secondary-container hover:bg-secondary-container dark:hover:bg-secondary transition-colors pb-1 px-2 rounded-t font-button text-button">Projects</button>
+<button class="text-on-surface-variant dark:text-on-secondary-container hover:bg-secondary-container dark:hover:bg-secondary transition-colors pb-1 px-2 rounded-t font-button text-button">About</button>
+</div>
+</div>
+<!-- Center: Document Title -->
+<div class="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+<span class="material-symbols-outlined fill text-primary dark:text-primary-fixed text-[20px]" data-icon="description">description</span>
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">Portfolio.docx</span>
+</div>
+<!-- Right Side: Actions & Profile -->
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-secondary-container dark:hover:bg-secondary transition-colors rounded text-on-surface-variant dark:text-on-secondary-container" id="theme-toggle">
+<span class="material-symbols-outlined text-[20px]" data-icon="dark_mode">dark_mode</span>
+</button>
+<button class="p-1 hover:bg-secondary-container dark:hover:bg-secondary transition-colors rounded text-on-surface-variant dark:text-on-secondary-container ml-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-label-sm font-label-sm">JD</div>
+</button>
+</div>
+</nav>
+<!-- Main Workspace (Padding for Toolbar) -->
+<main class="flex-grow pt-20 pb-16 px-4 md:px-workspace-padding flex justify-center">
+<!-- The "Paper" -->
+<div class="bg-surface-container-lowest dark:bg-on-background w-full max-w-[816px] min-h-[1056px] paper-shadow px-6 md:px-paper-margin-x py-8 md:py-paper-margin-y flex flex-col gap-8 mx-auto my-4 text-on-surface dark:text-on-secondary">
+<!-- Document Header -->
+<header class="border-b-2 border-primary dark:border-primary-fixed pb-6 mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+<div>
+<h1 class="font-display-doc text-display-doc text-primary dark:text-primary-fixed mb-2 tracking-tight">Jane Doe</h1>
+<p class="font-headline-lg text-headline-lg text-on-surface-variant dark:text-on-secondary-container">Creative Director &amp; Designer</p>
+<div class="flex gap-4 mt-4 font-body-ui text-body-ui text-on-surface-variant dark:text-on-secondary-container">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" data-icon="mail">mail</span> jane.doe@example.com</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" data-icon="link">link</span> janedoe.design</span>
+</div>
+</div>
+<!-- Interactive Profile Image -->
+<div class="relative w-32 h-32 rounded-full overflow-hidden border-4 border-surface-variant dark:border-outline group cursor-pointer shadow-sm shrink-0">
+<img alt="Professional portrait" class="default-image absolute inset-0 w-full h-full object-cover transition-opacity duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBl0fau5oVoH1dmJkGYNRbzmML5gu2mut8th3HSuWCXv4HVV6jffMvv-6z7IaOS-U76Gy-FZL8L53JJMxE5noo36x2N6swPN2GNbG49j1iPDs2b0qpIdZNH4pU18LoErlSv2JkVvoWJClOm9SpblZUYpQQKTwFHxLNC5rhmFxkdys2iUCXeZX1uHMBGQc4Jc58MXq_suDAfQAdVqQ2Rjala1XkfE0mQYpssfOd_yytcMFS1rW4gix37i2sClNw0LiEqPGP4zTo_bcY"/>
+<img alt="Professional portrait with sunglasses" class="hover-image absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCk5HJYkzIgomI6_epNwwx1K1wnKog61xXOjQ5XK0-MVwq3Rp6s_5ZtYS7990Cm7oEJ3OWU3Z9XBrgg--MBjcmTgcWVQMPndscykkVscfxeuaOcmqjFQjzpRTJnqb01HJdH-bB1tvie1fBUUTH7wewmqJgs-GAB7QkUV33KmBFK0Bk1E47lJJPw_i9X8AW0X5_DtLFQDZLwQnQn3w6qqTdqJmgnxmMWvZlsPgLxGvxArGC_t58Dr2Q1_1StEa5vTuS7_eNrfIeeUm4"/>
+</div>
+</header>
+<!-- Document Body Content -->
+<div class="flex flex-col gap-10 font-body-doc text-body-doc">
+<!-- Section: Executive Summary -->
+<section>
+<h2 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed mb-4 border-b border-outline-variant dark:border-outline pb-1 uppercase tracking-wider text-sm font-bold">Executive Summary</h2>
+<p class="mb-4 leading-relaxed">
+                        A highly adaptable and visionary Creative Director with over a decade of experience bridging the gap between physical aesthetics and digital interfaces. Specializing in translating complex corporate structures into intuitive, emotionally resonant user experiences. Proven track record of leading multidisciplinary teams to deliver award-winning designs that prioritize clarity, usability, and brand authority.
+                    </p>
+<p class="leading-relaxed">
+                        My design philosophy centers on the "Document-as-Interface" metaphor—believing that the most powerful digital tools are those that feel as reliable, structured, and focused as a crisp sheet of bond paper. I excel in environments that demand meticulous attention to typographic hierarchy and systemic layout architecture.
+                    </p>
+</section>
+<!-- Section: Core Competencies -->
+<section>
+<h2 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed mb-4 border-b border-outline-variant dark:border-outline pb-1 uppercase tracking-wider text-sm font-bold">Core Competencies</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+<ul class="list-disc list-inside space-y-2 marker:text-primary dark:marker:text-primary-fixed">
+<li>Design Systems Architecture</li>
+<li>Corporate Identity &amp; Branding</li>
+<li>Typography &amp; Layout Grids</li>
+<li>UI/UX for Enterprise Software</li>
+</ul>
+<ul class="list-disc list-inside space-y-2 marker:text-primary dark:marker:text-primary-fixed">
+<li>Cross-functional Team Leadership</li>
+<li>Prototyping (Figma, Framer)</li>
+<li>Design Strategy &amp; Vision</li>
+<li>Accessibility (WCAG) Compliance</li>
+</ul>
+</div>
+</section>
+<!-- Section: Selected Projects (Table Style) -->
+<section>
+<h2 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed mb-4 border-b border-outline-variant dark:border-outline pb-1 uppercase tracking-wider text-sm font-bold">Selected Projects</h2>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low dark:bg-inverse-surface text-on-surface dark:text-on-secondary font-bold border-b-2 border-outline-variant dark:border-outline">
+<th class="p-3 w-1/4">Project Name</th>
+<th class="p-3 w-1/4">Role</th>
+<th class="p-3">Description</th>
+<th class="p-3 w-24 text-center">Year</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant dark:divide-outline">
+<tr class="hover:bg-surface-bright dark:hover:bg-surface-container transition-colors">
+<td class="p-3 font-semibold text-primary dark:text-primary-fixed">LexOS Interface</td>
+<td class="p-3 text-on-surface-variant dark:text-on-secondary-container text-sm">Lead Designer</td>
+<td class="p-3 text-sm">Redesigned the primary interface for a leading legal tech firm, implementing a document-first UI that increased user focus by 40%.</td>
+<td class="p-3 text-center text-sm text-on-surface-variant dark:text-on-secondary-container">2023</td>
+</tr>
+<tr class="hover:bg-surface-bright dark:hover:bg-surface-container transition-colors">
+<td class="p-3 font-semibold text-primary dark:text-primary-fixed">Acme Corp Rebrand</td>
+<td class="p-3 text-on-surface-variant dark:text-on-secondary-container text-sm">Creative Director</td>
+<td class="p-3 text-sm">Directed the global rebrand, establishing a comprehensive design system anchoring all digital and print assets.</td>
+<td class="p-3 text-center text-sm text-on-surface-variant dark:text-on-secondary-container">2022</td>
+</tr>
+<tr class="hover:bg-surface-bright dark:hover:bg-surface-container transition-colors">
+<td class="p-3 font-semibold text-primary dark:text-primary-fixed">Writer's Block App</td>
+<td class="p-3 text-on-surface-variant dark:text-on-secondary-container text-sm">UX/UI Designer</td>
+<td class="p-3 text-sm">Conceptualized and designed a minimalist writing environment focused on typography and distraction-free creation.</td>
+<td class="p-3 text-center text-sm text-on-surface-variant dark:text-on-secondary-container">2021</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Section: Education -->
+<section class="mt-8">
+<h2 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed mb-4 border-b border-outline-variant dark:border-outline pb-1 uppercase tracking-wider text-sm font-bold">Education</h2>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-bold text-on-surface dark:text-on-secondary">Rhode Island School of Design (RISD)</h3>
+<p class="text-on-surface-variant dark:text-on-secondary-container text-sm">BFA in Graphic Design</p>
+</div>
+<span class="text-on-surface-variant dark:text-on-secondary-container text-sm">2010 - 2014</span>
+</div>
+</section>
+</div>
+<!-- Page Number Indicator -->
+<div class="mt-auto pt-16 flex justify-center text-on-surface-variant dark:text-on-secondary-container opacity-50 font-label-sm text-label-sm">
+                - 1 -
+            </div>
+</div>
+</main>
+<!-- Footer / Status Bar -->
+<footer class="bg-primary dark:bg-primary-container text-on-primary dark:text-on-primary-container font-label-sm text-label-sm fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-4 py-1 h-6">
+<div class="flex items-center gap-4">
+<span>Page 1 of 1</span>
+<span class="border-l border-on-primary/30 dark:border-on-primary-container/30 pl-4">420 words</span>
+<span class="border-l border-on-primary/30 dark:border-on-primary-container/30 pl-4 hidden sm:inline">English (US)</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-on-primary dark:text-on-primary-container opacity-90 hover:bg-primary-fixed-variant/20 px-2 rounded flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[14px]" data-icon="crop_free">crop_free</span>
+<span class="hidden sm:inline">Focus</span>
+</button>
+<button class="text-on-primary dark:text-on-primary-container font-bold hover:bg-primary-fixed-variant/20 px-2 rounded flex items-center gap-1 transition-colors bg-white/10 dark:bg-black/10 scale-95">
+<span class="material-symbols-outlined text-[14px]" data-icon="article">article</span>
+<span class="hidden sm:inline">Print Layout</span>
+</button>
+<!-- Zoom Control -->
+<div class="flex items-center gap-2 ml-4">
+<button class="hover:bg-primary-fixed-variant/20 rounded p-0.5"><span class="material-symbols-outlined text-[14px]" data-icon="remove">remove</span></button>
+<div class="w-24 h-1 bg-white/30 rounded-full relative">
+<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-3 bg-on-primary dark:bg-on-primary-container rounded-sm shadow-sm cursor-pointer"></div>
+</div>
+<button class="hover:bg-primary-fixed-variant/20 rounded p-0.5"><span class="material-symbols-outlined text-[14px]" data-icon="add">add</span></button>
+<span class="ml-1 w-8 text-right">100%</span>
+</div>
+</div>
+</footer>
+<script>
+        // Dark mode toggle functionality
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const htmlElement = document.documentElement;
+
+        themeToggleBtn.addEventListener('click', () => {
+            if (htmlElement.classList.contains('dark')) {
+                htmlElement.classList.remove('dark');
+                htmlElement.classList.add('light');
+                themeToggleBtn.querySelector('span').textContent = 'dark_mode';
+            } else {
+                htmlElement.classList.remove('light');
+                htmlElement.classList.add('dark');
+                themeToggleBtn.querySelector('span').textContent = 'light_mode';
+            }
+        });
+    </script>
+</body></html>

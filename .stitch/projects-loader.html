@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Source+Serif+4:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#e2e2e2",
+                        "error-container": "#ffdad6",
+                        "inverse-primary": "#abc7ff",
+                        "inverse-surface": "#2f3131",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#dadada",
+                        "primary": "#063f81",
+                        "outline-variant": "#c3c6d2",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e8e8e8",
+                        "inverse-on-surface": "#f0f1f1",
+                        "on-primary-container": "#b7cfff",
+                        "tertiary": "#633500",
+                        "secondary-container": "#dcdddd",
+                        "tertiary-container": "#844900",
+                        "surface-container-low": "#f3f3f4",
+                        "on-primary-fixed": "#001b3f",
+                        "surface-container-highest": "#e2e2e2",
+                        "on-tertiary-container": "#ffc28d",
+                        "primary-fixed": "#d7e3ff",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "on-background": "#1a1c1c",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#f9f9f9",
+                        "secondary": "#5d5f5f",
+                        "on-primary-fixed-variant": "#134688",
+                        "surface-variant": "#e2e2e2",
+                        "on-tertiary-fixed": "#2e1600",
+                        "on-secondary-container": "#5f6161",
+                        "primary-fixed-dim": "#abc7ff",
+                        "on-secondary-fixed-variant": "#454747",
+                        "surface-tint": "#335ea1",
+                        "tertiary-fixed-dim": "#ffb877",
+                        "outline": "#737782",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#6c3a00",
+                        "on-surface": "#1a1c1c",
+                        "tertiary-fixed": "#ffdcc1",
+                        "surface-container": "#eeeeee",
+                        "surface": "#f9f9f9",
+                        "on-secondary-fixed": "#1a1c1c",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#2b579a",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#434750",
+                        "background": "#f9f9f9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "paper-margin-y": "3rem",
+                        "workspace-padding": "2rem",
+                        "toolbar-gap": "0.5rem",
+                        "paper-margin-x": "2.5rem",
+                        "container-max-width": "816px"
+                    },
+                    "fontFamily": {
+                        "body-ui": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display-doc": ["Source Serif 4"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-doc": ["Source Serif 4"],
+                        "button": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-ui": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "display-doc": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-doc": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "button": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #dadada; /* surface-dim simulation */
+        }
+        .paper-shadow {
+            box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
+        }
+        .toc-dotted-line {
+            border-bottom: 1px dotted #737782;
+            flex-grow: 1;
+            margin: 0 8px 4px 8px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        @keyframes loading-bar {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+    </style>
+</head>
+<body class="font-body-ui text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Loader Overlay -->
+<div class="fixed inset-0 z-[100] bg-surface-container-lowest dark:bg-surface-container-high flex flex-col items-center justify-center transition-opacity duration-500" id="page-loader">
+<div class="absolute top-0 left-0 h-1 bg-primary w-full animate-[loading-bar_1.5s_ease-in-out_forwards]"></div>
+<div class="flex flex-col items-center gap-4">
+<span class="material-symbols-outlined text-[64px] text-primary animate-pulse" data-icon="description">description</span>
+<div class="text-on-surface-variant font-body-ui text-lg animate-pulse">Document Opening...</div>
+</div>
+</div>
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-high border-b border-outline-variant dark:border-outline docked full-width top-0 flex justify-between items-center px-2.5 py-2 w-full z-50 sticky">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-on-surface dark:text-on-surface-variant">Portfolio.docx</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-on-surface-variant dark:text-on-secondary-fixed-variant font-button hover:bg-surface-container dark:hover:bg-surface-dim transition-colors px-2 py-1" href="#">Home</a>
+<a class="text-primary-container dark:text-primary-fixed-dim font-bold border-b-2 border-primary-container pb-1" href="#">Projects</a>
+<a class="text-on-surface-variant dark:text-on-secondary-fixed-variant font-button hover:bg-surface-container dark:hover:bg-surface-dim transition-colors px-2 py-1" href="#">About</a>
+</nav>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="dark_mode">dark_mode</span>
+</button>
+<button class="bg-primary-container text-on-primary rounded px-4 py-1.5 font-button hover:opacity-80 transition-all active:scale-95">
+                Share
+            </button>
+</div>
+</header>
+<!-- Workspace Container -->
+<main class="min-h-screen pt-8 pb-20 px-8 flex justify-center bg-surface-dim">
+<!-- The Paper Canvas -->
+<article class="w-full max-w-[816px] bg-white paper-shadow min-h-[1056px] px-[2.5rem] py-[3rem] flex flex-col font-body-doc text-on-surface">
+<!-- Document Header -->
+<header class="mb-12 border-b-2 border-primary-container pb-4">
+<h1 class="font-display-doc text-display-doc text-primary">Projects Archive</h1>
+<p class="text-secondary font-label-sm italic">Confidential Report — Q4 2023 Executive Summary</p>
+</header>
+<!-- Table of Contents Section -->
+<section class="mb-16">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6 uppercase tracking-wider">Table of Contents</h2>
+<div class="space-y-4">
+<div class="flex items-end">
+<span class="font-bold">Project 01: Eco-Friendly Rebrand</span>
+<div class="toc-dotted-line"></div>
+<span class="font-bold">02</span>
+</div>
+<div class="flex items-end">
+<span class="font-bold">Project 02: FinTech Mobile App Architecture</span>
+<div class="toc-dotted-line"></div>
+<span class="font-bold">05</span>
+</div>
+<div class="flex items-end">
+<span class="font-bold">Project 03: AI-Driven Analytics Dashboard</span>
+<div class="toc-dotted-line"></div>
+<span class="font-bold">09</span>
+</div>
+</div>
+</section>
+<!-- Project Entry 01 -->
+<section class="mb-16">
+<div class="flex justify-between items-baseline border-b border-outline-variant mb-6">
+<h2 class="font-headline-md text-headline-md text-primary">Project 01: Eco-Friendly Rebrand</h2>
+<span class="font-label-sm text-secondary">REF: PRJ-2023-01</span>
+</div>
+<div class="mb-8">
+<div class="w-full aspect-video bg-surface-container-low overflow-hidden rounded-lg mb-2 relative group">
+<img alt="Eco-friendly branding concept" class="w-full h-full object-cover" data-alt="A clean and professional digital mockup of sustainable product packaging against a minimalist, bright studio background. The color palette features deep forest greens, earthy tans, and crisp whites to evoke an eco-friendly aesthetic. The lighting is soft and even, highlighting the natural textures of recycled paper and organic materials. The overall mood is sophisticated, modern, and environmentally conscious, aligned with a corporate light-mode design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlVUAmazEVjLnGDeWIs_W0mK5PEjPmk5ejNC-5DlnWEEciStb6_quXWH970qNYl1vlzYCaSj_IhQeVH690kd4FYNYrtP8AdgPmWWNACysmSp6vDX8hLW1LHXrgntuHQjVFFovjowiILiplaVjFTpdFvUnS2SufKyrr4SWG8FFYgizxvQdG7s7HtveI4ZcABWcwbK64p66KfvHDnbUI_Vlv_w9vOg3yboOCDt7eaU_kq0PMMq9a63Atn7lwzANXeC7yYTJD0zwlS7Y"/>
+</div>
+<p class="text-label-sm text-secondary italic text-center">FIG 1.1: Sustainable Visual Identity System and Material Explorations.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div>
+<h3 class="font-bold text-on-surface border-l-4 border-primary-container pl-3 mb-3 uppercase text-sm tracking-widest">Challenge</h3>
+<p class="text-body-doc text-on-surface-variant leading-relaxed">
+                            The client, a leading supplier of organic agricultural products, suffered from a fragmented brand identity that failed to communicate their high-end market position. Existing materials were inconsistent across digital and print touchpoints, leading to a 15% decrease in brand recall among primary stakeholders.
+                        </p>
+</div>
+<div>
+<h3 class="font-bold text-on-surface border-l-4 border-primary-container pl-3 mb-3 uppercase text-sm tracking-widest">Solution</h3>
+<p class="text-body-doc text-on-surface-variant leading-relaxed">
+                            Developed a comprehensive 'Document-First' design system utilizing a palette of earth-toned neutrals and high-contrast typography. We restructured their digital documentation flow and physical packaging to use sustainable materials, resulting in a cohesive narrative that increased stakeholder engagement by 34% within the first quarter.
+                        </p>
+</div>
+</div>
+</section>
+<!-- Horizontal Divider -->
+<div class="w-full h-px bg-outline-variant my-12"></div>
+<!-- Project Entry 02 -->
+<section class="mb-16">
+<div class="flex justify-between items-baseline border-b border-outline-variant mb-6">
+<h2 class="font-headline-md text-headline-md text-primary">Project 02: FinTech Mobile App</h2>
+<span class="font-label-sm text-secondary">REF: PRJ-2023-04</span>
+</div>
+<div class="mb-8">
+<div class="w-full aspect-video bg-surface-container-low overflow-hidden rounded-lg mb-2 relative">
+<img alt="Financial data visualization" class="w-full h-full object-cover" data-alt="A professional and sleek data visualization dashboard displayed on a high-resolution screen in a modern office setting. The interface features precise line charts, clean typography, and a refined color scheme of deep navy blues, bright whites, and subtle gray accents. The lighting is professional and airy, reflecting a high-focus corporate productivity environment. The composition is clean and orderly, emphasizing data clarity and modern financial technology." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXVgnof2ICUKSUUZjb9C5_b-f_X5472rPDHfV0pqH3pX0O5Xa-vCJ3Yng8QvzrUrxXWnwD7pvJ3DCow19fIIJKx9im1ZXmS6ffwm5hnsqhk_njueFPbalsXqX5wBehN2-wYzSIObu1OJYeMpcvo19T2ksjMBpYE6LZODSxs0oa4bXl4tf55P9_LYl3BtI16wjsxSN9TLgPg6Bl_XmVFBMTfRfEJ8nu45lss1mFAkGBEf7S_BDqHKhN0tFnBGQInKaINBcSxe8tbEc"/>
+</div>
+<p class="text-label-sm text-secondary italic text-center">FIG 2.1: Transactional Flow Architecture and Data Visualization Modules.</p>
+</div>
+<div class="bg-surface-container-lowest p-6 border border-outline-variant rounded mb-8">
+<table class="w-full border-collapse">
+<thead>
+<tr class="border-b-2 border-primary-container">
+<th class="text-left font-bold py-2 uppercase text-xs tracking-tighter">Metric</th>
+<th class="text-left font-bold py-2 uppercase text-xs tracking-tighter">Pre-Launch</th>
+<th class="text-left font-bold py-2 uppercase text-xs tracking-tighter">Post-Launch</th>
+<th class="text-left font-bold py-2 uppercase text-xs tracking-tighter text-primary">Growth</th>
+</tr>
+</thead>
+<tbody class="text-body-ui">
+<tr class="border-b border-outline-variant">
+<td class="py-3">User Retention</td>
+<td class="py-3">42%</td>
+<td class="py-3">78%</td>
+<td class="py-3 font-bold text-primary">+85.7%</td>
+</tr>
+<tr class="border-b border-outline-variant">
+<td class="py-3">Load Time (Avg)</td>
+<td class="py-3">3.4s</td>
+<td class="py-3">0.8s</td>
+<td class="py-3 font-bold text-primary">-76.4%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div>
+<h3 class="font-bold text-on-surface border-l-4 border-primary-container pl-3 mb-3 uppercase text-sm tracking-widest">Challenge</h3>
+<p class="text-body-doc text-on-surface-variant leading-relaxed">
+                            The legacy banking application suffered from high churn rates due to a complex navigation structure and outdated visual language. Mobile users reported difficulty in accessing core transactional features, leading to an average task completion time of over 120 seconds for basic transfers.
+                        </p>
+</div>
+<div>
+<h3 class="font-bold text-on-surface border-l-4 border-primary-container pl-3 mb-3 uppercase text-sm tracking-widest">Solution</h3>
+<p class="text-body-doc text-on-surface-variant leading-relaxed">
+                            Implemented a modular 'Bento-style' dashboard that prioritized high-frequency actions. By applying Material Design principles focused on information hierarchy and reducing cognitive load, the new architecture reduced task completion time to 24 seconds and stabilized user retention.
+                        </p>
+</div>
+</div>
+</section>
+<!-- Page Numbering Simulation -->
+<footer class="mt-auto pt-12 text-center border-t border-outline-variant text-label-sm text-secondary">
+<p>Page 1 of 1 — Appendix A: Technical Portfolio Reference</p>
+</footer>
+</article>
+</main>
+<!-- Footer / Status Bar -->
+<footer class="bg-primary-container dark:bg-primary text-on-primary dark:text-on-primary-fixed font-label-sm text-label-sm fixed bottom-0 w-full z-50 flex justify-between items-center h-6 px-4 w-full">
+<div class="flex items-center gap-4">
+<span>Page 1 of 1</span>
+<span class="opacity-40">|</span>
+<span>452 words</span>
+<span class="opacity-40">|</span>
+<span>English (US)</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-3">
+<span class="hover:bg-primary dark:hover:bg-primary-container cursor-pointer px-1 active:scale-95 duration-75">Focus</span>
+<span class="text-on-primary font-bold hover:bg-primary dark:hover:bg-primary-container cursor-pointer px-1 active:scale-95 duration-75">Print Layout</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="remove">remove</span>
+<span class="cursor-pointer">100%</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="add">add</span>
+</div>
+</div>
+</footer>
+<script>
+        // Simple logic for interactive elements
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if(link.getAttribute('href') === '#') e.preventDefault();
+            });
+        });
+
+        // Simulation of "Word" like hover for images
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('mouseenter', () => {
+                img.parentElement.classList.add('ring-2', 'ring-primary-container', 'ring-offset-2');
+            });
+            img.addEventListener('mouseleave', () => {
+                img.parentElement.classList.remove('ring-2', 'ring-primary-container', 'ring-offset-2');
+            });
+        });
+
+        // Loader logic
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('page-loader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                    }, 500);
+                }
+            }, 1500);
+        });
+    </script>
+</body></html>
