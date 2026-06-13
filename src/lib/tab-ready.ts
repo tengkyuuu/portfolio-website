@@ -24,6 +24,8 @@ function imageSrcsForTab(tab: TabId): string[] {
     return [
       "/projects/physiopano-app.webp",
       "/projects/physiopano-admin-landing.webp",
+      "/projects/famecrm-landing.webp",
+      "/projects/shm-landing.webp",
     ];
   }
   return [];

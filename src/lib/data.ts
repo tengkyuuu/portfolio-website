@@ -120,7 +120,7 @@ export const projects: Project[] = [
     index: "03",
     title: "FameCRM",
     blurb:
-      "Sample text — a CRM dashboard for creators and small teams to track accounts, engagement, and outreach in one place.",
+      "The agency operating system — a CRM that lets creator agencies track talent, discover trends, and manage their team across socials from one dashboard.",
     tags: ["React", "TypeScript", "SaaS"],
     stack: [
       "React",
@@ -133,32 +133,56 @@ export const projects: Project[] = [
     ref: "REF: JVC-2026-03",
     year: "2026",
     page: "04",
-    figCaption: "FIG 3.1: FameCRM dashboard — sample placeholder.",
+    figCaption:
+      "FIG 3.1: FameCRM — agency landing page, sign-in, and the per-creator analytics dashboard.",
     challenge:
-      "Sample text — describe the problem FameCRM set out to solve (scattered accounts, no single view of engagement, manual outreach).",
+      "Creator agencies juggle talent across Instagram, TikTok, X, and more, with performance data scattered across every platform. They needed one place to track creators, smart links, and engagement — without living in a dozen tabs.",
     solution:
-      "Sample text — describe what you built: a dashboard with account tracking, engagement analytics, and a clean, fast UI.",
-    gallery: [],
+      "A React + TypeScript CRM that pulls each creator's accounts into a single dashboard: seed/usage tracking, smart-link analytics, viral rankings, and click-through metrics, all rendered in a fast, dark, agency-grade UI.",
+    gallery: [
+      {
+        src: "/projects/famecrm-landing.webp",
+        alt: "FameCRM landing page — 'The smarter way to run your agency' hero on a dark UI.",
+      },
+      {
+        src: "/projects/famecrm-dashboard.webp",
+        alt: "FameCRM dashboard — per-creator analytics with seed usage, total creators/followers/views, and engagement metrics.",
+      },
+      {
+        src: "/projects/famecrm-login.webp",
+        alt: "FameCRM sign-in page — 'Your agency, supercharged' panel beside a login form.",
+      },
+    ],
     links: [{ label: "Repo", href: "#" }],
   },
   {
     id: "shm",
     index: "04",
-    title: "SHM",
+    title: "SHM — Structural Health Monitoring",
     blurb:
-      "Sample text — an IoT structural/health monitoring system that streams sensor data to the cloud for real-time dashboards and alerts.",
-    tags: ["ESP32", "IoT", "Sensors"],
-    stack: ["ESP32", "C / C++", "MQTT", "Firebase", "Sensors"],
+      "An IoT structural-health monitor for bridges — sensor nodes stream acceleration, velocity, and deflection to a real-time dashboard that flags unsafe movement.",
+    tags: ["ESP32", "IoT", "Real-time"],
+    stack: ["ESP32", "C / C++", "React", "WebSockets", "Recharts"],
     kind: "embedded",
     ref: "REF: JVC-2026-04",
     year: "2026",
     page: "05",
-    figCaption: "FIG 4.1: SHM sensor + dashboard — sample placeholder.",
+    figCaption:
+      "FIG 4.1: SHM — real-time monitoring landing page and the live per-node deflection dashboard.",
     challenge:
-      "Sample text — describe the monitoring problem (continuous sensing, remote sites, timely alerts on a low-power budget).",
+      "Bridges flex constantly, but dangerous structural movement is hard to catch by eye. Continuous, remote monitoring meant cheap sensor nodes that could sample motion reliably and surface a clear safe/unsafe signal in real time.",
     solution:
-      "Sample text — describe the build: ESP32 nodes sampling sensors, publishing over MQTT, and a dashboard for live readings and alerts.",
-    gallery: [],
+      "ESP32-based sensor nodes sample acceleration, velocity, and deflection and stream them live to a web dashboard. It classifies movement against safe limits, shows per-node readings and history, and auto-clears alerts once motion settles.",
+    gallery: [
+      {
+        src: "/projects/shm-landing.webp",
+        alt: "SHM landing page — 'Watch your bridge breathe in real time' with a live waveform background.",
+      },
+      {
+        src: "/projects/shm-dashboard.webp",
+        alt: "SHM live dashboard — Miputak Dacu Node showing 2.97 mm current deflection with acceleration and velocity sensor charts.",
+      },
+    ],
     links: [{ label: "Repo", href: "#" }],
   },
 ];
