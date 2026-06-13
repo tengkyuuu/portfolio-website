@@ -24,6 +24,13 @@ export function ResumePage() {
   const { hero, about, skills, projects, timeline, certs, contact } = content;
 
   const summary = plain(about.paragraphs.split(/\n\s*\n/)[0] ?? "");
+  const highlights = about.highlights ?? [];
+
+  // Keep the résumé to one page: list named awards as rows, and fold the
+  // image-based course certificates (Sololearn, etc.) into a single summary line.
+  const awardCerts = certs.filter((c) => !c.image);
+  const courseCerts = certs.filter((c) => c.image);
+  const courseIssuer = courseCerts[0]?.issuer ?? "online courses";
 
   // Contact line — pull the meaningful channels, skip "Location" (shown already)
   const channels = contact.channels.filter(
@@ -31,7 +38,7 @@ export function ResumePage() {
   );
 
   return (
-    <div className="min-h-svh bg-workspace text-ink py-6 md:py-10 px-3">
+    <div className="resume-page min-h-svh bg-workspace text-ink py-6 md:py-10 px-3">
       {/* Toolbar — not printed */}
       <div className="no-print max-w-[794px] mx-auto mb-4 flex items-center justify-between gap-3">
         <a
@@ -91,6 +98,19 @@ export function ResumePage() {
             <p className="font-doc text-[13.5px] leading-[1.6] text-ink-muted">
               {summary}
             </p>
+            {highlights.length > 0 && (
+              <ul className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1">
+                {highlights.map((h) => (
+                  <li
+                    key={h}
+                    className="font-ui text-[12px] text-ink-muted flex items-start gap-1.5"
+                  >
+                    <span className="text-word-blue font-bold leading-none">›</span>
+                    <span>{h}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </ResumeSection>
         )}
 
@@ -161,7 +181,7 @@ export function ResumePage() {
         {certs.length > 0 && (
           <ResumeSection title="Certifications & Awards">
             <ul className="space-y-1">
-              {certs.map((c) => (
+              {awardCerts.map((c) => (
                 <li
                   key={c.title + c.issuer}
                   className="flex items-baseline justify-between gap-3 font-ui text-[12.5px]"
@@ -170,11 +190,25 @@ export function ResumePage() {
                     <span className="font-semibold">{c.title}</span>
                     <span className="text-ink-muted"> — {c.issuer}</span>
                   </span>
-                  <span className="text-ink-subtle tabular-nums shrink-0">
-                    {c.date}
-                  </span>
+                  {c.date && (
+                    <span className="text-ink-subtle tabular-nums shrink-0">
+                      {c.date}
+                    </span>
+                  )}
                 </li>
               ))}
+              {courseCerts.length > 0 && (
+                <li className="font-ui text-[12.5px]">
+                  <span className="font-semibold text-ink">
+                    {courseCerts.length}× Course Certificates
+                  </span>
+                  <span className="text-ink-muted"> — {courseIssuer}</span>
+                  <span className="text-ink-subtle">
+                    {" "}
+                    ({courseCerts.map((c) => c.title).join(", ")})
+                  </span>
+                </li>
+              )}
             </ul>
           </ResumeSection>
         )}

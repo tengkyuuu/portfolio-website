@@ -47,8 +47,10 @@ export type HeroContent = {
 };
 
 export type AboutContent = {
-  /** Multi-paragraph body. Split on blank lines. Inline markdown allowed. */
+  /** Short lead body. Split on blank lines. Inline markdown allowed. */
   paragraphs: string;
+  /** Scannable one-line highlights shown as a bulleted strip. */
+  highlights?: string[];
   specs: { label: string; value: string }[];
 };
 
@@ -93,7 +95,13 @@ export const DEFAULT_CONTENT: SiteContent = {
   },
   about: {
     paragraphs:
-      "I'm a **Computer Engineer** specializing in embedded systems, with deep proficiency in frontend engineering and graphic design. I work at the seam where hardware and software meet — from programming microcontrollers and laying out PCBs to crafting pixel-perfect interfaces and visual identities.\n\nMy engineering background gives me a useful edge: I understand systems from the silicon up. Whether it's optimizing firmware for an ESP32, building responsive web apps, or designing brand assets that read clearly, I bring systems-level thinking to the work.\n\nI believe great technology should feel invisible — *powerful under the hood, calm on the surface.*",
+      "I'm a **Computer Engineer** who works where hardware meets software — ESP32 firmware and PCBs on one side, production React and brand systems on the other. I think from the silicon up and care about the surface: *powerful under the hood, calm on top.*",
+    highlights: [
+      "Embedded systems — firmware, sensors, PCB design",
+      "Frontend engineering — React, TypeScript, responsive UI",
+      "Graphic & product design — branding, UI/UX, Figma",
+      "Systems thinking across the hardware–software seam",
+    ],
     specs: [
       { label: "Role", value: "Computer Engineer" },
       { label: "Focus", value: "Embedded · Frontend · Design" },
@@ -141,6 +149,7 @@ function normalizeContent(stored: Partial<SiteContent>): SiteContent {
     about: {
       ...DEFAULT_CONTENT.about,
       ...stored.about,
+      highlights: stored.about?.highlights ?? DEFAULT_CONTENT.about.highlights,
       specs: stored.about?.specs ?? DEFAULT_CONTENT.about.specs,
     },
     skills: stored.skills ?? DEFAULT_CONTENT.skills,

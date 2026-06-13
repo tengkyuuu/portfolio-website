@@ -153,13 +153,13 @@ export const skillGroups: SkillGroup[] = [
     label: "Design",
     items: [
       "Figma",
+      "Canva",
+      "Google Stitch",
       "Adobe Photoshop",
       "Illustrator",
       "UI / UX",
       "Branding",
       "Typography",
-      "Motion",
-      "Print",
     ],
   },
   {
@@ -175,6 +175,10 @@ export const skillGroups: SkillGroup[] = [
       "VS Code",
     ],
   },
+  {
+    label: "AI & Data",
+    items: ["Claude", "ChatGPT", "Jupyter"],
+  },
 ];
 
 export type Cert = {
@@ -182,15 +186,38 @@ export type Cert = {
   issuer: string;
   date: string;
   href?: string;
+  /** Optional certificate image. Certs with an image render in the visual
+   *  gallery (thumbnail → opens full image); the rest render as text rows. */
+  image?: string;
 };
 
 export const certs: Cert[] = [
+  {
+    title: "Champion — Regional Programming Competition (C++)",
+    issuer: "ICpEP.SE",
+    date: "",
+  },
+  {
+    title: "Service Award — VP for External Affairs",
+    issuer: "ICpEP.SE",
+    date: "1 year",
+  },
   {
     title: "AI Fundamentals",
     issuer: "IBM SkillsBuild",
     date: "2024",
     href: "/credentials/ibm-ai-fundamentals.pdf",
   },
+  // Sololearn course certificates — rendered as an image gallery
+  { title: "Python", issuer: "Sololearn", date: "", image: "/credentials/sololearn-python.webp" },
+  { title: "C", issuer: "Sololearn", date: "", image: "/credentials/sololearn-c.webp" },
+  { title: "C++", issuer: "Sololearn", date: "", image: "/credentials/sololearn-cpp.webp" },
+  { title: "Java", issuer: "Sololearn", date: "", image: "/credentials/sololearn-java.webp" },
+  { title: "Intro to Java", issuer: "Sololearn", date: "", image: "/credentials/sololearn-java-intro.webp" },
+  { title: "SQL", issuer: "Sololearn", date: "", image: "/credentials/sololearn-sql.webp" },
+  { title: "SQL Intermediate", issuer: "Sololearn", date: "", image: "/credentials/sololearn-sql-intermediate.webp" },
+  { title: "HTML", issuer: "Sololearn", date: "", image: "/credentials/sololearn-html.webp" },
+  { title: "Machine Learning", issuer: "Sololearn", date: "", image: "/credentials/sololearn-ml.webp" },
 ];
 
 export type TimelineEntry = {
@@ -203,17 +230,31 @@ export type TimelineEntry = {
 export const timeline: TimelineEntry[] = [
   {
     range: "2021 — Present",
-    title: "BS Computer Engineering",
+    title: "BS Computer Engineering — 1.76 GWA",
     org: "Jose Rizal Memorial State University, Dapitan",
     blurb:
-      "Major in Embedded Systems Engineering. Dean's lister. Active thesis work on wearable health tech and physiological signal processing.",
+      "Lead software engineer on our IoT-based thesis, and Vice President for External Affairs of ICpEP.SE.",
   },
   {
-    range: "2023 — Present",
-    title: "Freelance Frontend Dev & Designer",
+    range: "Freelance",
+    title: "SaaS Frontend Developer & Designer",
     org: "Self-employed",
     blurb:
-      "Building responsive websites, UI/UX, and visual identities for clients and personal projects. Focused on modern web stacks and clean systems.",
+      "Build and design responsive SaaS web frontends for clients — UI/UX, design systems, and production React.",
+  },
+  {
+    range: "Internship",
+    title: "IT Support",
+    org: "Sangguniang Panlungsod — City Government Center of Dapitan",
+    blurb:
+      "Hardware and software troubleshooting, plus graphics design for the city council.",
+  },
+  {
+    range: "College",
+    title: "Undergraduate Research — IoT Systems",
+    org: "JRMSU · Multi-disciplinary Research",
+    blurb:
+      "Developed IoT-based theses contributing to multi-disciplinary undergraduate research.",
   },
 ];
 

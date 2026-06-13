@@ -3,6 +3,8 @@ import { getContent } from "../lib/content";
 
 export function Certifications() {
   const { certs, timeline } = useMemo(() => getContent(), []);
+  const awards = certs.filter((c) => !c.image);
+  const gallery = certs.filter((c) => c.image);
 
   return (
     <section className="space-y-10">
@@ -32,35 +34,95 @@ export function Certifications() {
         </ul>
       </div>
 
-      {/* Certifications */}
-      <div>
-        <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
-          Certifications &amp; Awards
-        </h2>
-        <ul className="font-doc text-[15px] divide-y divide-rule">
-          {certs.map((c) => (
-            <li
-              key={c.title + c.issuer}
-              className="flex items-baseline justify-between gap-4 py-2.5"
-            >
-              <div className="min-w-0 flex-1">
-                <a
-                  href={c.href ?? "#"}
-                  target={c.href && c.href !== "#" ? "_blank" : undefined}
-                  rel={c.href && c.href !== "#" ? "noreferrer" : undefined}
-                  className="font-semibold text-ink hover:text-word-blue hover:underline underline-offset-2"
+      {/* Certifications & Awards (text rows) */}
+      {awards.length > 0 && (
+        <div>
+          <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
+            Certifications &amp; Awards
+          </h2>
+          <ul className="font-doc text-[15px] divide-y divide-rule">
+            {awards.map((c) => {
+              const isLink = Boolean(c.href && c.href !== "#");
+              return (
+                <li
+                  key={c.title + c.issuer}
+                  className="flex items-baseline justify-between gap-4 py-2.5"
                 >
-                  {c.title}
+                  <div className="min-w-0 flex-1">
+                    <a
+                      href={c.href ?? "#"}
+                      target={isLink ? "_blank" : undefined}
+                      rel={isLink ? "noreferrer" : undefined}
+                      className={
+                        "font-semibold text-ink" +
+                        (isLink
+                          ? " hover:text-word-blue hover:underline underline-offset-2"
+                          : " pointer-events-none")
+                      }
+                    >
+                      {c.title}
+                    </a>
+                    <span className="text-ink-muted text-[14px]"> — {c.issuer}</span>
+                  </div>
+                  {c.date && (
+                    <span className="font-ui text-[12px] text-ink-subtle uppercase tracking-wider tabular-nums shrink-0">
+                      {c.date}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Course certificate gallery (Sololearn etc.) */}
+      {gallery.length > 0 && (
+        <div>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 section-rule pb-1.5 mb-4">
+            <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue">
+              Course Certificates
+            </h2>
+            <span className="font-ui text-[11px] text-ink-subtle uppercase tracking-wider tabular-nums">
+              {gallery.length} from {gallery[0]?.issuer ?? "online courses"}
+            </span>
+          </div>
+          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {gallery.map((c) => (
+              <li key={c.title + c.issuer}>
+                <a
+                  href={c.image}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={`${c.title} — ${c.issuer}`}
+                  className="group block border border-rule rounded-sm overflow-hidden bg-row-alt hover:border-word-blue transition-colors"
+                >
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img
+                      src={c.image}
+                      alt={`${c.title} certificate — ${c.issuer}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.03]"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+                    <span className="font-ui text-[12px] font-medium text-ink truncate">
+                      {c.title}
+                    </span>
+                    <span
+                      className="material-symbols-outlined text-ink-subtle group-hover:text-word-blue shrink-0"
+                      style={{ fontSize: 14 }}
+                    >
+                      open_in_new
+                    </span>
+                  </div>
                 </a>
-                <span className="text-ink-muted text-[14px]"> — {c.issuer}</span>
-              </div>
-              <span className="font-ui text-[12px] text-ink-subtle uppercase tracking-wider tabular-nums">
-                {c.date}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

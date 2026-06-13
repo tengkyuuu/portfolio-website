@@ -221,12 +221,24 @@
 
 /* Print: hide chrome, show only the paper */
 @media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
   body { background: white; }
   .no-print { display: none !important; }
   .paper-shadow { box-shadow: none !important; border: none !important; }
 
-  /* Résumé page (/resume): let the sheet flow into the printer's own margins
-     instead of stacking the on-screen padding on top of them. */
+  /* Résumé page (/resume): strip the on-screen workspace framing so the sheet
+     flows into the printer's own margins — no double margin, no empty trailing
+     page from the min-height, no gray background bleeding in. */
+  .resume-page {
+    background: #ffffff !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
   .resume-sheet {
     box-shadow: none !important;
     border: none !important;
@@ -235,5 +247,8 @@
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
+    /* Keep the blue accents and rules in the printed PDF */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

@@ -17,8 +17,9 @@ const kindAccent: Record<Project["kind"], string> = {
   design: "from-[#6a4caf] to-[#3a2a78]",
 };
 
-/** An A4 page (210 × 297 mm ≈ 794 × 1123 px @96dpi) styled like a Word sheet.
- *  Content taller than A4 simply extends the page rather than clipping. */
+/** A document page sized to match every other tab's bond paper
+ *  (820 × 1056 px). Content taller than the page extends it rather than
+ *  clipping, just like a Word document. */
 function PaperSheet({
   pageNumber,
   children,
@@ -27,7 +28,7 @@ function PaperSheet({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-paper paper-shadow w-full min-h-[1123px] px-6 md:px-14 py-10 md:py-16 flex flex-col text-ink relative overflow-hidden">
+    <section className="bg-paper paper-shadow w-full min-h-[1056px] px-6 md:px-14 py-10 md:py-16 flex flex-col text-ink relative overflow-hidden">
       {children}
       <div className="mt-auto pt-12 flex justify-center font-doc italic text-[12px] text-ink-subtle">
         — {pageNumber} —

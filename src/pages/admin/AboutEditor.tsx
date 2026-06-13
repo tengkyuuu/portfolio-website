@@ -37,14 +37,34 @@ export function AboutEditor() {
         }
       >
         <Field
-          label="Paragraphs"
-          hint="Markdown-lite: **bold**, *italic*, [link](url). Blank line = new paragraph."
+          label="Lead paragraph(s)"
+          hint="Keep it short. Markdown-lite: **bold**, *italic*, [link](url). Blank line = new paragraph."
         >
           <Textarea
             value={value.paragraphs}
             onChange={(v) => update({ ...value, paragraphs: v })}
-            rows={12}
+            rows={5}
             serif
+          />
+        </Field>
+
+        <Field
+          label="Highlights"
+          hint="One per line. Shown as a scannable bullet strip."
+        >
+          <Textarea
+            value={(value.highlights ?? []).join("\n")}
+            onChange={(v) =>
+              update({
+                ...value,
+                highlights: v
+                  .split("\n")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              })
+            }
+            rows={4}
+            placeholder={"Embedded systems — firmware, sensors, PCB design\nFrontend engineering — React, TypeScript, responsive UI"}
           />
         </Field>
       </Card>

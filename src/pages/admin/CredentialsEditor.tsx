@@ -148,7 +148,7 @@ function CertsCard() {
   return (
     <Card
       title="Certifications & Awards"
-      description="The credentials list under the timeline."
+      description="Text rows render as a list; any entry with an image URL moves into the visual certificate gallery instead."
       actions={
         <div className="flex items-center gap-1.5">
           <Button variant="secondary" icon="add" onClick={add}>
@@ -211,7 +211,14 @@ function CertsCard() {
                   <Input
                     value={c.href ?? ""}
                     onChange={(v) => set(i, { href: v })}
-                    placeholder="URL (optional)"
+                    placeholder="Link URL (optional)"
+                  />
+                </div>
+                <div className="sm:col-span-12">
+                  <Input
+                    value={c.image ?? ""}
+                    onChange={(v) => set(i, { image: v || undefined })}
+                    placeholder="Image URL → shows in the certificate gallery (e.g. /credentials/sololearn-python.webp)"
                   />
                 </div>
               </div>

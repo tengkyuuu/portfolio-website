@@ -168,12 +168,12 @@ function PortfolioDoc() {
             key={`${active}-v${contentVersion}`}
             id="paper-doc"
             style={{ zoom: zoom / 100 }}
-            className="paper-enter w-full max-w-[794px] my-2 mx-auto flex flex-col gap-6 md:gap-8 text-ink relative"
+            className="paper-enter w-full max-w-[820px] my-2 mx-auto flex flex-col gap-6 md:gap-8 text-ink relative"
           >
             {ready ? (
               <Projects />
             ) : (
-              <section className="bg-paper paper-shadow w-full min-h-[1123px] px-6 md:px-14 py-10 md:py-16 flex flex-col">
+              <section className="bg-paper paper-shadow w-full min-h-[1056px] px-6 md:px-14 py-10 md:py-16 flex flex-col">
                 <TabSkeleton tab="work" />
               </section>
             )}
