@@ -224,4 +224,16 @@
   body { background: white; }
   .no-print { display: none !important; }
   .paper-shadow { box-shadow: none !important; border: none !important; }
+
+  /* Résumé page (/resume): let the sheet flow into the printer's own margins
+     instead of stacking the on-screen padding on top of them. */
+  .resume-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }

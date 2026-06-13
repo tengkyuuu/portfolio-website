@@ -80,6 +80,13 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
           {menuOpen && (
             <div className="absolute top-full left-0 mt-1 w-56 bg-paper border border-rule rounded-sm shadow-lg py-1 font-ui text-[13px] text-ink">
               <MenuItem
+                icon="description"
+                label="Résumé (PDF)"
+                onClick={() => {
+                  window.location.href = "/resume";
+                }}
+              />
+              <MenuItem
                 icon="print"
                 label="Print / Save as PDF"
                 shortcut="Ctrl+P"

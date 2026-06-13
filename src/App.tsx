@@ -12,6 +12,7 @@ import { TabLoader } from "./components/TabLoader";
 import { TabSkeleton } from "./components/TabSkeleton";
 import { useDelayedLoading, useTabReady } from "./lib/tab-ready";
 import { AdminPage } from "./pages/AdminPage";
+import { ResumePage } from "./pages/ResumePage";
 
 type Theme = "light" | "dark";
 
@@ -236,7 +237,8 @@ function PortfolioDoc() {
 }
 
 export default function App() {
-  const isAdmin = window.location.pathname === "/admin";
-  if (isAdmin) return <AdminPage />;
+  const path = window.location.pathname;
+  if (path === "/admin") return <AdminPage />;
+  if (path === "/resume") return <ResumePage />;
   return <PortfolioDoc />;
 }

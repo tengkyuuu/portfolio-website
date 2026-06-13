@@ -66,7 +66,7 @@ export const projects: Project[] = [
       "A Flutter app that pairs with the Physiopaño band over BLE, streams the four sensor channels in real time, and distils them into a single daily well-being score with trends and gentle nudges. Sessions are cached on-device and sync to Firebase when a connection returns, so a dropped signal never loses a reading.",
     gallery: [
       {
-        src: "/projects/physiopano-app.png",
+        src: "/projects/physiopano-app.webp",
         alt: "Physiopaño mobile app on a phone, showing a green well-being ring, live sensor readouts, and session controls on a dark UI.",
       },
     ],
@@ -102,11 +102,11 @@ export const projects: Project[] = [
       "A React + TypeScript portal with role-based auth, a participant roster, and live session monitoring across every paired device. Researchers review and label sessions inline, then export the curated set as training data for the Random Forest model — closing the loop between the field and the firmware.",
     gallery: [
       {
-        src: "/projects/physiopano-admin-landing.png",
+        src: "/projects/physiopano-admin-landing.webp",
         alt: "Physiopaño admin portal landing page — 'Listen to what your body is telling you' hero with a live session dashboard preview.",
       },
       {
-        src: "/projects/physiopano-admin-login.png",
+        src: "/projects/physiopano-admin-login.webp",
         alt: "Physiopaño admin portal sign-in page — 'Stress, made visible.' panel with a live PPG signal beside a Firebase-backed research login form.",
       },
     ],
@@ -189,25 +189,7 @@ export const certs: Cert[] = [
     title: "AI Fundamentals",
     issuer: "IBM SkillsBuild",
     date: "2024",
-    href: "#",
-  },
-  {
-    title: "Certificate Title",
-    issuer: "Issuing Organization",
-    date: "Month Year",
-    href: "#",
-  },
-  {
-    title: "Certificate Title",
-    issuer: "Issuing Organization",
-    date: "Month Year",
-    href: "#",
-  },
-  {
-    title: "Award Title",
-    issuer: "Awarding Body",
-    date: "Month Year",
-    href: "#",
+    href: "/credentials/ibm-ai-fundamentals.pdf",
   },
 ];
 

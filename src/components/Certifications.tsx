@@ -46,6 +46,8 @@ export function Certifications() {
               <div className="min-w-0 flex-1">
                 <a
                   href={c.href ?? "#"}
+                  target={c.href && c.href !== "#" ? "_blank" : undefined}
+                  rel={c.href && c.href !== "#" ? "noreferrer" : undefined}
                   className="font-semibold text-ink hover:text-word-blue hover:underline underline-offset-2"
                 >
                   {c.title}

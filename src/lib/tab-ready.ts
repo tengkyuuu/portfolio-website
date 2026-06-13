@@ -22,8 +22,8 @@ function imageSrcsForTab(tab: TabId): string[] {
   if (tab === "work") {
     // First image of each project's figure — the rest of a carousel lazy-loads.
     return [
-      "/projects/physiopano-app.png",
-      "/projects/physiopano-admin-landing.png",
+      "/projects/physiopano-app.webp",
+      "/projects/physiopano-admin-landing.webp",
     ];
   }
   return [];
