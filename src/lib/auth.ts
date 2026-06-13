@@ -25,17 +25,22 @@ export type LoginResult =
 export async function login(password: string): Promise<LoginResult> {
   const result = await serverLogin(password);
 
-  if (result.reachable) {
-    if (result.ok) {
-      sessionStorage.setItem(AUTH_KEY, "1");
-      sessionStorage.setItem(TOKEN_KEY, result.token);
-      sessionStorage.setItem(MODE_KEY, "server");
-      return { ok: true, mode: "server" };
-    }
+  // A real server accepted the password.
+  if (result.reachable && result.ok) {
+    sessionStorage.setItem(AUTH_KEY, "1");
+    sessionStorage.setItem(TOKEN_KEY, result.token);
+    sessionStorage.setItem(MODE_KEY, "server");
+    return { ok: true, mode: "server" };
+  }
+
+  // A real API explicitly rejected the password (401) — trust it, no fallback.
+  if (result.reachable && !result.ok && result.status === 401) {
     return { ok: false, error: result.error };
   }
 
-  // No server — legacy local-only mode
+  // Otherwise there's no working content API: a static deploy returns 404/405
+  // for /api/login, and offline returns a network error. Fall back to the
+  // client-side hash check against VITE_ADMIN_PASSWORD_HASH.
   const ok = await checkPassword(password);
   if (!ok) return { ok: false, error: "Incorrect password." };
   sessionStorage.setItem(AUTH_KEY, "1");
