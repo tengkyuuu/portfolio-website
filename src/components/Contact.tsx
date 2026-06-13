@@ -51,57 +51,46 @@ export function Contact() {
         ))}
       </ul>
 
-      {/* Call to action */}
-      <div className="mt-8 border border-rule rounded-sm bg-row-alt/50 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-doc text-[20px] font-bold text-ink leading-tight">
-            Let's build something.
-          </h3>
-          {hero.available && hero.availableText ? (
-            <p className="mt-1 inline-flex items-center gap-2 font-ui text-[13px] text-word-blue">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-word-blue opacity-50 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-word-blue" />
+      {/* Closing note — document sign-off, not a landing-page CTA */}
+      <div className="mt-8 pt-5 border-t border-rule">
+        <p className="font-doc text-[15px] leading-relaxed text-ink-muted max-w-2xl">
+          {hero.available && hero.availableText && (
+            <>
+              <span className="inline-flex items-center gap-1.5 font-medium text-word-blue">
+                <span className="inline-block h-2 w-2 rounded-full bg-word-blue" />
+                {hero.availableText}
               </span>
-              {hero.availableText} — usually replies within a day.
-            </p>
-          ) : (
-            <p className="mt-1 font-ui text-[13px] text-ink-muted">
-              Open to freelance, internships, and collaborations.
-            </p>
+              {" — "}
+            </>
           )}
-        </div>
+          open to freelance, internships, and collaborations. Drop a line — I
+          read everything.
+        </p>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="mt-4 flex flex-wrap gap-2">
           {email && (
             <a
               href={`mailto:${email}?subject=${encodeURIComponent(
                 "Let's work together"
               )}`}
-              className="inline-flex items-center gap-1.5 bg-word-blue text-white font-ui text-[13px] font-medium px-3.5 py-2 rounded-sm hover:bg-word-blue-dark transition-colors"
+              className={chipClass}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
                 mail
               </span>
               Email me
             </a>
           )}
           {email && (
-            <button
-              onClick={copyEmail}
-              className="inline-flex items-center gap-1.5 bg-paper text-ink border border-rule font-ui text-[13px] font-medium px-3.5 py-2 rounded-sm hover:bg-ribbon-hover transition-colors"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            <button onClick={copyEmail} className={chipClass}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
                 {copied ? "check" : "content_copy"}
               </span>
               {copied ? "Copied" : "Copy email"}
             </button>
           )}
-          <a
-            href="/resume"
-            className="inline-flex items-center gap-1.5 bg-paper text-ink border border-rule font-ui text-[13px] font-medium px-3.5 py-2 rounded-sm hover:bg-ribbon-hover transition-colors"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+          <a href="/resume" className={chipClass}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
               description
             </span>
             Résumé
@@ -111,3 +100,7 @@ export function Contact() {
     </section>
   );
 }
+
+/** Shared bordered link-chip — matches the project links + tech-stack chips. */
+const chipClass =
+  "inline-flex items-center gap-1.5 font-ui text-[12px] font-medium text-word-blue border border-rule rounded-sm px-2.5 py-1.5 hover:bg-word-blue-light transition-colors";

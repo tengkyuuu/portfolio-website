@@ -94,7 +94,6 @@ export function Certifications() {
                     >
                       collections
                     </span>
-                    Tap to view
                   </span>
                 </div>
                 <span
