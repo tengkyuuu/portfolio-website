@@ -115,6 +115,52 @@ export const projects: Project[] = [
       { label: "Live demo", href: "#" },
     ],
   },
+  {
+    id: "famecrm",
+    index: "03",
+    title: "FameCRM",
+    blurb:
+      "Sample text — a CRM dashboard for creators and small teams to track accounts, engagement, and outreach in one place.",
+    tags: ["React", "TypeScript", "SaaS"],
+    stack: [
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Firebase",
+      "Recharts",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-03",
+    year: "2026",
+    page: "04",
+    figCaption: "FIG 3.1: FameCRM dashboard — sample placeholder.",
+    challenge:
+      "Sample text — describe the problem FameCRM set out to solve (scattered accounts, no single view of engagement, manual outreach).",
+    solution:
+      "Sample text — describe what you built: a dashboard with account tracking, engagement analytics, and a clean, fast UI.",
+    gallery: [],
+    links: [{ label: "Repo", href: "#" }],
+  },
+  {
+    id: "shm",
+    index: "04",
+    title: "SHM",
+    blurb:
+      "Sample text — an IoT structural/health monitoring system that streams sensor data to the cloud for real-time dashboards and alerts.",
+    tags: ["ESP32", "IoT", "Sensors"],
+    stack: ["ESP32", "C / C++", "MQTT", "Firebase", "Sensors"],
+    kind: "embedded",
+    ref: "REF: JVC-2026-04",
+    year: "2026",
+    page: "05",
+    figCaption: "FIG 4.1: SHM sensor + dashboard — sample placeholder.",
+    challenge:
+      "Sample text — describe the monitoring problem (continuous sensing, remote sites, timely alerts on a low-power budget).",
+    solution:
+      "Sample text — describe the build: ESP32 nodes sampling sensors, publishing over MQTT, and a dashboard for live readings and alerts.",
+    gallery: [],
+    links: [{ label: "Repo", href: "#" }],
+  },
 ];
 
 export type SkillGroup = {
