@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CONTENT_EVENT, syncFromServer } from "./lib/content";
+import { startContentSync } from "./lib/realtime";
 import { Nav, type TabId, tabs } from "./components/Nav";
 import { Hero } from "./components/Hero";
 import { About } from "./components/About";
@@ -95,9 +96,13 @@ function PortfolioDoc() {
     const bump = () => setContentVersion((v) => v + 1);
     window.addEventListener(CONTENT_EVENT, bump);
     window.addEventListener("storage", bump);
+    // Real-time sync: Supabase Realtime + visibility refetch + polling.
+    // Any admin save on any device propagates to this tab in seconds.
+    const stopSync = startContentSync();
     return () => {
       window.removeEventListener(CONTENT_EVENT, bump);
       window.removeEventListener("storage", bump);
+      stopSync();
     };
   }, []);
 
