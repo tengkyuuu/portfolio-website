@@ -23,6 +23,8 @@ export type LoginResult =
   | { ok: false; error: string };
 
 export async function login(password: string): Promise<LoginResult> {
+  if (!password) return { ok: false, error: "Enter your password." };
+
   const result = await serverLogin(password);
 
   // A real server accepted the password.
@@ -35,12 +37,20 @@ export async function login(password: string): Promise<LoginResult> {
 
   // A real API explicitly rejected the password (401) — trust it, no fallback.
   if (result.reachable && !result.ok && result.status === 401) {
-    return { ok: false, error: result.error };
+    return { ok: false, error: result.error || "Incorrect password." };
   }
 
   // Otherwise there's no working content API: a static deploy returns 404/405
   // for /api/login, and offline returns a network error. Fall back to the
   // client-side hash check against VITE_ADMIN_PASSWORD_HASH.
+  const expected = getExpectedHash();
+  if (!expected) {
+    return {
+      ok: false,
+      error:
+        "This deployment has no admin password configured. Set VITE_ADMIN_PASSWORD_HASH in your hosting environment variables, then redeploy.",
+    };
+  }
   const ok = await checkPassword(password);
   if (!ok) return { ok: false, error: "Incorrect password." };
   sessionStorage.setItem(AUTH_KEY, "1");
