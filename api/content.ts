@@ -82,11 +82,7 @@ function safeJson(s: string): unknown {
   }
 }
 
-export const config = {
-  // Content can include base64 image data URLs — bump the payload cap accordingly.
-  api: {
-    bodyParser: {
-      sizeLimit: "30mb",
-    },
-  },
-};
+// Note: Vercel's @vercel/node runtime has a ~4.5 MB request body cap on Hobby
+// plans. The client base64-encodes uploaded screenshots into the JSON, so very
+// image-heavy content can exceed this. If you hit a 413 on PUT, either keep
+// screenshots in public/ and reference by path, or upgrade the plan.
