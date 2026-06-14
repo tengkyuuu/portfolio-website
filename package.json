@@ -12,6 +12,7 @@
   "dependencies": {
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
+    "@supabase/supabase-js": "^2.108.1",
     "@types/three": "^0.184.1",
     "express": "^5.2.1",
     "lucide-react": "^0.469.0",
@@ -24,6 +25,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@vercel/node": "^5.8.17",
     "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
