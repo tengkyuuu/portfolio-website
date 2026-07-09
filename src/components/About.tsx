@@ -1,15 +1,17 @@
 import { useMemo } from "react";
 import { getContent } from "../lib/content";
+import { useI18n } from "../lib/i18n";
 import { renderParagraphs } from "../lib/inline";
 
 export function About() {
+  const { t } = useI18n();
   const { about } = useMemo(() => getContent(), []);
   const highlights = about.highlights ?? [];
 
   return (
     <section>
       <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
-        Executive Summary
+        {t("section.executiveSummary")}
       </h2>
 
       {/* Short lead — scannable, not a wall of text */}

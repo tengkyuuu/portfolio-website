@@ -35,7 +35,12 @@
   --font-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Dark mode overrides */
+/* ─── PALETTE PARENTS ─────────────────────────────────────────────────
+   .light / .dark set the base swatches. `data-theme` below then tweaks
+   individual tokens per Word theme (Colorful / Dark Gray / Black / White).
+   Every dark: Tailwind selector continues to work because we keep .dark
+   on <html> under any dark theme variant. */
+
 .dark {
   --color-workspace: #1a1a1a;
   --color-paper: #232527;
@@ -58,6 +63,68 @@
 
   --color-status-bar: #2b579a;
   --color-status-bar-fg: #ffffff;
+}
+
+/* ─── WORD THEME VARIANTS ───────────────────────────────────────────── */
+
+/* Colorful = the default light. Explicit selector wins over :root. */
+[data-theme="colorful"] {
+  --color-workspace: #e6e6e6;
+  --color-paper: #ffffff;
+  --color-ribbon: #f3f3f4;
+  --color-ribbon-hover: #e2e2e2;
+  --color-status-bar: #2b579a; /* Word blue */
+  --color-word-blue: #2b579a;
+  --color-word-blue-dark: #1f3f73;
+  --color-word-blue-light: #e8f0fb;
+}
+
+/* Dark Gray — softer dark, muted blue accent */
+[data-theme="dark-gray"].dark {
+  --color-workspace: #2b2b2b;
+  --color-paper: #363636;
+  --color-paper-edge: #4a4a4a;
+  --color-ribbon: #3b3b3b;
+  --color-ribbon-hover: #4a4a4a;
+  --color-row-alt: #313131;
+  --color-rule: #4a4a4a;
+  --color-rule-strong: #5a5a5a;
+  --color-status-bar: #454545;
+  --color-word-blue: #b8caff;
+  --color-word-blue-dark: #d7e3ff;
+  --color-word-blue-light: #364a75;
+}
+
+/* Black — deep, high-contrast dark */
+[data-theme="black"].dark {
+  --color-workspace: #0a0a0a;
+  --color-paper: #141414;
+  --color-paper-edge: #262626;
+  --color-ribbon: #171717;
+  --color-ribbon-hover: #262626;
+  --color-row-alt: #1a1a1a;
+  --color-rule: #262626;
+  --color-rule-strong: #383838;
+  --color-status-bar: #000000;
+  --color-word-blue: #cfe0ff;
+  --color-word-blue-dark: #ffffff;
+  --color-word-blue-light: #1e2b48;
+}
+
+/* White — near-pure light, minimal chrome */
+[data-theme="white"].light {
+  --color-workspace: #f5f5f5;
+  --color-paper: #ffffff;
+  --color-paper-edge: #e4e4e4;
+  --color-ribbon: #ffffff;
+  --color-ribbon-hover: #f0f0f0;
+  --color-row-alt: #fafafa;
+  --color-rule: #e4e4e4;
+  --color-rule-strong: #cccccc;
+  --color-status-bar: #1a1c1c;
+  --color-word-blue: #1a1c1c;
+  --color-word-blue-dark: #000000;
+  --color-word-blue-light: #f0f0f0;
 }
 
 @layer base {
@@ -252,3 +319,33 @@
     print-color-adjust: exact;
   }
 }
+
+/* ─── VIEW TRANSITIONS ─────────────────────────────────────────────────
+   Powers the circular reveal when the theme changes. We suppress the
+   default cross-fade so the JS-driven clip-path is the only motion; the
+   OLD screen stays put while the NEW one grows over it from the click
+   origin. Non-supporting browsers just get an instant swap. */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 999;
+}
+
+/* Small floating popover shell used by the theme + language pickers.
+   Word uses hairline borders and a subtle shadow — matches the ribbon. */
+.word-popover {
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+}
+

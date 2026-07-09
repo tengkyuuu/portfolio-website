@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { getContent } from "../lib/content";
+import { useI18n } from "../lib/i18n";
 import { renderInline } from "../lib/inline";
 
 export function Contact() {
+  const { t } = useI18n();
   const { contact, hero } = useMemo(() => getContent(), []);
   const [copied, setCopied] = useState(false);
 
@@ -18,7 +20,7 @@ export function Contact() {
   return (
     <section>
       <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
-        Get in Touch
+        {t("section.getInTouch")}
       </h2>
 
       {contact.intro && (

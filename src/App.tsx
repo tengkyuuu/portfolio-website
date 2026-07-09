@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { CONTENT_EVENT, syncFromServer } from "./lib/content";
+import { useI18n } from "./lib/i18n";
 import { startContentSync } from "./lib/realtime";
+import {
+  applyTheme,
+  getStoredTheme,
+  switchTheme,
+  watchSystemTheme,
+  type Theme,
+} from "./lib/theme";
 import { Nav, type TabId, tabs } from "./components/Nav";
 import { Hero } from "./components/Hero";
 import { About } from "./components/About";
@@ -15,26 +23,28 @@ import { useDelayedLoading, useTabReady } from "./lib/tab-ready";
 import { AdminPage } from "./pages/AdminPage";
 import { ResumePage } from "./pages/ResumePage";
 
-type Theme = "light" | "dark";
+/**
+ * Word-style theme picker (5 options: Colorful / Dark Gray / Black / White /
+ * System). The setter's second argument is the click origin — passing it
+ * triggers a circular reveal via the View Transitions API.
+ */
+function useTheme(): [Theme, (next: Theme, origin?: { x: number; y: number }) => void] {
+  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme());
 
-function useTheme(): [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "light";
-    const saved = localStorage.getItem("jvc_theme") as Theme | null;
-    if (saved) return saved;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  });
-
+  // Apply on mount + whenever theme changes without an origin (e.g. programmatic).
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle("dark", theme === "dark");
-    root.classList.toggle("light", theme === "light");
-    localStorage.setItem("jvc_theme", theme);
+    applyTheme(theme);
   }, [theme]);
 
-  return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
+  // Keep "system" in sync with OS-level light/dark flips.
+  useEffect(() => watchSystemTheme(() => theme), [theme]);
+
+  const setTheme = (next: Theme, origin?: { x: number; y: number }) => {
+    switchTheme(next, origin);
+    setThemeState(next);
+  };
+
+  return [theme, setTheme];
 }
 
 function hashToTab(): TabId {
@@ -80,7 +90,7 @@ function useZoom(): [number, (z: number) => void] {
 }
 
 function PortfolioDoc() {
-  const [theme, toggleTheme] = useTheme();
+  const [theme, setTheme] = useTheme();
   const [zoom, setZoom] = useZoom();
   const [focusMode, setFocusMode] = useState(false);
   const [active, setActive] = useState<TabId>(() =>
@@ -135,10 +145,12 @@ function PortfolioDoc() {
     () => tabs.findIndex((t) => t.id === active) + 1,
     [active]
   );
-  const activeLabel = useMemo(
-    () => tabs.find((t) => t.id === active)?.label ?? "Document",
+  const { t } = useI18n();
+  const activeMeta = useMemo(
+    () => tabs.find((tab) => tab.id === active),
     [active]
   );
+  const activeLabel = activeMeta ? t(activeMeta.key) : "Document";
 
   // Real loading state for the active tab (fonts + images).
   // The loader only flashes if loading lasts longer than the threshold.
@@ -150,7 +162,7 @@ function PortfolioDoc() {
       {!focusMode && (
         <Nav
           theme={theme}
-          onToggleTheme={toggleTheme}
+          onThemeChange={setTheme}
           active={active}
           onChange={setActive}
         />

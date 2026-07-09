@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { getContent } from "../lib/content";
+import { useI18n } from "../lib/i18n";
 import { renderInline, renderParagraphs } from "../lib/inline";
 
 export function Hero() {
+  const { t } = useI18n();
   const { hero } = useMemo(() => getContent(), []);
 
   return (
@@ -123,15 +125,15 @@ export function Hero() {
       {hero.showContents && (
         <section className="mt-2">
           <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-3">
-            Contents
+            {t("section.contents")}
           </h2>
           <ol className="font-doc text-[15px] text-ink space-y-1.5">
             {[
-              ["I.", "Projects", "Selected works across embedded, mobile, web, desktop, and design."],
-              ["II.", "About", "Background, philosophy, and the way I think about systems."],
-              ["III.", "Skills", "Core competencies across four disciplines."],
-              ["IV.", "Credentials", "Education, experience, and certifications."],
-              ["V.", "Contact", "How to reach me."],
+              ["I.", t("nav.projects"), "Selected works across embedded, mobile, web, desktop, and design."],
+              ["II.", t("nav.about"), "Background, philosophy, and the way I think about systems."],
+              ["III.", t("nav.skills"), "Core competencies across four disciplines."],
+              ["IV.", t("nav.credentials"), "Education, experience, and certifications."],
+              ["V.", t("nav.contact"), "How to reach me."],
             ].map(([num, title, desc]) => (
               <li
                 key={title}

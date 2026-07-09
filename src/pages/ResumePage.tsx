@@ -32,10 +32,18 @@ export function ResumePage() {
   const courseCerts = certs.filter((c) => c.image);
   const courseIssuer = courseCerts[0]?.issuer ?? "online courses";
 
-  // Contact line — pull the meaningful channels, skip "Location" (shown already)
-  const channels = contact.channels.filter(
-    (c) => c.icon !== "location_on" && c.value
-  );
+  // Contact line — pull the meaningful channels, skip "Location" (already shown
+  // beside the email) and skip anything that would duplicate hero.email.
+  const heroEmailLower = hero.email.trim().toLowerCase();
+  const channels = contact.channels.filter((c) => {
+    if (!c.value) return false;
+    if (c.icon === "location_on") return false;
+    const v = c.value.trim().toLowerCase();
+    if (v === heroEmailLower) return false; // dedupe email
+    const href = (c.href ?? "").trim().toLowerCase();
+    if (href === `mailto:${heroEmailLower}`) return false;
+    return true;
+  });
 
   return (
     <div className="resume-page min-h-svh bg-workspace text-ink py-6 md:py-10 px-3">
@@ -63,15 +71,15 @@ export function ResumePage() {
 
       {/* Résumé sheet (A4) */}
       <article className="resume-sheet bg-paper paper-shadow w-full max-w-[794px] min-h-[1123px] mx-auto px-10 md:px-14 py-12 text-ink">
-        {/* Header */}
-        <header className="border-b-2 border-word-blue pb-4 mb-5">
+        {/* Header — centered like a résumé letterhead */}
+        <header className="text-center border-b-2 border-word-blue pb-4 mb-5">
           <h1 className="font-doc text-[34px] font-bold tracking-tight leading-none text-ink">
             {hero.name}
           </h1>
           <p className="font-ui text-[13px] font-medium text-word-blue mt-1.5 uppercase tracking-[0.08em]">
             {hero.role}
           </p>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-ui text-[12px] text-ink-muted">
+          <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 font-ui text-[12px] text-ink-muted">
             {hero.email && (
               <a href={`mailto:${hero.email}`} className="hover:text-word-blue">
                 {hero.email}

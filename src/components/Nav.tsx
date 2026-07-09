@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "../lib/i18n";
+import { switchTheme, THEMES, type Theme } from "../lib/theme";
 
 export type TabId =
   | "top"
@@ -8,35 +10,45 @@ export type TabId =
   | "credentials"
   | "contact";
 
-export const tabs: { id: TabId; label: string }[] = [
-  { id: "top", label: "Home" },
-  { id: "work", label: "Projects" },
-  { id: "about", label: "About" },
-  { id: "stack", label: "Skills" },
-  { id: "credentials", label: "Credentials" },
-  { id: "contact", label: "Contact" },
+type TabMeta = { id: TabId; key: string };
+
+export const tabs: TabMeta[] = [
+  { id: "top", key: "nav.home" },
+  { id: "work", key: "nav.projects" },
+  { id: "about", key: "nav.about" },
+  { id: "stack", key: "nav.skills" },
+  { id: "credentials", key: "nav.credentials" },
+  { id: "contact", key: "nav.contact" },
 ];
 
 type NavProps = {
-  theme: "light" | "dark";
-  onToggleTheme: () => void;
+  theme: Theme;
+  onThemeChange: (next: Theme, origin?: { x: number; y: number }) => void;
   active: TabId;
   onChange: (id: TabId) => void;
 };
 
-export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
+export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const themeRef = useRef<HTMLDivElement>(null);
 
-  // Close the File menu on outside click / Esc
+  // Close popovers on outside click / Esc
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !themeOpen) return;
     const onDown = (e: PointerEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+      const target = e.target as Node;
+      if (menuOpen && !menuRef.current?.contains(target)) setMenuOpen(false);
+      if (themeOpen && !themeRef.current?.contains(target)) setThemeOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setThemeOpen(false);
+      }
     };
     window.addEventListener("pointerdown", onDown);
     window.addEventListener("keydown", onKey);
@@ -44,7 +56,7 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("keydown", onKey);
     };
-  }, [menuOpen]);
+  }, [menuOpen, themeOpen]);
 
   async function shareLink() {
     const url = window.location.href;
@@ -60,6 +72,8 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 1500);
   }
+
+  const currentTheme = THEMES.find((th) => th.id === theme) ?? THEMES[0];
 
   return (
     <nav className="no-print fixed top-0 left-0 right-0 z-50 h-12 bg-paper border-b border-rule flex items-center justify-between px-2 md:px-3 text-sm">
@@ -78,7 +92,7 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
             <span className="material-symbols-outlined">menu</span>
           </button>
           {menuOpen && (
-            <div className="absolute top-full left-0 mt-1 w-56 bg-paper border border-rule rounded-sm shadow-lg py-1 font-ui text-[13px] text-ink">
+            <div className="word-popover absolute top-full left-0 mt-1 w-56 py-1 font-ui text-[13px] text-ink">
               <MenuItem
                 icon="description"
                 label="Résumé (PDF)"
@@ -97,17 +111,9 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
               />
               <MenuItem
                 icon="link"
-                label={linkCopied ? "Link copied!" : "Copy link"}
+                label={linkCopied ? "Link copied!" : t("common.share")}
                 onClick={() => {
                   void shareLink();
-                }}
-              />
-              <MenuItem
-                icon={theme === "dark" ? "light_mode" : "dark_mode"}
-                label={theme === "dark" ? "Light mode" : "Dark mode"}
-                onClick={() => {
-                  setMenuOpen(false);
-                  onToggleTheme();
                 }}
               />
               <div className="my-1 h-px bg-rule" />
@@ -153,12 +159,12 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
         </div>
 
         <div className="hidden md:flex items-end h-full pt-1 overflow-x-auto">
-          {tabs.map((t) => {
-            const isActive = active === t.id;
+          {tabs.map((tab) => {
+            const isActive = active === tab.id;
             return (
               <button
-                key={t.id}
-                onClick={() => onChange(t.id)}
+                key={tab.id}
+                onClick={() => onChange(tab.id)}
                 className={
                   "px-3 pb-1.5 pt-1 text-[13px] font-medium transition-colors border-b-2 whitespace-nowrap " +
                   (isActive
@@ -166,7 +172,7 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
                     : "text-ink-muted border-transparent hover:bg-ribbon-hover hover:text-ink")
                 }
               >
-                {t.label}
+                {t(tab.key)}
               </button>
             );
           })}
@@ -180,9 +186,9 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
             onChange={(e) => onChange(e.target.value as TabId)}
             className="bg-paper border border-rule rounded text-ink text-[13px] font-medium px-2 py-1 focus:outline-none focus:ring-2 focus:ring-word-blue"
           >
-            {tabs.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
+            {tabs.map((tab) => (
+              <option key={tab.id} value={tab.id}>
+                {t(tab.key)}
               </option>
             ))}
           </select>
@@ -203,7 +209,7 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
         <span className="text-ink-subtle text-[11px]">— Saved to OneDrive</span>
       </div>
 
-      {/* Right: theme toggle + avatar */}
+      {/* Right: comment, share, theme picker, avatar */}
       <div className="flex items-center gap-1">
         <button
           aria-label="Comments — get in touch"
@@ -225,23 +231,112 @@ export function Nav({ theme, onToggleTheme, active, onChange }: NavProps) {
             {linkCopied ? "check" : "share"}
           </span>
           <span className="hidden md:inline">
-            {linkCopied ? "Copied" : "Share"}
+            {linkCopied ? "Copied" : t("common.share")}
           </span>
         </button>
-        <button
-          onClick={onToggleTheme}
-          aria-label="Toggle theme"
-          className="p-2 rounded text-ink-muted hover:bg-ribbon-hover transition-colors"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            {theme === "dark" ? "light_mode" : "dark_mode"}
-          </span>
-        </button>
+
+        <div className="relative" ref={themeRef}>
+          <ThemePicker
+            currentTheme={currentTheme.id}
+            onChange={onThemeChange}
+            open={themeOpen}
+            setOpen={setThemeOpen}
+          />
+        </div>
+
         <div className="ml-1 w-8 h-8 rounded-full bg-word-blue text-white grid place-items-center text-[11px] font-semibold tracking-wider">
           JV
         </div>
       </div>
     </nav>
+  );
+}
+
+/* ─── theme picker popover ─── */
+
+function ThemePicker({
+  currentTheme,
+  onChange,
+  open,
+  setOpen,
+}: {
+  currentTheme: Theme;
+  onChange: (next: Theme, origin?: { x: number; y: number }) => void;
+  open: boolean;
+  setOpen: (o: boolean) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <>
+      <button
+        aria-label="Office theme"
+        aria-expanded={open}
+        title={t("theme.title")}
+        onClick={() => setOpen(!open)}
+        className={
+          "p-2 rounded text-ink-muted transition-colors " +
+          (open ? "bg-ribbon-hover" : "hover:bg-ribbon-hover")
+        }
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+          palette
+        </span>
+      </button>
+      {open && (
+        <div className="word-popover absolute top-full right-0 mt-1 w-72 py-2 z-50">
+          <div className="px-3 pb-1.5 border-b border-rule">
+            <div className="font-ui text-[13px] font-semibold text-ink">
+              {t("theme.title")}
+            </div>
+            <div className="font-ui text-[11px] text-ink-subtle">
+              {t("theme.hint")}
+            </div>
+          </div>
+          <div className="py-1">
+            {THEMES.map((th) => {
+              const isActive = th.id === currentTheme;
+              return (
+                <button
+                  key={th.id}
+                  onClick={(e) => {
+                    setOpen(false);
+                    onChange(th.id, { x: e.clientX, y: e.clientY });
+                  }}
+                  className={
+                    "w-full flex items-center gap-3 px-3 py-2 text-left transition-colors " +
+                    (isActive
+                      ? "bg-word-blue-light"
+                      : "hover:bg-ribbon-hover")
+                  }
+                >
+                  <span
+                    className="w-6 h-6 rounded-sm border border-rule shrink-0"
+                    style={{ background: th.chip }}
+                    aria-hidden="true"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-ui text-[13px] font-medium text-ink truncate">
+                      {th.label}
+                    </div>
+                    <div className="font-ui text-[11px] text-ink-subtle truncate">
+                      {th.hint}
+                    </div>
+                  </div>
+                  {isActive && (
+                    <span
+                      className="material-symbols-outlined text-word-blue icon-fill"
+                      style={{ fontSize: 18 }}
+                    >
+                      check_circle
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -274,3 +369,6 @@ function MenuItem({
     </button>
   );
 }
+
+/** Re-export for convenience: callers that need switchTheme's animation. */
+export { switchTheme };

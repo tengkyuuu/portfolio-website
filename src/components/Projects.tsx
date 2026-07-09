@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { getContent, type Project, type ProjectImage } from "../lib/content";
+import { useI18n } from "../lib/i18n";
 
 const kindLabel: Record<Project["kind"], string> = {
   embedded: "Embedded",
@@ -328,6 +329,7 @@ function ProjectEntry({ project }: { project: Project }) {
 }
 
 export function Projects() {
+  const { t } = useI18n();
   const { projects } = useMemo(() => getContent(), []);
 
   // Cover sheet is page 1; each project gets its own A4 sheet after it.
@@ -349,7 +351,7 @@ export function Projects() {
 
         <section>
           <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
-            Table of Contents
+            {t("section.contents")}
           </h2>
           <ul className="space-y-2.5 font-doc text-[15px] text-ink">
             {projects.map((p, i) => (

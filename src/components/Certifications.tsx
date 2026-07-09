@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { getContent, type Cert } from "../lib/content";
+import { useI18n } from "../lib/i18n";
 
 export function Certifications() {
+  const { t } = useI18n();
   const { certs, timeline } = useMemo(() => getContent(), []);
   const awards = certs.filter((c) => !c.image);
   const courseCerts = certs.filter((c) => c.image);
@@ -14,7 +16,7 @@ export function Certifications() {
       {/* Education + Experience */}
       <div>
         <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
-          Education &amp; Experience
+          {t("section.educationExperience")}
         </h2>
         <ul className="space-y-4 font-doc text-[15px]">
           {timeline.map((entry) => (
@@ -40,7 +42,7 @@ export function Certifications() {
       {/* Certifications & Awards */}
       <div>
         <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
-          Certifications &amp; Awards
+          {t("section.certificationsAwards")}
         </h2>
         <ul className="font-doc text-[15px] divide-y divide-rule">
           {awards.map((c) => {

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { getContent } from "../lib/content";
+import { useI18n } from "../lib/i18n";
 
 /** Material Symbol per competency group; falls back to a generic chip icon. */
 const groupIcon: Record<string, string> = {
@@ -11,6 +12,7 @@ const groupIcon: Record<string, string> = {
 };
 
 export function Skills() {
+  const { t } = useI18n();
   const { skills } = useMemo(() => getContent(), []);
   const total = skills.reduce((n, g) => n + g.items.length, 0);
 
@@ -18,7 +20,7 @@ export function Skills() {
     <section>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 section-rule pb-1.5 mb-5">
         <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue">
-          Core Competencies
+          {t("section.coreCompetencies")}
         </h2>
         <span className="font-ui text-[11px] text-ink-subtle uppercase tracking-wider tabular-nums">
           {skills.length} disciplines · {total} skills

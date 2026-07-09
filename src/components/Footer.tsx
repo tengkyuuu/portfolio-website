@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { LANGUAGES, useI18n, type LanguageId } from "../lib/i18n";
 
 type FooterProps = {
   currentPage: number;
@@ -18,6 +19,7 @@ export function Footer({
   onZoomChange,
   onEnterFocus,
 }: FooterProps) {
+  const { t } = useI18n();
   const [wordCount, setWordCount] = useState(0);
   const [speaking, setSpeaking] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -77,14 +79,12 @@ export function Footer({
     <footer className="no-print fixed bottom-0 left-0 right-0 h-6 z-50 bg-status-bar text-status-bar-fg text-[11px] flex items-center justify-between px-3 font-ui">
       <div className="flex items-center gap-3">
         <span className="tabular-nums">
-          Page {currentPage} of {totalPages}
+          {t("status.page")} {currentPage} {t("status.of")} {totalPages}
         </span>
         <span className="border-l border-white/30 pl-3 tabular-nums">
-          {wordCount.toLocaleString()} words
+          {wordCount.toLocaleString()} {t("status.words")}
         </span>
-        <span className="hidden sm:inline border-l border-white/30 pl-3">
-          English (US)
-        </span>
+        <LanguagePicker />
         <span className="hidden md:inline border-l border-white/30 pl-3">
           <span
             className="material-symbols-outlined align-middle"
@@ -92,7 +92,7 @@ export function Footer({
           >
             check_circle
           </span>{" "}
-          Accessibility: Good
+          {t("status.accessibility")}
         </span>
       </div>
 
@@ -110,7 +110,7 @@ export function Footer({
             {speaking ? "stop_circle" : "volume_up"}
           </span>
           <span className="hidden md:inline">
-            {speaking ? "Stop" : "Read aloud"}
+            {speaking ? "Stop" : t("status.readAloud")}
           </span>
         </button>
         <button
@@ -122,7 +122,7 @@ export function Footer({
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
             crop_free
           </span>
-          <span className="hidden md:inline">Focus</span>
+          <span className="hidden md:inline">{t("status.focus")}</span>
         </button>
         <button
           aria-label="Print layout"
@@ -133,7 +133,7 @@ export function Footer({
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
             article
           </span>
-          <span className="hidden md:inline">Print Layout</span>
+          <span className="hidden md:inline">{t("status.printLayout")}</span>
         </button>
 
         <div className="hidden sm:flex items-center gap-1.5 ml-2">
@@ -190,5 +190,104 @@ export function Footer({
         </div>
       </div>
     </footer>
+  );
+}
+
+/**
+ * Word-style "Language" chip in the status bar. Clicking opens a small popover
+ * upward with the four supported languages. Selecting one calls setLanguage,
+ * which flips the app-wide translation set + <html lang="…">.
+ */
+function LanguagePicker() {
+  const { language, setLanguage, t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const current = LANGUAGES.find((l) => l.id === language) ?? LANGUAGES[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} className="relative hidden sm:inline-block">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label={t("status.language")}
+        aria-expanded={open}
+        className={
+          "border-l border-white/30 pl-3 pr-1 h-6 -my-0.5 inline-flex items-center gap-1 hover:bg-white/10 transition-colors " +
+          (open ? "bg-white/15" : "")
+        }
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+          language
+        </span>
+        {current.statusLabel}
+        <span className="material-symbols-outlined opacity-70" style={{ fontSize: 12 }}>
+          arrow_drop_up
+        </span>
+      </button>
+      {open && (
+        <div className="word-popover absolute bottom-full left-0 mb-1 w-64 py-2 z-50 text-ink normal-case tracking-normal font-normal text-[13px]">
+          <div className="px-3 pb-1.5 border-b border-rule">
+            <div className="font-ui text-[13px] font-semibold text-ink">
+              {t("status.language")}
+            </div>
+            <div className="font-ui text-[11px] text-ink-subtle">
+              Set the document language
+            </div>
+          </div>
+          <div className="py-1">
+            {LANGUAGES.map((lang) => {
+              const isActive = lang.id === language;
+              return (
+                <button
+                  key={lang.id}
+                  onClick={() => {
+                    setOpen(false);
+                    setLanguage(lang.id as LanguageId);
+                  }}
+                  className={
+                    "w-full flex items-center gap-3 px-3 py-1.5 text-left transition-colors " +
+                    (isActive ? "bg-word-blue-light" : "hover:bg-ribbon-hover")
+                  }
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-ui text-[13px] font-medium text-ink truncate">
+                      {lang.label}
+                    </div>
+                    {lang.label !== lang.english && (
+                      <div className="font-ui text-[11px] text-ink-subtle truncate">
+                        {lang.english}
+                      </div>
+                    )}
+                  </div>
+                  {isActive && (
+                    <span
+                      className="material-symbols-outlined text-word-blue icon-fill"
+                      style={{ fontSize: 16 }}
+                    >
+                      check_circle
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
