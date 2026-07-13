@@ -116,6 +116,13 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
                   void shareLink();
                 }}
               />
+              <MenuItem
+                icon="monitoring"
+                label="System info (/status)"
+                onClick={() => {
+                  window.location.href = "/status";
+                }}
+              />
               <div className="my-1 h-px bg-rule" />
               <MenuItem
                 icon="shield_person"

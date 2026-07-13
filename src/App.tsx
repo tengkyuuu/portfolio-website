@@ -10,6 +10,7 @@ import {
   type Theme,
 } from "./lib/theme";
 import { Nav, type TabId, tabs } from "./components/Nav";
+import { PwaChips } from "./components/PwaChips";
 import { Hero } from "./components/Hero";
 import { About } from "./components/About";
 import { Skills } from "./components/Skills";
@@ -22,6 +23,7 @@ import { TabSkeleton } from "./components/TabSkeleton";
 import { useDelayedLoading, useTabReady } from "./lib/tab-ready";
 import { AdminPage } from "./pages/AdminPage";
 import { ResumePage } from "./pages/ResumePage";
+import { StatusPage } from "./pages/StatusPage";
 
 /**
  * Word-style theme picker (5 options: Colorful / Dark Gray / Black / White /
@@ -237,6 +239,8 @@ function PortfolioDoc() {
         />
       )}
 
+      {!focusMode && <PwaChips />}
+
       {/* Focus mode: all chrome is hidden, so float a way back out */}
       {focusMode && (
         <button
@@ -257,5 +261,6 @@ export default function App() {
   const path = window.location.pathname;
   if (path === "/admin") return <AdminPage />;
   if (path === "/resume") return <ResumePage />;
+  if (path === "/status") return <StatusPage />;
   return <PortfolioDoc />;
 }
