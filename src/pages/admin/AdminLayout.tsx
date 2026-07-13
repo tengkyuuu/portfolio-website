@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { SYNC_EVENT, type SyncStatus } from "../../lib/content";
 import { clearAdminAuth } from "../../lib/auth";
+import { fetchInquiries } from "../../lib/inquiry-api";
 import { Button } from "./ui";
 
 export type SectionId =
@@ -10,6 +11,7 @@ export type SectionId =
   | "projects"
   | "credentials"
   | "contact"
+  | "inbox"
   | "tools";
 
 export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string }[] = [
@@ -19,8 +21,11 @@ export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string
   { id: "projects", label: "Projects", icon: "folder", tab: "Projects tab" },
   { id: "credentials", label: "Credentials", icon: "school", tab: "Credentials tab" },
   { id: "contact", label: "Contact", icon: "mail", tab: "Contact tab" },
+  { id: "inbox", label: "Inbox", icon: "inbox", tab: "Messages from the contact form" },
   { id: "tools", label: "Tools", icon: "settings", tab: "Backup, import, danger zone" },
 ];
+
+const INBOX_POLL_MS = 20_000;
 
 function hashToSection(): SectionId {
   const h = window.location.hash.replace(/^#/, "");
@@ -36,6 +41,53 @@ type Props = {
 
 export function AdminLayout({ active, onChange, onLogout, children }: Props) {
   const [sync, setSync] = useState<SyncStatus | "idle">("idle");
+  const [inboxUnread, setInboxUnread] = useState<number>(0);
+  const [inboxToast, setInboxToast] = useState<{ count: number; ts: number } | null>(null);
+
+  /* ------------------------------------------------------------
+     Global inbox watcher: polls /api/inquiries every 20s so the
+     sidebar unread badge stays fresh even while a different section
+     is open. If the unread count grows while the user isn't already
+     in the Inbox, surface a toast.
+  ------------------------------------------------------------ */
+  useEffect(() => {
+    let cancelled = false;
+    let lastUnread: number | null = null;
+
+    async function tick() {
+      const result = await fetchInquiries("unread");
+      if (cancelled || !result.ok) return;
+      const next = result.unreadCount;
+      if (lastUnread !== null && next > lastUnread && active !== "inbox") {
+        setInboxToast({ count: next - lastUnread, ts: Date.now() });
+      }
+      lastUnread = next;
+      setInboxUnread(next);
+    }
+
+    void tick();
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") void tick();
+    }, INBOX_POLL_MS);
+    const onFocus = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [active]);
+
+  // Auto-dismiss toast after 6s
+  useEffect(() => {
+    if (!inboxToast) return;
+    const t = window.setTimeout(() => setInboxToast(null), 6_000);
+    return () => window.clearTimeout(t);
+  }, [inboxToast]);
 
   // Track real publish status: "saving" while the debounced push is pending,
   // then "saved" (server), "local" (no server / offline), or "error".
@@ -130,6 +182,7 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
                 active={active === s.id}
                 onClick={() => onChange(s.id)}
                 topDivider={s.id === "tools" && i > 0}
+                badge={s.id === "inbox" ? inboxUnread : undefined}
               />
             ))}
           </nav>
@@ -137,24 +190,91 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
 
         {/* Mobile section picker */}
         <div className="md:hidden fixed bottom-3 left-3 right-3 z-20 bg-paper border border-rule rounded-sm shadow-lg p-2 flex gap-1 overflow-x-auto">
-          {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => onChange(s.id)}
-              className={
-                "shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-sm font-ui text-[12px] font-medium transition-colors " +
-                (active === s.id
-                  ? "bg-word-blue text-white"
-                  : "text-ink-muted hover:bg-ribbon-hover")
-              }
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                {s.icon}
-              </span>
-              {s.label}
-            </button>
-          ))}
+          {SECTIONS.map((s) => {
+            const badge = s.id === "inbox" ? inboxUnread : undefined;
+            return (
+              <button
+                key={s.id}
+                onClick={() => onChange(s.id)}
+                className={
+                  "shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-sm font-ui text-[12px] font-medium transition-colors " +
+                  (active === s.id
+                    ? "bg-word-blue text-white"
+                    : "text-ink-muted hover:bg-ribbon-hover")
+                }
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  {s.icon}
+                </span>
+                {s.label}
+                {badge !== undefined && badge > 0 && (
+                  <span
+                    className={
+                      "inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm font-ui text-[10px] font-bold tabular-nums " +
+                      (active === s.id
+                        ? "bg-white/25 text-white"
+                        : "bg-word-blue text-white")
+                    }
+                  >
+                    {badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Global inbox toast — shown when a new inquiry arrives while the
+             user is on a different section. */}
+        {inboxToast && active !== "inbox" && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="no-print fixed bottom-6 right-6 z-40 max-w-sm bg-paper border border-word-blue rounded-sm shadow-lg overflow-hidden"
+          >
+            <div className="flex items-center gap-2 border-b border-rule bg-word-blue-light px-3 py-1.5">
+              <span
+                className="material-symbols-outlined icon-fill text-word-blue"
+                style={{ fontSize: 14 }}
+              >
+                notifications_active
+              </span>
+              <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-word-blue">
+                New Comment
+              </span>
+            </div>
+            <div className="p-3 flex items-start gap-3">
+              <div className="flex-1">
+                <p className="font-ui text-[13px] text-ink">
+                  {inboxToast.count === 1
+                    ? "A new inquiry just landed."
+                    : `${inboxToast.count} new inquiries just landed.`}
+                </p>
+                <button
+                  onClick={() => {
+                    onChange("inbox");
+                    setInboxToast(null);
+                  }}
+                  className="mt-1.5 font-ui text-[12px] font-medium text-word-blue hover:underline decoration-word-blue underline-offset-2"
+                >
+                  Open Inbox →
+                </button>
+              </div>
+              <button
+                onClick={() => setInboxToast(null)}
+                className="opacity-60 hover:opacity-100"
+                aria-label="Dismiss"
+              >
+                <span
+                  className="material-symbols-outlined text-ink-muted"
+                  style={{ fontSize: 16 }}
+                >
+                  close
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Main */}
         <main className="flex-1 min-w-0 px-4 md:px-8 py-6 md:py-10 pb-24 md:pb-10 max-w-4xl">
@@ -227,11 +347,13 @@ function SidebarItem({
   active,
   onClick,
   topDivider,
+  badge,
 }: {
   item: (typeof SECTIONS)[number];
   active: boolean;
   onClick: () => void;
   topDivider?: boolean;
+  badge?: number;
 }) {
   return (
     <>
@@ -240,6 +362,11 @@ function SidebarItem({
       )}
       <button
         onClick={onClick}
+        aria-label={
+          badge !== undefined && badge > 0
+            ? `${item.label} — ${badge} unread`
+            : item.label
+        }
         className={
           "flex items-center gap-2.5 px-3 py-2 rounded-sm font-ui text-[13px] text-left transition-colors " +
           (active
@@ -256,6 +383,19 @@ function SidebarItem({
           {item.icon}
         </span>
         <span className="flex-1 truncate">{item.label}</span>
+        {badge !== undefined && badge > 0 && (
+          <span
+            aria-hidden="true"
+            className={
+              "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-sm font-ui text-[10px] font-bold tabular-nums " +
+              (active
+                ? "bg-word-blue text-white"
+                : "bg-word-blue text-white")
+            }
+          >
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
       </button>
     </>
   );

@@ -1,6 +1,8 @@
-import { useMemo } from "react";
-import { getContent } from "../lib/content";
+import { useEffect, useMemo, useState } from "react";
+import { getContent, type Project } from "../lib/content";
 import { useI18n } from "../lib/i18n";
+import { getSkillMeta, skillLogoUrl } from "../lib/skill-catalog";
+import { SkillDetailPanel } from "./SkillDetailPanel";
 
 /** Material Symbol per competency group; falls back to a generic chip icon. */
 const groupIcon: Record<string, string> = {
@@ -13,8 +15,36 @@ const groupIcon: Record<string, string> = {
 
 export function Skills() {
   const { t } = useI18n();
-  const { skills } = useMemo(() => getContent(), []);
+  const { skills, projects } = useMemo(() => getContent(), []);
   const total = skills.reduce((n, g) => n + g.items.length, 0);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  // Compute related projects up front so lookup at panel-open time is O(1).
+  const projectsBySkill = useMemo(() => {
+    const map = new Map<string, Project[]>();
+    const norm = (s: string) => s.trim().toLowerCase();
+    for (const p of projects) {
+      const bag = new Set<string>();
+      (p.tags ?? []).forEach((t) => bag.add(norm(t)));
+      (p.stack ?? []).forEach((s) => bag.add(norm(s)));
+      for (const skill of bag) {
+        const list = map.get(skill) ?? [];
+        list.push(p);
+        map.set(skill, list);
+      }
+    }
+    return map;
+  }, [projects]);
+
+  // Escape closes the panel; also drop out of the panel when the tab remounts.
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
 
   return (
     <section>
@@ -26,6 +56,11 @@ export function Skills() {
           {skills.length} disciplines · {total} skills
         </span>
       </div>
+
+      <p className="font-doc italic text-[13px] text-ink-subtle mb-4">
+        Click any chip to open its detail card — a Word info pane with the code
+        I actually reach for, why I chose it, and where it shipped.
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {skills.map((group) => (
@@ -49,17 +84,71 @@ export function Skills() {
             </div>
             <ul className="flex flex-wrap gap-1.5">
               {group.items.map((item) => (
-                <li
+                <SkillChip
                   key={item}
-                  className="font-ui text-[12px] font-medium text-ink bg-paper border border-rule rounded-sm px-2.5 py-1"
-                >
-                  {item}
-                </li>
+                  name={item}
+                  onClick={() => setSelected(item)}
+                />
               ))}
             </ul>
           </div>
         ))}
       </div>
+
+      {selected && (
+        <SkillDetailPanel
+          name={selected}
+          related={
+            projectsBySkill.get(selected.trim().toLowerCase()) ?? []
+          }
+          onClose={() => setSelected(null)}
+        />
+      )}
     </section>
+  );
+}
+
+function SkillChip({ name, onClick }: { name: string; onClick: () => void }) {
+  const meta = getSkillMeta(name);
+  const [logoOk, setLogoOk] = useState(true);
+  const hasLogo = Boolean(meta?.logo && logoOk);
+
+  return (
+    <li>
+      <button
+        onClick={onClick}
+        title={`Open ${name}`}
+        className="group inline-flex items-center gap-1.5 font-ui text-[12px] font-medium text-ink bg-paper border border-rule rounded-sm pl-1.5 pr-2 py-1 hover:border-word-blue hover:bg-word-blue-light transition-colors"
+      >
+        {hasLogo && meta?.logo ? (
+          <img
+            src={skillLogoUrl(meta.logo)}
+            alt=""
+            aria-hidden="true"
+            width={14}
+            height={14}
+            loading="lazy"
+            decoding="async"
+            onError={() => setLogoOk(false)}
+            className="w-[14px] h-[14px] object-contain shrink-0"
+          />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined text-ink-subtle group-hover:text-word-blue transition-colors"
+            style={{ fontSize: 12 }}
+          >
+            chip_extraction
+          </span>
+        )}
+        {name}
+        {meta?.level && (
+          <span
+            aria-hidden="true"
+            className="ml-1 w-1 h-1 rounded-full bg-word-blue opacity-60 group-hover:opacity-100"
+          />
+        )}
+      </button>
+    </li>
   );
 }

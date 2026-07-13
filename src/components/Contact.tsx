@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { getContent } from "../lib/content";
 import { useI18n } from "../lib/i18n";
 import { renderInline } from "../lib/inline";
+import { ContactForm } from "./ContactForm";
 
 export function Contact() {
   const { t } = useI18n();
@@ -99,6 +100,9 @@ export function Contact() {
           </a>
         </div>
       </div>
+
+      {/* New Comment (contact form) */}
+      <ContactForm />
     </section>
   );
 }

@@ -9,6 +9,7 @@ import {
 import { ContactEditor } from "./admin/ContactEditor";
 import { CredentialsEditor } from "./admin/CredentialsEditor";
 import { HeroEditor } from "./admin/HeroEditor";
+import { InboxEditor } from "./admin/InboxEditor";
 import { PasswordGate } from "./admin/PasswordGate";
 import { ProjectsEditor } from "./admin/ProjectsEditor";
 import { SkillsEditor } from "./admin/SkillsEditor";
@@ -36,6 +37,7 @@ export function AdminPage() {
       {section === "projects" && <ProjectsEditor />}
       {section === "credentials" && <CredentialsEditor />}
       {section === "contact" && <ContactEditor />}
+      {section === "inbox" && <InboxEditor />}
       {section === "tools" && <ToolsPanel />}
     </AdminLayout>
   );

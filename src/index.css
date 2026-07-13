@@ -349,3 +349,15 @@
   border-radius: 4px;
 }
 
+/* Slide-in from the right for the skill detail pane. */
+@keyframes skill-slide {
+  from {
+    transform: translateX(100%);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
