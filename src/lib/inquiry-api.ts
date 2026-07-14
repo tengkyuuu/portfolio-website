@@ -50,11 +50,15 @@ export async function submitInquiry(
 
     if (res.status === 201 || res.status === 202) return { ok: true };
 
+    // Try JSON first; if the response was HTML (Vercel default 500 page,
+    // SPA fallback, etc.), fall through to a text peek so the user sees
+    // *something* concrete instead of "Request failed (500)".
+    const raw = await res.text();
     let body: { error?: string; details?: { field: string; message: string }[] } = {};
     try {
-      body = (await res.json()) as typeof body;
+      body = raw ? (JSON.parse(raw) as typeof body) : {};
     } catch {
-      /* body was not JSON — fall through with default */
+      /* raw isn't JSON — peek it below */
     }
 
     if (res.status === 400 && body.details) {
@@ -70,11 +74,25 @@ export async function submitInquiry(
     return {
       ok: false,
       kind: "server",
-      message: body.error ?? `Request failed (${res.status}).`,
+      message:
+        body.error ??
+        (raw ? textPeek(raw, res.status) : `Request failed (${res.status}).`),
     };
   } catch {
     return { ok: false, kind: "offline" };
   }
+}
+
+/** Turn a non-JSON error body into something a human can read + act on. */
+function textPeek(text: string, status: number): string {
+  const stripped = text
+    .replace(/<[^>]+>/g, " ") // drop tags
+    .replace(/\s+/g, " ")
+    .trim();
+  const excerpt = stripped.slice(0, 180);
+  return excerpt
+    ? `Server returned ${status}: ${excerpt}${stripped.length > 180 ? "…" : ""}`
+    : `Server returned ${status} with no body.`;
 }
 
 /* ---------------- admin-only calls ---------------- */
