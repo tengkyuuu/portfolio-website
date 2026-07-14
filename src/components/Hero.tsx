@@ -128,22 +128,37 @@ export function Hero() {
             {t("section.contents")}
           </h2>
           <ol className="font-doc text-[15px] text-ink space-y-1.5">
-            {[
-              ["I.", t("nav.projects"), "Selected works across embedded, mobile, web, desktop, and design."],
-              ["II.", t("nav.about"), "Background, philosophy, and the way I think about systems."],
-              ["III.", t("nav.skills"), "Core competencies across four disciplines."],
-              ["IV.", t("nav.credentials"), "Education, experience, and certifications."],
-              ["V.", t("nav.contact"), "How to reach me."],
-            ].map(([num, title, desc]) => (
+            {(
+              [
+                ["I.", "work", t("nav.projects"), "Selected works across embedded, mobile, web, desktop, and design."],
+                ["II.", "about", t("nav.about"), "Background, philosophy, and the way I think about systems."],
+                ["III.", "stack", t("nav.skills"), "Core competencies across four disciplines."],
+                ["IV.", "credentials", t("nav.credentials"), "Education, experience, and certifications."],
+                ["V.", "contact", t("nav.contact"), "How to reach me."],
+              ] as const
+            ).map(([num, tab, title, desc]) => (
               <li
-                key={title}
-                className="flex items-baseline gap-3 border-b border-dotted border-rule pb-1"
+                key={tab}
+                className="border-b border-dotted border-rule"
               >
-                <span className="font-ui text-[12px] font-semibold text-ink-subtle w-7 shrink-0 tabular-nums">
-                  {num}
-                </span>
-                <span className="font-semibold text-ink shrink-0">{title}</span>
-                <span className="flex-1 text-[13px] text-ink-muted truncate">— {desc}</span>
+                <a
+                  href={`#${tab}`}
+                  className="group flex items-baseline gap-3 pb-1 hover:text-word-blue transition-colors"
+                >
+                  <span className="font-ui text-[12px] font-semibold text-ink-subtle w-7 shrink-0 tabular-nums group-hover:text-word-blue transition-colors">
+                    {num}
+                  </span>
+                  <span className="font-semibold text-ink shrink-0 group-hover:text-word-blue transition-colors">
+                    {title}
+                  </span>
+                  <span className="flex-1 text-[13px] text-ink-muted truncate">— {desc}</span>
+                  <span
+                    className="material-symbols-outlined text-ink-subtle opacity-0 group-hover:opacity-100 group-hover:text-word-blue transition-opacity shrink-0"
+                    style={{ fontSize: 14 }}
+                  >
+                    arrow_forward
+                  </span>
+                </a>
               </li>
             ))}
           </ol>

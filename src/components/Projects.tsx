@@ -353,19 +353,22 @@ export function Projects() {
           <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
             {t("section.contents")}
           </h2>
-          <ul className="space-y-2.5 font-doc text-[15px] text-ink">
+          <ul className="space-y-1 font-doc text-[15px] text-ink">
             {projects.map((p, i) => (
-              <li key={p.id} className="flex items-end gap-2">
+              <li key={p.id}>
                 <a
                   href={`#proj-${p.id}`}
-                  className="font-semibold hover:text-word-blue transition-colors"
+                  className="group flex items-end gap-2 py-1 px-1 -mx-1 rounded-sm hover:bg-word-blue-light transition-colors"
+                  aria-label={`Jump to Project ${p.index}: ${p.title}, page ${String(pageOf(i)).padStart(2, "0")}`}
                 >
-                  Project {p.index}: {p.title}
+                  <span className="font-semibold group-hover:text-word-blue transition-colors">
+                    Project {p.index}: {p.title}
+                  </span>
+                  <span className="toc-leader group-hover:opacity-100 opacity-70 transition-opacity" />
+                  <span className="font-ui text-[12px] font-semibold text-ink-subtle tabular-nums group-hover:text-word-blue transition-colors">
+                    {String(pageOf(i)).padStart(2, "0")}
+                  </span>
                 </a>
-                <span className="toc-leader" />
-                <span className="font-ui text-[12px] font-semibold text-ink-subtle tabular-nums">
-                  {String(pageOf(i)).padStart(2, "0")}
-                </span>
               </li>
             ))}
           </ul>

@@ -11,6 +11,7 @@ import {
 } from "./lib/theme";
 import { Nav, type TabId, tabs } from "./components/Nav";
 import { PwaChips } from "./components/PwaChips";
+import { RequireAuth } from "./components/RequireAuth";
 import { Hero } from "./components/Hero";
 import { About } from "./components/About";
 import { Skills } from "./components/Skills";
@@ -260,7 +261,17 @@ function PortfolioDoc() {
 export default function App() {
   const path = window.location.pathname;
   if (path === "/admin") return <AdminPage />;
-  if (path === "/resume") return <ResumePage />;
-  if (path === "/status") return <StatusPage />;
+  if (path === "/resume")
+    return (
+      <RequireAuth>
+        <ResumePage />
+      </RequireAuth>
+    );
+  if (path === "/status")
+    return (
+      <RequireAuth>
+        <StatusPage />
+      </RequireAuth>
+    );
   return <PortfolioDoc />;
 }

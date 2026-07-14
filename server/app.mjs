@@ -190,3 +190,150 @@ apiApp.delete("/api/content", requireAuth, (_req, res) => {
   fs.rmSync(DATA_FILE, { force: true });
   res.json({ ok: true });
 });
+
+/* ------------------------------- inquiries ------------------------------ */
+/**
+ * Local-dev mirror of the Vercel Functions in api/inquiries.ts +
+ * api/inquiry/[id].ts. Uses a JSON file at server/data/inquiries.json
+ * so contact-form submissions land somewhere you can see them from
+ * /admin during local development. In production Vercel serves the
+ * TypeScript versions instead — they use Supabase.
+ */
+
+const INQUIRIES_FILE = path.join(DATA_DIR, "inquiries.json");
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_PER_10_MIN = 5;
+
+function readInquiries() {
+  try {
+    return JSON.parse(fs.readFileSync(INQUIRIES_FILE, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+function writeInquiries(all) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const tmp = INQUIRIES_FILE + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(all, null, 2), "utf8");
+  fs.renameSync(tmp, INQUIRIES_FILE);
+}
+
+function clientIp(req) {
+  const fwd = req.headers["x-forwarded-for"];
+  const raw = Array.isArray(fwd) ? fwd[0] : fwd ?? req.socket?.remoteAddress;
+  return raw ? String(raw).split(",")[0].trim() : null;
+}
+
+function hashIp(ip) {
+  if (!ip) return null;
+  return crypto
+    .createHmac("sha256", PASSWORD_HASH || "local-dev")
+    .update(ip)
+    .digest("hex")
+    .slice(0, 32);
+}
+
+apiApp.post("/api/inquiries", (req, res) => {
+  const b = req.body ?? {};
+  const errors = [];
+  const name = typeof b.name === "string" ? b.name.trim() : "";
+  if (name.length < 1) errors.push({ field: "name", message: "Name is required." });
+  if (name.length > 100) errors.push({ field: "name", message: "Name is too long." });
+  const email = typeof b.email === "string" ? b.email.trim() : "";
+  if (!email) errors.push({ field: "email", message: "Email is required." });
+  else if (email.length > 200) errors.push({ field: "email", message: "Email is too long." });
+  else if (!EMAIL_RE.test(email)) errors.push({ field: "email", message: "That doesn't look like a valid email." });
+  const subjectRaw = typeof b.subject === "string" ? b.subject.trim() : "";
+  const subject = subjectRaw.length > 0 ? subjectRaw : null;
+  if (subject && subject.length > 200) errors.push({ field: "subject", message: "Subject is too long." });
+  const message = typeof b.message === "string" ? b.message.trim() : "";
+  if (!message) errors.push({ field: "message", message: "Message is required." });
+  else if (message.length > 5000) errors.push({ field: "message", message: "Message is too long." });
+  if (errors.length) {
+    res.status(400).json({ error: "Validation failed", details: errors });
+    return;
+  }
+
+  // Honeypot: silent success for bots.
+  if (typeof b.website === "string" && b.website.trim().length > 0) {
+    res.status(202).json({ ok: true });
+    return;
+  }
+
+  const ipHash = hashIp(clientIp(req));
+  const since = Date.now() - 10 * 60 * 1000;
+  const recent = readInquiries().filter(
+    (i) => i.ip_hash === ipHash && new Date(i.created_at).getTime() > since
+  );
+  if (ipHash && recent.length >= MAX_PER_10_MIN) {
+    res
+      .status(429)
+      .json({ error: "Too many messages from this address. Try again in a few minutes." });
+    return;
+  }
+
+  const row = {
+    id: crypto.randomUUID(),
+    name,
+    email,
+    subject,
+    message,
+    status: "unread",
+    ip_hash: ipHash,
+    user_agent: (req.headers["user-agent"] ?? "").slice(0, 500),
+    created_at: new Date().toISOString(),
+    read_at: null,
+    archived_at: null,
+  };
+  const all = readInquiries();
+  all.push(row);
+  writeInquiries(all);
+  res.status(201).json({ ok: true, id: row.id });
+});
+
+apiApp.get("/api/inquiries", requireAuth, (req, res) => {
+  const status = typeof req.query.status === "string" ? req.query.status : "all";
+  const all = readInquiries().sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+  const items = status === "all" ? all : all.filter((i) => i.status === status);
+  const unreadCount = all.filter((i) => i.status === "unread").length;
+  res.json({ items, unreadCount });
+});
+
+apiApp.patch("/api/inquiry/:id", requireAuth, (req, res) => {
+  const { id } = req.params;
+  const status = req.body?.status;
+  if (!["unread", "read", "archived"].includes(status)) {
+    res.status(400).json({ error: "status must be unread, read or archived." });
+    return;
+  }
+  const all = readInquiries();
+  const i = all.findIndex((row) => row.id === id);
+  if (i < 0) {
+    res.status(404).json({ error: "Inquiry not found." });
+    return;
+  }
+  const now = new Date().toISOString();
+  all[i] = {
+    ...all[i],
+    status,
+    read_at: status === "unread" ? null : all[i].read_at ?? now,
+    archived_at: status === "archived" ? now : null,
+  };
+  writeInquiries(all);
+  res.json(all[i]);
+});
+
+apiApp.delete("/api/inquiry/:id", requireAuth, (req, res) => {
+  const { id } = req.params;
+  const all = readInquiries();
+  const next = all.filter((row) => row.id !== id);
+  if (next.length === all.length) {
+    res.status(404).json({ error: "Inquiry not found." });
+    return;
+  }
+  writeInquiries(next);
+  res.json({ ok: true });
+});
