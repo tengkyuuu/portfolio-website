@@ -302,8 +302,12 @@ apiApp.get("/api/inquiries", requireAuth, (req, res) => {
   res.json({ items, unreadCount });
 });
 
-apiApp.patch("/api/inquiry/:id", requireAuth, (req, res) => {
-  const { id } = req.params;
+apiApp.patch("/api/inquiries", requireAuth, (req, res) => {
+  const id = req.query.id;
+  if (typeof id !== "string" || !id) {
+    res.status(400).json({ error: "Missing ?id=" });
+    return;
+  }
   const status = req.body?.status;
   if (!["unread", "read", "archived"].includes(status)) {
     res.status(400).json({ error: "status must be unread, read or archived." });
@@ -326,8 +330,12 @@ apiApp.patch("/api/inquiry/:id", requireAuth, (req, res) => {
   res.json(all[i]);
 });
 
-apiApp.delete("/api/inquiry/:id", requireAuth, (req, res) => {
-  const { id } = req.params;
+apiApp.delete("/api/inquiries", requireAuth, (req, res) => {
+  const id = req.query.id;
+  if (typeof id !== "string" || !id) {
+    res.status(400).json({ error: "Missing ?id=" });
+    return;
+  }
   const all = readInquiries();
   const next = all.filter((row) => row.id !== id);
   if (next.length === all.length) {

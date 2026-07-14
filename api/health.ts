@@ -79,18 +79,21 @@ export default async function handler(
   });
 }
 
-async function probe(
-  supabase: { from: (table: string) => { select: (columns: string, opts?: unknown) => { limit: (n: number) => Promise<{ error: { message: string; code?: string; hint?: string } | null }> } } },
-  table: string
-): Promise<TableProbe> {
+// Accept the real Supabase client type but keep this file dep-free of type
+// imports by using `any` at the boundary — probe just calls `.from(...).select`.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function probe(supabase: any, table: string): Promise<TableProbe> {
   try {
-    const { error } = await supabase.from(table).select("*", { count: "exact", head: true }).limit(1);
+    const { error } = await supabase
+      .from(table)
+      .select("*", { count: "exact", head: true })
+      .limit(1);
     if (!error) return { ok: true };
     return {
       ok: false,
-      error: error.message,
-      code: error.code,
-      hint: error.hint,
+      error: error.message ?? String(error),
+      code: (error as { code?: string }).code,
+      hint: (error as { hint?: string }).hint,
     };
   } catch (e) {
     return {

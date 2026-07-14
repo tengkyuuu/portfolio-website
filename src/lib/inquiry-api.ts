@@ -133,14 +133,17 @@ export async function updateInquiry(
   const token = getAdminToken();
   if (!token) return { ok: false, kind: "unauthorized" };
   try {
-    const res = await fetch(`/api/inquiry/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ status }),
-    });
+    const res = await fetch(
+      `/api/inquiries?id=${encodeURIComponent(id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
     if (res.status === 401) return { ok: false, kind: "unauthorized" };
     if (res.status === 404) return { ok: false, kind: "not_found" };
     if (!res.ok) {
@@ -158,10 +161,13 @@ export async function deleteInquiry(id: string): Promise<MutateResult> {
   const token = getAdminToken();
   if (!token) return { ok: false, kind: "unauthorized" };
   try {
-    const res = await fetch(`/api/inquiry/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch(
+      `/api/inquiries?id=${encodeURIComponent(id)}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
     if (res.status === 401) return { ok: false, kind: "unauthorized" };
     if (res.status === 404) return { ok: false, kind: "not_found" };
     if (!res.ok) {
