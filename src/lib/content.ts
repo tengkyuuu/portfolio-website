@@ -65,6 +65,9 @@ export type ContactContent = {
   /** Intro paragraph. Inline markdown allowed. */
   intro: string;
   channels: ContactChannel[];
+  /** Scheduling link (Cal.com / Calendly). When set, the Contact tab
+   *  shows a "Book a meeting" section with an inline embed. */
+  bookingUrl?: string;
 };
 
 export type SiteContent = {

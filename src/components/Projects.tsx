@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { getContent, type Project, type ProjectImage } from "../lib/content";
 import { useI18n } from "../lib/i18n";
+import { InteractiveFigure } from "./InteractiveFigure";
 
 const kindLabel: Record<Project["kind"], string> = {
   embedded: "Embedded",
@@ -214,9 +215,11 @@ function ProjectEntry({ project }: { project: Project }) {
         </span>
       </div>
 
-      {/* Figure */}
+      {/* Figure — screenshots plus optional live-demo / video view tabs */}
       <figure className="mb-6">
-        <ProjectFigure project={project} />
+        <InteractiveFigure project={project}>
+          <ProjectFigure project={project} />
+        </InteractiveFigure>
         <figcaption className="mt-2 text-center font-doc italic text-[12px] text-ink-subtle">
           {figCaption}
         </figcaption>

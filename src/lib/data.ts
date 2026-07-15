@@ -36,6 +36,12 @@ export type Project = {
   /** Multiple screenshots. When more than one, the figure becomes a
    *  carousel with left/right arrows. */
   gallery?: ProjectImage[];
+  /** Live site URL. When set, the figure gains a "Web Layout" tab that
+   *  embeds the project in an iframe with desktop/tablet/phone frames. */
+  demoUrl?: string;
+  /** Demo video: a YouTube watch/short URL or a direct .mp4/.webm file.
+   *  When set, the figure gains a "Media" tab. */
+  videoUrl?: string;
 };
 
 export const projects: Project[] = [

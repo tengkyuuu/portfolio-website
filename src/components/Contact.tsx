@@ -101,9 +101,75 @@ export function Contact() {
         </div>
       </div>
 
+      {/* Book a meeting — shown only when a scheduling URL is configured */}
+      {contact.bookingUrl && (
+        <BookingSection url={contact.bookingUrl} />
+      )}
+
       {/* New Comment (contact form) */}
       <ContactForm />
     </section>
+  );
+}
+
+/**
+ * Inline scheduling embed (Cal.com / Calendly). Lazy: the iframe mounts
+ * only after the visitor opts in — keeps the Contact tab light and avoids
+ * loading a third-party widget for everyone who never books.
+ */
+function BookingSection({ url }: { url: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mt-8 border border-rule rounded-sm overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-rule bg-ribbon px-4 py-2">
+        <span
+          className="material-symbols-outlined icon-fill text-word-blue"
+          style={{ fontSize: 16 }}
+        >
+          calendar_month
+        </span>
+        <h3 className="font-ui text-[12px] font-semibold uppercase tracking-[0.12em] text-word-blue">
+          Book a Meeting
+        </h3>
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="ml-auto inline-flex items-center gap-1 font-ui text-[11px] font-medium text-ink-muted hover:text-word-blue transition-colors"
+        >
+          Open scheduler
+          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+            open_in_new
+          </span>
+        </a>
+      </div>
+
+      {open ? (
+        <iframe
+          src={url}
+          title="Book a meeting"
+          loading="lazy"
+          className="w-full bg-paper"
+          style={{ height: 620, border: 0 }}
+        />
+      ) : (
+        <div className="p-5 flex flex-wrap items-center justify-between gap-3 bg-row-alt">
+          <p className="font-doc text-[14px] text-ink-muted">
+            Prefer a call? Pick a slot that works for you — no back-and-forth.
+          </p>
+          <button
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-white font-ui text-[13px] font-semibold px-3.5 py-2 rounded-sm transition-colors"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+              event_available
+            </span>
+            Show available times
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

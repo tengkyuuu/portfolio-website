@@ -16,6 +16,9 @@ or nice-to-have · **T4** = big infra, only if the portfolio grows.
 - ✅ Version history + restore (admin → History, coalesced snapshots, keep-20)
 - ✅ Activity log (admin → History, "Track Changes" feed, server-written)
 - ✅ Full-text search (Ctrl+K "Tell Me" palette on the live site)
+- ✅ Interactive projects (Web Layout live-demo tab with device frames, Media video tab)
+- ✅ Email reply templates (inbox → Reply → Compose modal, Gmail/mailto/copy)
+- ✅ Contact scheduling (admin-configurable Cal.com/Calendly embed on Contact)
 
 ---
 

@@ -6,6 +6,7 @@ import {
   type Inquiry,
   type InquiryStatus,
 } from "../../lib/inquiry-api";
+import { ReplyComposer } from "./ReplyComposer";
 import { Button, Card, IconButton } from "./ui";
 
 /**
@@ -422,13 +423,7 @@ function InquiryDetail({
   onConfirmDelete: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  function copyReplyLink() {
-    const subject = inquiry.subject ?? "Re: your message";
-    const url = `mailto:${inquiry.email}?subject=${encodeURIComponent(
-      subject.startsWith("Re:") ? subject : `Re: ${subject}`
-    )}`;
-    window.location.href = url;
-  }
+  const [composing, setComposing] = useState(false);
   function copyEmail() {
     void navigator.clipboard.writeText(inquiry.email);
     setCopied(true);
@@ -479,7 +474,7 @@ function InquiryDetail({
 
       {/* Actions */}
       <footer className="border-t border-rule px-4 py-3 flex flex-wrap items-center gap-2 bg-row-alt">
-        <Button variant="primary" icon="reply" onClick={copyReplyLink}>
+        <Button variant="primary" icon="reply" onClick={() => setComposing(true)}>
           Reply
         </Button>
         {inquiry.status !== "read" && (
@@ -545,6 +540,10 @@ function InquiryDetail({
           )}
         </div>
       </footer>
+
+      {composing && (
+        <ReplyComposer inquiry={inquiry} onClose={() => setComposing(false)} />
+      )}
     </article>
   );
 }

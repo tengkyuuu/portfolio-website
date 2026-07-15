@@ -357,6 +357,31 @@ function ProjectForm({
         />
       </Field>
 
+      <Row>
+        <Field
+          label="Live demo URL"
+          hint='Adds a "Web Layout" tab — iframe with device frames'
+        >
+          <Input
+            type="url"
+            value={project.demoUrl ?? ""}
+            onChange={(v) => onChange({ demoUrl: v.trim() || undefined })}
+            placeholder="https://myproject.vercel.app"
+          />
+        </Field>
+        <Field
+          label="Demo video URL"
+          hint='Adds a "Media" tab — YouTube link or direct .mp4'
+        >
+          <Input
+            type="url"
+            value={project.videoUrl ?? ""}
+            onChange={(v) => onChange({ videoUrl: v.trim() || undefined })}
+            placeholder="https://youtu.be/… or /projects/demo.mp4"
+          />
+        </Field>
+      </Row>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Field
           label="Challenge"

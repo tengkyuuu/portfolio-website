@@ -67,6 +67,22 @@ export function ContactEditor() {
             serif
           />
         </Field>
+
+        <div className="mt-4">
+          <Field
+            label="Booking / scheduling URL"
+            hint='Cal.com or Calendly link — shows a "Book a Meeting" section when set; leave empty to hide it'
+          >
+            <Input
+              type="url"
+              value={value.bookingUrl ?? ""}
+              onChange={(v) =>
+                update({ ...value, bookingUrl: v.trim() || undefined })
+              }
+              placeholder="https://cal.com/yourname/30min"
+            />
+          </Field>
+        </div>
       </Card>
 
       <Card
