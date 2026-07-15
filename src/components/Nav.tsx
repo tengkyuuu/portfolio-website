@@ -216,8 +216,20 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
         <span className="text-ink-subtle text-[11px]">— Saved to OneDrive</span>
       </div>
 
-      {/* Right: comment, share, theme picker, avatar */}
+      {/* Right: search, comment, share, theme picker, avatar */}
       <div className="flex items-center gap-1">
+        <button
+          aria-label="Search this document"
+          title="Search this document (Ctrl+K)"
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("jvc:open-search"))
+          }
+          className="p-2 rounded text-ink-muted hover:bg-ribbon-hover transition-colors"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            search
+          </span>
+        </button>
         <button
           aria-label="Comments — get in touch"
           title="Leave a comment (opens Contact)"

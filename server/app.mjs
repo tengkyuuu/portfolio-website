@@ -182,13 +182,138 @@ apiApp.put("/api/content", requireAuth, (req, res) => {
     });
     return;
   }
+  // Version the content being replaced (mirrors api/content.ts semantics:
+  // snapshot previous, coalesced to one per 5-minute editing session).
+  let prev = null;
+  try {
+    prev = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+  } catch {
+    /* no previous content */
+  }
+  if (prev) {
+    const sections = changedSections(prev, req.body);
+    if (sections.length > 0) snapshotVersion(prev, sections);
+  }
   writeContentAtomic(JSON.stringify(req.body));
   res.json({ ok: true });
 });
 
 apiApp.delete("/api/content", requireAuth, (_req, res) => {
   fs.rmSync(DATA_FILE, { force: true });
+  logActivity("content.reset", null);
   res.json({ ok: true });
+});
+
+/* --------------------------- history (local dev) -------------------------- */
+/**
+ * File-backed mirror of api/versions.ts + api/activity.ts. Snapshots live
+ * in server/data/versions.json, activity in server/data/activity.json.
+ */
+
+const VERSIONS_FILE = path.join(DATA_DIR, "versions.json");
+const ACTIVITY_FILE = path.join(DATA_DIR, "activity.json");
+const SECTION_KEYS = ["hero", "about", "skills", "projects", "certs", "timeline", "contact"];
+const SNAPSHOT_COOLDOWN_MS = 5 * 60_000;
+const KEEP_VERSIONS = 20;
+
+function readJsonFile(file, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonFile(file, value) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const tmp = file + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(value, null, 2), "utf8");
+  fs.renameSync(tmp, file);
+}
+
+function changedSections(a, b) {
+  return SECTION_KEYS.filter(
+    (k) => JSON.stringify(a?.[k]) !== JSON.stringify(b?.[k])
+  );
+}
+
+function logActivity(action, detail) {
+  const all = readJsonFile(ACTIVITY_FILE, []);
+  all.unshift({
+    id: crypto.randomUUID(),
+    action,
+    detail,
+    created_at: new Date().toISOString(),
+  });
+  writeJsonFile(ACTIVITY_FILE, all.slice(0, 200));
+}
+
+function snapshotVersion(content, sections, { bypassCooldown = false } = {}) {
+  const all = readJsonFile(VERSIONS_FILE, []);
+  const newest = all[0];
+  const newestAge = newest
+    ? Date.now() - new Date(newest.created_at).getTime()
+    : Infinity;
+  if (!bypassCooldown && newestAge <= SNAPSHOT_COOLDOWN_MS) return;
+  all.unshift({
+    id: crypto.randomUUID(),
+    content,
+    sections,
+    byte_size: JSON.stringify(content).length,
+    created_at: new Date().toISOString(),
+  });
+  writeJsonFile(VERSIONS_FILE, all.slice(0, KEEP_VERSIONS));
+  logActivity("content.publish", { sections });
+}
+
+apiApp.get("/api/versions", requireAuth, (req, res) => {
+  const all = readJsonFile(VERSIONS_FILE, []);
+  const id = req.query.id;
+  if (typeof id === "string" && id) {
+    const row = all.find((v) => v.id === id);
+    if (!row) {
+      res.status(404).json({ error: "Version not found." });
+      return;
+    }
+    res.json(row);
+    return;
+  }
+  res.json({
+    items: all.map(({ id: vid, created_at, sections, byte_size }) => ({
+      id: vid,
+      created_at,
+      sections,
+      byte_size,
+    })),
+  });
+});
+
+apiApp.post("/api/versions", requireAuth, (req, res) => {
+  const id = req.query.id;
+  if (typeof id !== "string" || !id) {
+    res.status(400).json({ error: "Missing ?id=" });
+    return;
+  }
+  const all = readJsonFile(VERSIONS_FILE, []);
+  const row = all.find((v) => v.id === id);
+  if (!row) {
+    res.status(404).json({ error: "Version not found." });
+    return;
+  }
+  let prev = null;
+  try {
+    prev = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+  } catch {
+    /* nothing to back up */
+  }
+  if (prev) snapshotVersion(prev, ["pre-restore backup"], { bypassCooldown: true });
+  writeContentAtomic(JSON.stringify(row.content));
+  logActivity("content.restore", { version_id: id });
+  res.json({ ok: true });
+});
+
+apiApp.get("/api/activity", requireAuth, (_req, res) => {
+  res.json({ items: readJsonFile(ACTIVITY_FILE, []).slice(0, 100) });
 });
 
 /* ------------------------------- inquiries ------------------------------ */
@@ -327,6 +452,7 @@ apiApp.patch("/api/inquiries", requireAuth, (req, res) => {
     archived_at: status === "archived" ? now : null,
   };
   writeInquiries(all);
+  logActivity("inquiry.status", { id, status });
   res.json(all[i]);
 });
 
@@ -343,5 +469,6 @@ apiApp.delete("/api/inquiries", requireAuth, (req, res) => {
     return;
   }
   writeInquiries(next);
+  logActivity("inquiry.delete", { id });
   res.json({ ok: true });
 });

@@ -1,10 +1,21 @@
 # Portfolio.docx — Roadmap
 
-Next-phase feature backlog. Everything here is scoped out but not built. Group
-by area, then pick from Tier 1 (biggest visible payoff, smallest scope) first.
+Next-phase feature backlog. Group by area, then pick from Tier 1 (biggest
+visible payoff, smallest scope) first.
 
 Legend: **T1** = ship next · **T2** = worth it, more scope · **T3** = polish
 or nice-to-have · **T4** = big infra, only if the portfolio grows.
+
+## Shipped
+
+- ✅ Inquiry form + admin inbox (+ polling notifications, unread badge, toast)
+- ✅ Skill logos + interactive tech stack (detail side pane)
+- ✅ Interactive résumé builder (Modern + ATS templates, role focus, ?style/?role links)
+- ✅ PWA (manifest, service worker, install + update chips)
+- ✅ /status performance dashboard (bundle metrics, deploy info, live Web Vitals)
+- ✅ Version history + restore (admin → History, coalesced snapshots, keep-20)
+- ✅ Activity log (admin → History, "Track Changes" feed, server-written)
+- ✅ Full-text search (Ctrl+K "Tell Me" palette on the live site)
 
 ---
 

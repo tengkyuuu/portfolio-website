@@ -12,6 +12,7 @@ export type SectionId =
   | "credentials"
   | "contact"
   | "inbox"
+  | "history"
   | "tools";
 
 export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string }[] = [
@@ -22,6 +23,7 @@ export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string
   { id: "credentials", label: "Credentials", icon: "school", tab: "Credentials tab" },
   { id: "contact", label: "Contact", icon: "mail", tab: "Contact tab" },
   { id: "inbox", label: "Inbox", icon: "inbox", tab: "Messages from the contact form" },
+  { id: "history", label: "History", icon: "history", tab: "Version history & track changes" },
   { id: "tools", label: "Tools", icon: "settings", tab: "Backup, import, danger zone" },
 ];
 

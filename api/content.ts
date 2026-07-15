@@ -77,6 +77,84 @@ function isContentShaped(body: unknown): boolean {
   );
 }
 
+/* ---------------- version history ---------------- */
+
+const SECTION_KEYS = [
+  "hero",
+  "about",
+  "skills",
+  "projects",
+  "certs",
+  "timeline",
+  "contact",
+] as const;
+
+const SNAPSHOT_COOLDOWN_MS = 5 * 60_000; // one snapshot per editing session
+const KEEP_VERSIONS = 20;
+
+function changedSections(prev: unknown, next: unknown): string[] {
+  const a = (prev ?? {}) as Record<string, unknown>;
+  const b = (next ?? {}) as Record<string, unknown>;
+  return SECTION_KEYS.filter(
+    (k) => JSON.stringify(a[k]) !== JSON.stringify(b[k])
+  );
+}
+
+/**
+ * Snapshot `prev` into content_versions + append an activity row.
+ * Best-effort by design: a missing 004 migration or a full table must
+ * never fail the publish itself, so every step swallows its own errors.
+ */
+async function recordHistory(
+  supabase: Awaited<ReturnType<typeof getSupabase>>,
+  prev: unknown,
+  sections: string[]
+): Promise<void> {
+  try {
+    if (prev) {
+      const { data: newest } = await supabase
+        .from("content_versions")
+        .select("created_at")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const newestAge = newest
+        ? Date.now() - new Date((newest as { created_at: string }).created_at).getTime()
+        : Infinity;
+      if (newestAge > SNAPSHOT_COOLDOWN_MS) {
+        await supabase.from("content_versions").insert({
+          content: prev,
+          sections,
+          byte_size: JSON.stringify(prev).length,
+        });
+        // Prune beyond the newest KEEP_VERSIONS
+        const { data: extra } = await supabase
+          .from("content_versions")
+          .select("id")
+          .order("created_at", { ascending: false })
+          .range(KEEP_VERSIONS, KEEP_VERSIONS + 100);
+        if (extra && extra.length > 0) {
+          await supabase
+            .from("content_versions")
+            .delete()
+            .in(
+              "id",
+              (extra as { id: string }[]).map((r) => r.id)
+            );
+        }
+        // Activity coalesces with the snapshot cadence so the log stays
+        // readable — one "published" row per session, not per keystroke.
+        await supabase.from("activity_log").insert({
+          action: "content.publish",
+          detail: { sections },
+        });
+      }
+    }
+  } catch {
+    // History is best-effort — never block the publish.
+  }
+}
+
 function safeJson(s: string): unknown {
   try {
     return JSON.parse(s);
@@ -128,18 +206,39 @@ export default async function handler(
             error: "Body must include hero, about, skills, projects.",
           });
         }
+
+        // Read what we're about to replace so it can be versioned.
+        const { data: cur } = await supabase
+          .from(TABLE)
+          .select("content")
+          .eq("id", ROW_ID)
+          .maybeSingle();
+        const prev = (cur as { content: unknown } | null)?.content ?? null;
+        const sections = prev ? changedSections(prev, body) : [];
+
         const { error } = await supabase.from(TABLE).upsert({
           id: ROW_ID,
           content: body,
           updated_at: new Date().toISOString(),
         });
         if (error) throw error;
+
+        if (prev && sections.length > 0) {
+          await recordHistory(supabase, prev, sections);
+        }
         return res.status(200).json({ ok: true });
       }
 
       // DELETE
       const { error } = await supabase.from(TABLE).delete().eq("id", ROW_ID);
       if (error) throw error;
+      try {
+        await supabase
+          .from("activity_log")
+          .insert({ action: "content.reset", detail: null });
+      } catch {
+        /* best-effort */
+      }
       return res.status(200).json({ ok: true });
     }
 

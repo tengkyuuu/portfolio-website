@@ -267,6 +267,13 @@ export default async function handler(
         .maybeSingle();
       if (error) throw error;
       if (!data) return res.status(404).json({ error: "Inquiry not found." });
+      try {
+        await supabase
+          .from("activity_log")
+          .insert({ action: "inquiry.status", detail: { id, status } });
+      } catch {
+        /* history is best-effort */
+      }
       return res.status(200).json(data);
     }
 
@@ -278,6 +285,13 @@ export default async function handler(
       if (error) throw error;
       if ((count ?? 0) === 0) {
         return res.status(404).json({ error: "Inquiry not found." });
+      }
+      try {
+        await supabase
+          .from("activity_log")
+          .insert({ action: "inquiry.delete", detail: { id } });
+      } catch {
+        /* history is best-effort */
       }
       return res.status(200).json({ ok: true });
     }

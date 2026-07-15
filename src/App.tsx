@@ -12,6 +12,7 @@ import {
 import { Nav, type TabId, tabs } from "./components/Nav";
 import { PwaChips } from "./components/PwaChips";
 import { RequireAuth } from "./components/RequireAuth";
+import { SearchPalette } from "./components/SearchPalette";
 import { Hero } from "./components/Hero";
 import { About } from "./components/About";
 import { Skills } from "./components/Skills";
@@ -241,6 +242,7 @@ function PortfolioDoc() {
       )}
 
       {!focusMode && <PwaChips />}
+      <SearchPalette />
 
       {/* Focus mode: all chrome is hidden, so float a way back out */}
       {focusMode && (
