@@ -316,6 +316,80 @@ apiApp.get("/api/activity", requireAuth, (_req, res) => {
   res.json({ items: readJsonFile(ACTIVITY_FILE, []).slice(0, 100) });
 });
 
+/* ----------------------------- embed check ------------------------------ */
+/** Mirror of api/embed-check.ts — probes a URL's frame headers. */
+
+apiApp.get("/api/embed-check", async (req, res) => {
+  const urlStr = req.query.url;
+  if (typeof urlStr !== "string" || !urlStr) {
+    res.status(400).json({ error: "Missing ?url=" });
+    return;
+  }
+  let url;
+  try {
+    url = new URL(urlStr);
+  } catch {
+    res.status(400).json({ error: "Invalid URL." });
+    return;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    res.status(400).json({ error: "Only http(s) URLs are supported." });
+    return;
+  }
+  const host = url.hostname.toLowerCase();
+  if (
+    host === "localhost" ||
+    /^(10\.|127\.|192\.168\.|169\.254\.|0\.)/.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+  ) {
+    res.status(400).json({ error: "Private hosts are not allowed." });
+    return;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const upstream = await fetch(url.toString(), {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "user-agent": "portfolio-embed-check/1.0" },
+    });
+    const xfo = (upstream.headers.get("x-frame-options") ?? "").toLowerCase();
+    const csp = (upstream.headers.get("content-security-policy") ?? "").toLowerCase();
+    let embeddable = true;
+    let reason = null;
+    if (xfo.includes("deny")) {
+      embeddable = false;
+      reason = "X-Frame-Options: DENY";
+    } else if (xfo.includes("sameorigin")) {
+      embeddable = false;
+      reason = "X-Frame-Options: SAMEORIGIN";
+    }
+    const fa = csp.match(/frame-ancestors\s+([^;]+)/);
+    if (fa) {
+      const sources = fa[1].trim();
+      if (sources === "'none'") {
+        embeddable = false;
+        reason = "CSP frame-ancestors 'none'";
+      } else if (!sources.includes("*") && !sources.includes("https:")) {
+        embeddable = false;
+        reason = `CSP frame-ancestors ${sources}`;
+      }
+    }
+    res.json({ ok: true, embeddable, reason, status: upstream.status });
+  } catch (e) {
+    res.json({
+      ok: false,
+      embeddable: true,
+      reason: e?.name === "AbortError" ? "timeout" : "unreachable",
+      status: null,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
 /* ------------------------------- inquiries ------------------------------ */
 /**
  * Local-dev mirror of the Vercel Functions in api/inquiries.ts +

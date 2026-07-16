@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Project } from "../lib/content";
 
 /**
@@ -182,10 +182,92 @@ export function InteractiveFigure({
 
 /* ------------------------------ live demo ------------------------------ */
 
+/**
+ * Browsers can't tell the parent page when an iframe is refused by
+ * X-Frame-Options / frame-ancestors — the frame just renders blank. So we
+ * ask our own /api/embed-check first, which probes the target's headers
+ * server-side. Blocked sites get an honest fallback card instead of an
+ * empty frame. If the probe itself fails (offline, timeout), we try the
+ * iframe anyway — false negatives shouldn't kill working demos.
+ */
+type EmbedProbe =
+  | { state: "checking" }
+  | { state: "embeddable" }
+  | { state: "blocked"; reason: string };
+
 function LiveDemo({ url, title }: { url: string; title: string }) {
   const [device, setDevice] = useState<Device>("desktop");
   const [loaded, setLoaded] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [probe, setProbe] = useState<EmbedProbe>({ state: "checking" });
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/embed-check?url=${encodeURIComponent(url)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data: { embeddable: boolean; reason: string | null }) => {
+        if (!alive) return;
+        setProbe(
+          data.embeddable
+            ? { state: "embeddable" }
+            : { state: "blocked", reason: data.reason ?? "framing denied" }
+        );
+      })
+      .catch(() => {
+        // Probe unavailable — optimistically attempt the embed.
+        if (alive) setProbe({ state: "embeddable" });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [url]);
+
+  if (probe.state === "blocked") {
+    return (
+      <div className="border border-rule rounded-sm overflow-hidden bg-row-alt">
+        <div className="flex items-center gap-2 border-b border-rule bg-ribbon px-2.5 py-1.5">
+          <div className="hidden sm:flex items-center gap-1" aria-hidden="true">
+            <span className="w-2.5 h-2.5 rounded-full bg-rule-strong" />
+            <span className="w-2.5 h-2.5 rounded-full bg-rule-strong" />
+            <span className="w-2.5 h-2.5 rounded-full bg-rule-strong" />
+          </div>
+          <div className="flex-1 min-w-0 bg-paper border border-rule rounded-sm px-2.5 py-0.5 font-ui text-[11px] text-ink-muted truncate">
+            {url}
+          </div>
+        </div>
+        <div className="grid place-items-center py-12 px-6 text-center">
+          <span
+            className="material-symbols-outlined text-ink-subtle"
+            style={{ fontSize: 40 }}
+          >
+            vpn_lock
+          </span>
+          <h4 className="mt-3 font-doc text-[16px] font-bold text-ink">
+            This site doesn't allow embedding
+          </h4>
+          <p className="mt-1 font-ui text-[12px] text-ink-muted max-w-sm">
+            {title} sends{" "}
+            <code className="bg-ribbon border border-rule rounded-sm px-1 text-[11px]">
+              {probe.reason}
+            </code>{" "}
+            — browsers refuse to render it inside another page. Open it in
+            its own tab instead:
+          </p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-white font-ui text-[13px] font-semibold px-4 py-2 rounded-sm transition-colors"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+              open_in_new
+            </span>
+            Open {title}
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border border-rule rounded-sm overflow-hidden bg-row-alt">
@@ -267,24 +349,26 @@ function LiveDemo({ url, title }: { url: string; title: string }) {
             </div>
           </div>
         )}
-        <iframe
-          key={reloadKey}
-          src={url}
-          title={`${title} — live preview`}
-          onLoad={() => setLoaded(true)}
-          loading="lazy"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          referrerPolicy="strict-origin-when-cross-origin"
-          className={
-            "relative bg-paper border border-rule rounded-sm shadow-md transition-opacity duration-300 " +
-            (loaded ? "opacity-100" : "opacity-0")
-          }
-          style={{
-            width: DEVICE_WIDTH[device],
-            maxWidth: "100%",
-            height: device === "phone" ? 620 : 460,
-          }}
-        />
+        {probe.state === "embeddable" && (
+          <iframe
+            key={reloadKey}
+            src={url}
+            title={`${title} — live preview`}
+            onLoad={() => setLoaded(true)}
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            referrerPolicy="strict-origin-when-cross-origin"
+            className={
+              "relative bg-paper border border-rule rounded-sm shadow-md transition-opacity duration-300 " +
+              (loaded ? "opacity-100" : "opacity-0")
+            }
+            style={{
+              width: DEVICE_WIDTH[device],
+              maxWidth: "100%",
+              height: device === "phone" ? 620 : 460,
+            }}
+          />
+        )}
       </div>
 
       {/* Footer hint */}
