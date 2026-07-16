@@ -77,14 +77,42 @@ export function ResumePage() {
 
   return (
     <div className="resume-page min-h-svh bg-workspace text-ink py-6 md:py-10 px-3">
-      {/* Route-scoped print override: zero @page margin removes the
-          browser's own header/footer (date + title live in that margin),
-          and the sheet takes over the breathing room itself. Only /resume
-          loads this component, so site-wide printing is unaffected. */}
+      {/* Route-scoped print overrides. Only /resume loads this component,
+          so site-wide printing is unaffected.
+
+          @page margin 0 removes the browser's own header/footer (date +
+          title live in that margin area). But that also means the sheet's
+          padding only cushions PAGE ONE — later pages would start at the
+          paper's physical edge. So vertical breathing room comes from a
+          repeating table frame instead: Chromium re-renders a table's
+          <thead>/<tfoot> at the top/bottom of EVERY printed page, and the
+          empty spacer rows inside them are 12mm tall in print. Horizontal
+          padding stays on the sheet (it applies to every line anyway). */}
       <style>{`
+        .resume-print-frame,
+        .resume-print-frame > thead,
+        .resume-print-frame > tbody,
+        .resume-print-frame > tfoot,
+        .resume-print-frame tr,
+        .resume-print-frame td {
+          display: block;
+          width: 100%;
+          border: 0;
+          padding: 0;
+          margin: 0;
+        }
+        .resume-page-spacer { height: 0; }
+
         @media print {
           @page { margin: 0; }
-          .resume-sheet { padding: 14mm 16mm !important; }
+          .resume-sheet { padding: 0 16mm !important; }
+          .resume-print-frame { display: table !important; table-layout: fixed; }
+          .resume-print-frame > thead { display: table-header-group !important; }
+          .resume-print-frame > tbody { display: table-row-group !important; }
+          .resume-print-frame > tfoot { display: table-footer-group !important; }
+          .resume-print-frame tr { display: table-row !important; }
+          .resume-print-frame td { display: table-cell !important; }
+          .resume-page-spacer { height: 12mm; }
         }
       `}</style>
       <ResumeToolbar
@@ -95,11 +123,33 @@ export function ResumePage() {
         onDownload={download}
       />
 
-      {template === "ats" ? (
-        <ATSTemplate content={filtered} />
-      ) : (
-        <ModernTemplate content={filtered} />
-      )}
+      <table className="resume-print-frame">
+        <thead>
+          <tr>
+            <td>
+              <div className="resume-page-spacer" aria-hidden="true" />
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              {template === "ats" ? (
+                <ATSTemplate content={filtered} />
+              ) : (
+                <ModernTemplate content={filtered} />
+              )}
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>
+              <div className="resume-page-spacer" aria-hidden="true" />
+            </td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 }
