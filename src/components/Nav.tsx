@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isAdminAuthed } from "../lib/auth";
 import { useI18n } from "../lib/i18n";
 import { switchTheme, THEMES, type Theme } from "../lib/theme";
 
@@ -94,13 +95,6 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
           {menuOpen && (
             <div className="word-popover absolute top-full left-0 mt-1 w-56 py-1 font-ui text-[13px] text-ink">
               <MenuItem
-                icon="description"
-                label="Résumé (PDF)"
-                onClick={() => {
-                  window.location.href = "/resume";
-                }}
-              />
-              <MenuItem
                 icon="print"
                 label="Print / Save as PDF"
                 shortcut="Ctrl+P"
@@ -116,13 +110,27 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
                   void shareLink();
                 }}
               />
-              <MenuItem
-                icon="monitoring"
-                label="System info (/status)"
-                onClick={() => {
-                  window.location.href = "/status";
-                }}
-              />
+              {/* Admin-only shortcuts — /resume and /status are gated, so
+                  don't advertise them to visitors who'd just hit a lock. */}
+              {isAdminAuthed() && (
+                <>
+                  <div className="my-1 h-px bg-rule" />
+                  <MenuItem
+                    icon="description"
+                    label="Résumé builder"
+                    onClick={() => {
+                      window.location.href = "/resume";
+                    }}
+                  />
+                  <MenuItem
+                    icon="monitoring"
+                    label="System info (/status)"
+                    onClick={() => {
+                      window.location.href = "/status";
+                    }}
+                  />
+                </>
+              )}
               <div className="my-1 h-px bg-rule" />
               <MenuItem
                 icon="shield_person"
