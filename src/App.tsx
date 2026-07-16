@@ -9,6 +9,7 @@ import {
   watchSystemTheme,
   type Theme,
 } from "./lib/theme";
+import { Assistant } from "./components/Assistant";
 import { Nav, type TabId, tabs } from "./components/Nav";
 import { PwaChips } from "./components/PwaChips";
 import { RequireAuth } from "./components/RequireAuth";
@@ -242,6 +243,7 @@ function PortfolioDoc() {
       )}
 
       {!focusMode && <PwaChips />}
+      {!focusMode && <Assistant />}
       <SearchPalette />
 
       {/* Focus mode: all chrome is hidden, so float a way back out */}

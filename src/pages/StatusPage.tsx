@@ -47,12 +47,41 @@ type Vital = {
   rating: "good" | "needs" | "poor" | null;
 };
 
+type Lighthouse = {
+  scores: {
+    performance: number;
+    accessibility: number;
+    bestPractices: number;
+    seo: number;
+  };
+  url: string | null;
+  commit: string | null;
+  fetchedAt: string;
+};
+
 export function StatusPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [lcp, setLcp] = useState<Vital>({ value: null, rating: null });
   const [inp, setInp] = useState<Vital>({ value: null, rating: null });
   const [cls, setCls] = useState<Vital>({ value: null, rating: null });
+  const [lighthouse, setLighthouse] = useState<Lighthouse | null | "unset">(null);
+
+  // Fetch last Lighthouse run (posted by the GitHub Action)
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/lighthouse")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: Lighthouse) => {
+        if (alive) setLighthouse(d);
+      })
+      .catch(() => {
+        if (alive) setLighthouse("unset");
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Fetch build-time metrics
   useEffect(() => {
@@ -294,6 +323,40 @@ export function StatusPage() {
           )}
         </Card>
 
+        {/* Lighthouse panel */}
+        <Card icon="flare" title="Lighthouse">
+          {lighthouse === null ? (
+            <SkeletonRows count={2} />
+          ) : lighthouse === "unset" ? (
+            <p className="font-ui text-[13px] text-ink-subtle italic">
+              No Lighthouse data yet. The GitHub Action in{" "}
+              <code className="bg-ribbon px-1 rounded-sm">.github/workflows/lighthouse.yml</code>{" "}
+              posts scores after each push — add the{" "}
+              <code className="bg-ribbon px-1 rounded-sm">ADMIN_TOKEN_SECRET</code>{" "}
+              repo secret on GitHub to enable it.
+            </p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <LighthouseScore label="Performance" value={lighthouse.scores.performance} />
+                <LighthouseScore label="Accessibility" value={lighthouse.scores.accessibility} />
+                <LighthouseScore label="Best Practices" value={lighthouse.scores.bestPractices} />
+                <LighthouseScore label="SEO" value={lighthouse.scores.seo} />
+              </div>
+              <p className="mt-3 font-ui text-[11px] text-ink-subtle">
+                Audited {formatWhen(lighthouse.fetchedAt)}
+                {lighthouse.commit && (
+                  <>
+                    {" · commit "}
+                    <code className="bg-ribbon px-1 rounded-sm">{lighthouse.commit}</code>
+                  </>
+                )}
+                {" · median of 3 runs via GitHub Actions"}
+              </p>
+            </>
+          )}
+        </Card>
+
         {/* Live vitals panel */}
         <Card icon="speed" title="Core Web Vitals (this visit)">
           <p className="font-ui text-[12px] text-ink-subtle mb-3 italic">
@@ -459,6 +522,30 @@ function VitalTile({
         )}
       </div>
       <div className="font-ui text-[10px] text-ink-subtle mt-1">{thresholds}</div>
+    </div>
+  );
+}
+
+function LighthouseScore({ label, value }: { label: string; value: number }) {
+  const tone =
+    value >= 90
+      ? "text-word-blue border-word-blue"
+      : value >= 50
+        ? "text-amber-600 dark:text-amber-400 border-amber-500"
+        : "text-red-600 dark:text-red-400 border-red-500";
+  return (
+    <div className="flex flex-col items-center gap-1.5 py-2">
+      <div
+        className={
+          "grid place-items-center w-14 h-14 rounded-full border-[3px] font-doc text-[18px] font-bold tabular-nums " +
+          tone
+        }
+      >
+        {value}
+      </div>
+      <span className="font-ui text-[10px] font-semibold uppercase tracking-wider text-ink-muted text-center">
+        {label}
+      </span>
     </div>
   );
 }

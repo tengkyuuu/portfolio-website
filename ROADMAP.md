@@ -19,6 +19,8 @@ or nice-to-have · **T4** = big infra, only if the portfolio grows.
 - ✅ Interactive projects (Web Layout live-demo tab with device frames, Media video tab)
 - ✅ Email reply templates (inbox → Reply → Compose modal, Gmail/mailto/copy)
 - ✅ Contact scheduling (admin-configurable Cal.com/Calendly embed on Contact)
+- ✅ Chatbot — Office Assistant 📎 (grounded in site content, needs ANTHROPIC_API_KEY on Vercel)
+- ✅ Lighthouse CI (GitHub Action → /api/lighthouse → /status card, needs ADMIN_TOKEN_SECRET repo secret)
 
 ---
 

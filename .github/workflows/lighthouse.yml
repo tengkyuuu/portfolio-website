@@ -1,0 +1,83 @@
+# Runs Lighthouse against the production deploy and pushes the four
+# category scores to /api/lighthouse, where the /status dashboard reads
+# them.
+#
+# Setup (one time):
+#   Repo → Settings → Secrets and variables → Actions → New repository secret
+#     Name:  ADMIN_TOKEN_SECRET
+#     Value: the same value as the ADMIN_TOKEN_SECRET env var on Vercel
+#
+# Triggers: every push to main (after a 2½-minute wait for Vercel to
+# deploy), a weekly refresh, and manual dispatch from the Actions tab.
+
+name: Lighthouse
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * 1" # Mondays 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse
+  cancel-in-progress: true
+
+env:
+  SITE_URL: https://engrjamescalunsag.vercel.app
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Vercel deploy
+        if: github.event_name == 'push'
+        run: sleep 150
+
+      - name: Run Lighthouse
+        id: lhci
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: ${{ env.SITE_URL }}
+          uploadArtifacts: true
+          temporaryPublicStorage: false
+          runs: 3
+
+      - name: Post scores to /status
+        env:
+          TOKEN: ${{ secrets.ADMIN_TOKEN_SECRET }}
+          MANIFEST: ${{ steps.lhci.outputs.manifest }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::ADMIN_TOKEN_SECRET repo secret is not set — cannot publish scores."
+            exit 1
+          fi
+          # Pick the median run's summary (isRepresentativeRun) and convert
+          # the 0-1 category scores to 0-100 integers.
+          SUMMARY=$(echo "$MANIFEST" | jq -c '[.[] | select(.isRepresentativeRun == true)][0].summary // .[0].summary')
+          echo "Summary: $SUMMARY"
+          PAYLOAD=$(echo "$SUMMARY" | jq -c \
+            --arg url "$SITE_URL" \
+            --arg commit "${GITHUB_SHA:0:7}" \
+            '{
+              performance:    ((.performance    // 0) * 100 | round),
+              accessibility:  ((.accessibility  // 0) * 100 | round),
+              bestPractices:  ((."best-practices" // 0) * 100 | round),
+              seo:            ((.seo            // 0) * 100 | round),
+              url: $url,
+              commit: $commit
+            }')
+          echo "Payload: $PAYLOAD"
+          STATUS=$(curl -s -o /tmp/resp.json -w "%{http_code}" \
+            -X POST "$SITE_URL/api/lighthouse" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+          cat /tmp/resp.json
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Posting scores failed with HTTP $STATUS"
+            exit 1
+          fi
