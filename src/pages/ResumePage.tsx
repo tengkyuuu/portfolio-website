@@ -51,10 +51,10 @@ export function ResumePage() {
     if (window.location.pathname + window.location.search !== next) {
       window.history.replaceState(null, "", next);
     }
-    // Set a Word-doc-y page title so browser tabs read cleanly
-    document.title = `Résumé — ${
-      role === "all" ? "All disciplines" : role
-    } — ${template.toUpperCase()}`;
+    // Formal, constant title — this is also what the browser prints in its
+    // page header and uses as the default PDF filename, so no role/style
+    // suffixes and no informal casing here.
+    document.title = "James Vincent Calunsag — Résumé";
   }, [role, template]);
 
   // Respond to external nav (e.g. back-forward) that changes ?style/?role
@@ -77,6 +77,16 @@ export function ResumePage() {
 
   return (
     <div className="resume-page min-h-svh bg-workspace text-ink py-6 md:py-10 px-3">
+      {/* Route-scoped print override: zero @page margin removes the
+          browser's own header/footer (date + title live in that margin),
+          and the sheet takes over the breathing room itself. Only /resume
+          loads this component, so site-wide printing is unaffected. */}
+      <style>{`
+        @media print {
+          @page { margin: 0; }
+          .resume-sheet { padding: 14mm 16mm !important; }
+        }
+      `}</style>
       <ResumeToolbar
         role={role}
         template={template}

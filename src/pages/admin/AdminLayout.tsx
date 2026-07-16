@@ -187,6 +187,14 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
                 badge={s.id === "inbox" ? inboxUnread : undefined}
               />
             ))}
+
+            {/* Admin-gated standalone pages — live outside the console */}
+            <div className="my-2 mx-2 h-px bg-rule" aria-hidden="true" />
+            <p className="px-3 pb-1 font-ui text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
+              Pages
+            </p>
+            <PageLink href="/resume" icon="description" label="Résumé builder" />
+            <PageLink href="/status" icon="monitoring" label="System info" />
           </nav>
         </aside>
 
@@ -224,6 +232,24 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
               </button>
             );
           })}
+          <a
+            href="/resume"
+            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-sm font-ui text-[12px] font-medium text-ink-muted hover:bg-ribbon-hover"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              description
+            </span>
+            Résumé
+          </a>
+          <a
+            href="/status"
+            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-sm font-ui text-[12px] font-medium text-ink-muted hover:bg-ribbon-hover"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              monitoring
+            </span>
+            Status
+          </a>
         </div>
 
         {/* Global inbox toast — shown when a new inquiry arrives while the
@@ -295,6 +321,28 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
         </main>
       </div>
     </div>
+  );
+}
+
+/** Sidebar link to an admin-gated standalone page (opens in this tab). */
+function PageLink({ href, icon, label }: { href: string; icon: string; label: string }) {
+  return (
+    <a
+      href={href}
+      className="flex items-center gap-2.5 px-3 py-2 rounded-sm font-ui text-[13px] text-ink-muted hover:bg-ribbon-hover hover:text-ink transition-colors"
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+        {icon}
+      </span>
+      <span className="flex-1 truncate">{label}</span>
+      <span
+        className="material-symbols-outlined text-ink-subtle"
+        style={{ fontSize: 13 }}
+        aria-hidden="true"
+      >
+        open_in_new
+      </span>
+    </a>
   );
 }
 

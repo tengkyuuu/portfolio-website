@@ -27,6 +27,9 @@ export type RoleMeta = {
   relevantStack: string[];
   /** Prose spin used when the summary paragraph should be role-specific. */
   summaryOverride?: string;
+  /** Role-specific highlight bullets, prepended to the summary highlights
+   *  so they lead the list when this role is selected. */
+  extraHighlights?: string[];
 };
 
 const norm = (s: string) => s.trim().toLowerCase();
@@ -81,6 +84,10 @@ export const RESUME_ROLES: RoleMeta[] = [
     ],
     summaryOverride:
       "Full-stack engineer who works across the whole request lifecycle — React + TypeScript on the surface, Node + SQL (Postgres/Supabase) + serverless functions on the server. Comfortable designing schemas, wiring auth, and hardening a deploy pipeline.",
+    extraHighlights: [
+      "Handled the full deployment lifecycle — domain configuration, SSL setup, and hosting — for client launches (Rallys Equities, MYKTECH), ensuring secure and reliable production delivery",
+      "Customized WordPress themes and layouts for client projects, adapting builds to non-technical client requirements",
+    ],
   },
   {
     id: "support",
@@ -167,10 +174,15 @@ export function applyRoleFilter(content: SiteContent, role: ResumeRole): SiteCon
     ? meta.summaryOverride + "\n\n" + content.about.paragraphs
     : content.about.paragraphs;
 
+  // Role-specific bullets lead the highlights list so they read first.
+  const highlights = meta.extraHighlights
+    ? [...meta.extraHighlights, ...(content.about.highlights ?? [])]
+    : content.about.highlights;
+
   return {
     ...content,
     hero: { ...content.hero, role: meta.headline },
-    about: { ...content.about, paragraphs },
+    about: { ...content.about, paragraphs, highlights },
     skills: filteredSkills,
     projects,
   };
