@@ -191,6 +191,112 @@ export const projects: Project[] = [
     ],
     links: [{ label: "Repo", href: "#" }],
   },
+  {
+    id: "stormfresh-erp",
+    index: "05",
+    title: "Stormfresh — Poultry ERP",
+    blurb:
+      "Role-gated ERP for a Philippine poultry operation — tracks live-bird purchases through dressing output to invoices and staff commissions, with profit recomputed live from source records rather than stored.",
+    tags: ["Next.js", "React", "Supabase", "Tailwind"],
+    stack: [
+      "Next.js (App Router)",
+      "React",
+      "Supabase Postgres (RLS)",
+      "Supabase Auth",
+      "Tailwind CSS",
+      "Zustand",
+      "Recharts / Chart.js",
+      "Vitest",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-05",
+    year: "2026",
+    page: "06",
+    figCaption:
+      "FIG 5.1: Stormfresh — management dashboard, marketing landing page, and the invitation-only workspace sign-in.",
+    challenge:
+      "A poultry business bought live birds, dressed them, and sold the output — but the money lived in spreadsheets. Flock grow-out, commission payroll, and monthly P&L each sat in a separate workbook, several carrying arithmetic defects nobody had caught. Profit was only knowable after month-end reconciliation, and approving a purchase order meant whoever happened to sign the paper.",
+    solution:
+      "One of five engineers on the build. I owned the management dashboard and reporting layer — gain, balance, and trend figures recomputed live from source rows rather than stored, so the numbers can't drift out of sync — and the role model, pushed down into Postgres row-level security so drafts stay private to their author and only Management approves or deletes. The interface language across the app is mine as well.",
+    gallery: [
+      {
+        src: "/projects/poias-dashboard.webp",
+        alt: "Stormfresh management dashboard — left module sidebar, a dark green welcome banner, and a Gain panel breaking sales, bird cost, and expenses down to a red loss figure.",
+      },
+      {
+        src: "/projects/poias-landing.webp",
+        alt: "Stormfresh landing page — 'Fresh from the farm. Sharp on the numbers.' headline in dark green over cream, with an illustrated chicken and floating gain and dressed-weight cards.",
+      },
+      {
+        src: "/projects/poias-login.webp",
+        alt: "Stormfresh sign-in — a green 'Welcome back!' panel with the Tropical Poultry Farms logo, split diagonally by an orange band from an invitation-only email and password form.",
+      },
+    ],
+    demoUrl: "https://poias.vercel.app",
+    links: [{ label: "Repo", href: "https://github.com/mykd13/POIAS" }],
+  },
+  {
+    id: "flux",
+    index: "06",
+    title: "Flux",
+    blurb:
+      "Pre-launch site for a Shariah-compliant Pakistani digital bank — a waitlist funnel and product story where accessible contrast, and honesty about what isn't live yet, are enforced by the test suite.",
+    tags: ["Next.js", "TypeScript", "Tailwind", "Expo"],
+    stack: [
+      "Next.js (App Router)",
+      "TypeScript",
+      "Tailwind CSS",
+      "React Native (Expo Router)",
+      "Vitest + Testing Library",
+      "Google Sheets API",
+      "Three.js",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-06",
+    year: "2026",
+    page: "07",
+    figCaption:
+      "FIG 6.1: Flux — the pre-launch hero and the digital-card section of the marketing site.",
+    challenge:
+      "A bank that has not opened yet still has to collect real names, phone numbers, and emails from the public, and show an earned-wage product it cannot yet run — every screen risks implying a service already exists. The client also settled a four-colour brand mid-build whose primary teal is light enough that white text on it fails AA outright, so the palette could not simply be dropped in.",
+    solution:
+      "Honesty is enforced mechanically rather than by review: a contrast suite pins every shipping colour pair, with inverted guards that fail if light text lands on the brand teal or teal is used as body copy. Unbuilt products get working, fixture-driven screens that state their own blocker instead of dead-ending, and the companion Expo app swaps a five-slot tab bar for one floating menu across thirteen destinations.",
+    metrics: [
+      {
+        label: "Contrast pairs under test",
+        pre: "0",
+        post: "19",
+        delta: "+19",
+      },
+      {
+        label: "App font sizes in use",
+        pre: "16",
+        post: "6",
+        delta: "−10",
+      },
+      {
+        label: "Web test suite",
+        pre: "—",
+        post: "235 tests / 35 files",
+        delta: "—",
+      },
+    ],
+    gallery: [
+      {
+        src: "/projects/flux-1.png",
+        alt: "Flux marketing site hero — an angled phone mockup with a green Flux debit card floating over it, beside the headline 'No riba. No hidden fee. No exceptions.' and a Join the waitlist button.",
+      },
+      {
+        src: "/projects/flux-2.png",
+        alt: "Flux card section — 'An Islamic bank card that lives in your phone' beside a large green geometric debit card, with Apple Pay, Google Wallet, Contactless, and Instant Control listed below.",
+      },
+    ],
+    demoUrl: "https://fluxpk.co",
+    links: [
+      { label: "Live site", href: "https://fluxpk.co" },
+      { label: "Repo", href: "https://github.com/mykd13/flux-website" },
+    ],
+  },
 ];
 
 export type SkillGroup = {
