@@ -361,3 +361,97 @@
   }
 }
 
+/* ─── CORE COMPETENCIES ────────────────────────────────────────────────
+   The Skills tab reads like an instrument panel bolted onto a Word doc:
+   hairline rules and tabular figures, but with meters that fill and rows
+   that stagger in. Every animation below is disabled under
+   prefers-reduced-motion at the bottom of this block. */
+
+/* Faint engineering grid behind the readout strip. */
+.telemetry-grid {
+  background-image:
+    linear-gradient(to right, var(--color-rule) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-rule) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: -1px -1px;
+  opacity: 0.4;
+}
+
+/* Meter fill — width is set inline; this only animates it in. */
+@keyframes meter-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.meter-fill {
+  transform-origin: left center;
+  animation: meter-fill 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Segment blocks pop in one after another. */
+@keyframes seg-in {
+  from { opacity: 0; transform: scaleY(0.2); }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+.seg-in {
+  transform-origin: bottom center;
+  animation: seg-in 260ms ease-out both;
+}
+
+/* Rows stagger up as a filter result set changes. */
+@keyframes skill-row-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.skill-row-in {
+  animation: skill-row-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Live readout line swaps content on hover — soften the change. */
+@keyframes readout-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.readout-in {
+  animation: readout-in 200ms ease-out both;
+}
+
+/* Sweep highlight across a skill row on hover — a scanline, not a glow. */
+.skill-scan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-word-blue) 12%, transparent) 50%,
+    transparent 80%
+  );
+  opacity: 0;
+  transform: translateX(-60%);
+  transition: opacity 200ms ease-out;
+}
+.skill-scan:hover::after,
+.skill-scan:focus-visible::after {
+  opacity: 1;
+  animation: skill-sweep 620ms ease-out;
+}
+@keyframes skill-sweep {
+  from { transform: translateX(-60%); }
+  to   { transform: translateX(60%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meter-fill,
+  .seg-in,
+  .skill-row-in,
+  .readout-in {
+    animation: none !important;
+  }
+  .skill-scan:hover::after,
+  .skill-scan:focus-visible::after {
+    animation: none !important;
+    opacity: 0;
+  }
+}
+
