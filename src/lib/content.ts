@@ -27,6 +27,8 @@ import {
 export type { Project, ProjectImage, SkillGroup, Cert, Metric, TimelineEntry };
 
 const STORAGE_KEY = "jvc_content_v1";
+/** Sidecar describing what the cached payload was derived from. */
+const META_KEY = "jvc_content_meta_v1";
 export const CONTENT_EVENT = "jvc:content-change";
 
 export type HeroContent = {
@@ -171,6 +173,72 @@ function normalizeContent(stored: Partial<SiteContent>): SiteContent {
  *  read source when the cached JSON can't be written. */
 let memoryContent: SiteContent | null = null;
 
+/* ---------------------- stale-cache invalidation ---------------------- */
+
+/**
+ * The browser copy is a cache, not a source of truth. On a static deploy
+ * `data.ts` is what's published (see README), so a deploy that ships new
+ * defaults must not stay invisible to anyone whose browser is holding an
+ * older snapshot — that is how a project can be live in the bundle and
+ * still missing from the page.
+ *
+ * Every write records a fingerprint of the defaults it was taken against.
+ * A payload survives only while that fingerprint still matches: once a
+ * deploy ships different defaults, the deploy wins and the cache is
+ * ignored. Nothing is lost when the server is healthy — syncFromServer
+ * re-applies the published content and re-stamps the record on the next
+ * load — but when the server is unreachable we fall back to what shipped
+ * instead of serving an indefinitely old snapshot.
+ *
+ * A payload with no record predates this rule, so it counts as stale.
+ */
+
+/** `src` is informational only — provenance for anyone reading the
+ *  key in devtools. Staleness is decided by `fp` alone. */
+type CacheMeta = { fp: string; src: "server" | "local" };
+
+/** Cheap, stable 32-bit string hash. Collisions don't matter here. */
+function fingerprint(value: unknown): string {
+  const s = JSON.stringify(value);
+  let h = 5381;
+  for (let i = 0; i < s.length; i += 1) h = ((h << 5) + h) ^ s.charCodeAt(i);
+  return (h >>> 0).toString(36) + "." + s.length.toString(36);
+}
+
+let defaultsFp: string | null = null;
+/** Lazy: DEFAULT_CONTENT is initialized above, but only at module load. */
+function defaultsFingerprint(): string {
+  if (defaultsFp === null) defaultsFp = fingerprint(DEFAULT_CONTENT);
+  return defaultsFp;
+}
+
+function readMeta(): CacheMeta | null {
+  try {
+    const raw = localStorage.getItem(META_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CacheMeta>;
+    if (typeof parsed?.fp !== "string") return null;
+    return { fp: parsed.fp, src: parsed.src === "server" ? "server" : "local" };
+  } catch {
+    return null;
+  }
+}
+
+function writeMeta(src: CacheMeta["src"]): void {
+  try {
+    const meta: CacheMeta = { fp: defaultsFingerprint(), src };
+    localStorage.setItem(META_KEY, JSON.stringify(meta));
+  } catch {
+    // Quota exceeded — the payload write failed too.
+  }
+}
+
+/** False when the cached payload is masking newer shipped defaults. */
+function cacheIsUsable(): boolean {
+  const meta = readMeta();
+  return meta !== null && meta.fp === defaultsFingerprint();
+}
+
 export function getContent(): SiteContent {
   if (typeof localStorage === "undefined") {
     return memoryContent ?? DEFAULT_CONTENT;
@@ -178,6 +246,7 @@ export function getContent(): SiteContent {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return memoryContent ?? DEFAULT_CONTENT;
+    if (!cacheIsUsable()) return memoryContent ?? DEFAULT_CONTENT;
     return normalizeContent(JSON.parse(raw) as Partial<SiteContent>);
   } catch {
     return memoryContent ?? DEFAULT_CONTENT;
@@ -223,10 +292,11 @@ function schedulePush(content: SiteContent) {
 
 /** Write content to the local cache without publishing (used for content
  *  that just arrived FROM the server — pushing it back would be a loop). */
-function applyContent(content: SiteContent): void {
+function applyContent(content: SiteContent, src: CacheMeta["src"]): void {
   memoryContent = content;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
+    writeMeta(src);
   } catch {
     // Quota exceeded — memoryContent still serves this session.
   }
@@ -242,12 +312,12 @@ export async function syncFromServer(): Promise<boolean> {
   if (!remote) return false;
   const next = normalizeContent(remote);
   if (JSON.stringify(next) === JSON.stringify(getContent())) return false;
-  applyContent(next);
+  applyContent(next, "server");
   return true;
 }
 
 export function saveContent(content: SiteContent): void {
-  applyContent(content);
+  applyContent(content, "local");
   schedulePush(content);
 }
 
@@ -271,6 +341,7 @@ export function resetSection<K extends keyof SiteContent>(
 
 export function resetAll(): void {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(META_KEY);
   memoryContent = null;
   const token = getAdminToken();
   if (token) {

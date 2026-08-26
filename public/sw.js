@@ -4,21 +4,35 @@
  *
  *   1) SHELL  — precached at install: /, /index.html, /manifest, /icon.svg.
  *               Kept forever until this SW is replaced.
- *   2) API    — stale-while-revalidate for /api/content and /api/health.
- *               Any admin-write path is bypassed entirely.
+ *   2) API    — network-first with a bounded stale fallback for
+ *               /api/content and /api/health. Any admin-write path is
+ *               bypassed entirely.
  *   3) ASSETS — cache-first with a 30-day expiry for JS/CSS/font/image
  *               responses (both same-origin and Devicon/Google Fonts CDNs).
  *
- * The cache version bumps whenever this file changes — commit a new build
- * ⇒ SW installs ⇒ old caches purged on activate ⇒ open tabs get a "new
- * version available" prompt (see registerSW in main.tsx).
+ * CACHE_VERSION is bumped BY HAND. The browser only reinstalls this worker
+ * when these bytes change, so a deploy that doesn't touch this file leaves
+ * every existing cache in place. Bump it whenever the caching rules change
+ * or a cached response needs purging from the field; installing then
+ * purges the old caches on activate and open tabs get a "new version
+ * available" prompt (see registerSW in main.tsx).
+ *
+ * Why API is network-first: /api/content feeds syncFromServer, which
+ * overwrites the visitor's local content cache. Under
+ * stale-while-revalidate a snapshot cached while the API was healthy kept
+ * being served as a 200 after the API started failing, so every load
+ * re-applied it over the freshly deployed defaults — content shipped in
+ * the bundle stayed invisible. Now a failing API falls through to the
+ * shipped defaults once the cached copy passes API_MAX_STALE_MS.
  */
 
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const SHELL_CACHE = `pd-shell-${CACHE_VERSION}`;
 const API_CACHE = `pd-api-${CACHE_VERSION}`;
 const ASSET_CACHE = `pd-asset-${CACHE_VERSION}`;
 const ASSET_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+/** How long a cached API response may stand in for an unreachable server. */
+const API_MAX_STALE_MS = 24 * 60 * 60 * 1000; // 1 day
 
 const SHELL_URLS = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg"];
 
@@ -70,9 +84,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Public API (content, health): stale-while-revalidate
+  // Public API (content, health): network-first, bounded stale fallback
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(staleWhileRevalidate(req, API_CACHE));
+    event.respondWith(networkFirstAPI(req, API_CACHE, API_MAX_STALE_MS));
     return;
   }
 
@@ -97,16 +111,47 @@ self.addEventListener("fetch", (event) => {
 
 /* ---------------- strategies ---------------- */
 
-async function staleWhileRevalidate(req, cacheName) {
+/**
+ * Network wins whenever it answers at all — including a 4xx/5xx, which is
+ * real information the app knows how to handle (fetchRemoteContent treats
+ * a non-ok as "no published content" and leaves the defaults alone). The
+ * cache is only a fallback for an outright network failure, and only while
+ * it is younger than maxStaleMs, so a dead API can't pin the site to an
+ * old snapshot indefinitely.
+ */
+async function networkFirstAPI(req, cacheName, maxStaleMs) {
   const cache = await caches.open(cacheName);
-  const cached = await cache.match(req);
-  const network = fetch(req)
-    .then((res) => {
-      if (res.ok) cache.put(req, res.clone());
-      return res;
-    })
-    .catch(() => cached);
-  return cached ?? (await network);
+  try {
+    const res = await fetch(req);
+    if (res.ok) {
+      const cloned = res.clone();
+      const body = await cloned.blob();
+      const headers = new Headers(cloned.headers);
+      headers.set("sw-cached-at", String(Date.now()));
+      await cache.put(
+        req,
+        new Response(body, {
+          status: cloned.status,
+          statusText: cloned.statusText,
+          headers,
+        })
+      );
+    } else {
+      // The endpoint answered but has nothing good to give — drop any
+      // older success so it can't be replayed on the next offline load.
+      await cache.delete(req);
+    }
+    return res;
+  } catch {
+    const cached = await cache.match(req);
+    if (!cached) throw new Error("offline and uncached");
+    const at = Number(cached.headers.get("sw-cached-at") || 0);
+    if (!at || Date.now() - at > maxStaleMs) {
+      await cache.delete(req);
+      throw new Error("cached API response too stale");
+    }
+    return cached;
+  }
 }
 
 async function networkFirstShell(req) {
