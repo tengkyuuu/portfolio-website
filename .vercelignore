@@ -1,0 +1,9 @@
+# Every file under api/ is built as a Serverless Function, and the Hobby plan
+# caps a deployment at 12 of them. Going over does not fail the build — it
+# fails afterwards, at "Deploying outputs...", so the build log looks clean
+# and CI stays green while production silently keeps serving the last good
+# deploy. Test files are not endpoints and must not consume a slot.
+#
+# vitest still collects these: it runs from the repo, not from the Vercel
+# build (see the "api/**/*.test.ts" include in vitest.config.ts).
+api/**/*.test.ts
