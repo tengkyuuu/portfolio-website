@@ -37,7 +37,21 @@ import crypto from "node:crypto";
  *   curl -H "x-goog-api-key: $GEMINI_API_KEY"  *     https://generativelanguage.googleapis.com/v1beta/models
  */
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
-const MAX_TOKENS = 400;
+
+/**
+ * Reasoning tokens are billed against maxOutputTokens on Gemini 2.5+, and
+ * they are spent before a single visible character is emitted. At 400 the
+ * model burned the whole budget thinking and the answer arrived cut off
+ * mid-sentence — a truncated reply reads as a broken assistant, and
+ * extractReply can't tell it apart from a complete one.
+ *
+ * Blue answers in 1-4 grounded sentences; it has nothing to reason about.
+ * Thinking is switched off (cheaper and faster too) with headroom on the
+ * cap for the rare long answer. See the 400-retry below: the field is
+ * model-dependent, so it degrades instead of failing.
+ */
+const THINKING_OFF = { thinkingConfig: { thinkingBudget: 0 } } as const;
+const MAX_TOKENS = 800;
 const PER_IP_PER_10MIN = 15;
 const GLOBAL_PER_DAY = 300;
 
@@ -400,6 +414,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           generationConfig: {
             temperature: 0.3,
             maxOutputTokens: MAX_TOKENS,
+            ...THINKING_OFF,
           },
         }),
       }
@@ -409,8 +424,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const detail = (await upstream.json().catch(() => null)) as {
         error?: { message?: string };
       } | null;
+      const message = detail?.error?.message ?? "";
+
+      /* thinkingConfig is model-dependent and GEMINI_MODEL is overridable by
+         env, so a model that rejects the field must not take the assistant
+         down. Retry once without it rather than 502-ing the visitor. */
+      if (upstream.status === 400 && /thinking/i.test(message)) {
+        const retry = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "x-goog-api-key": process.env.GEMINI_API_KEY as string,
+            },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: systemPrompt(summary) }] },
+              contents: messages.map((m) => ({
+                role: m.role === "assistant" ? "model" : "user",
+                parts: [{ text: m.content }],
+              })),
+              generationConfig: { temperature: 0.3, maxOutputTokens: MAX_TOKENS },
+            }),
+          }
+        );
+        if (retry.ok) {
+          const retried =
+            extractReply((await retry.json()) as GeminiResponse) ||
+            "…I'm not sure how to answer that one.";
+          if (sessionId) {
+            try {
+              await supabase.from("chat_messages").insert({
+                session_id: sessionId,
+                role: "ai",
+                body: retried.slice(0, MAX_REPLY_CHARS),
+              });
+            } catch {
+              /* the visitor still gets the answer */
+            }
+          }
+          return res.status(200).json({ reply: retried, mode: "ai" });
+        }
+      }
+
       return res.status(502).json({
-        error: detail?.error?.message ?? `Assistant unavailable (${upstream.status}).`,
+        error: message || `Assistant unavailable (${upstream.status}).`,
       });
     }
 
