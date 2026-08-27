@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && npm run postbuild",
-    "postbuild": "node scripts/collect-metrics.mjs",
+    "postbuild": "node scripts/collect-metrics.mjs && node scripts/emit-content-defaults.mjs",
     "preview": "vite preview",
     "start": "node server/index.mjs",
     "test": "vitest run",

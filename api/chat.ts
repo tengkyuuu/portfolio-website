@@ -1,14 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import crypto from "node:crypto";
-import {
-  certs,
-  defaultAbout,
-  defaultContact,
-  defaultHero,
-  projects,
-  skillGroups,
-  timeline,
-} from "../src/lib/data";
 
 /**
  * Blue — the Office Assistant. AI answers plus human takeover.
@@ -277,18 +268,30 @@ ${summary}`;
 }
 
 /**
- * The defaults compiled into the site bundle, in the same shape the
- * published row uses, so summarizeContent cannot tell them apart.
+ * The defaults compiled into the site bundle, fetched as JSON from this
+ * same deployment rather than imported.
+ *
+ * Importing ../src/lib/data from here breaks the function at module load:
+ * Vercel's tracer does not follow it out of api/, and every request 500s
+ * before the handler runs. scripts/emit-content-defaults.mjs writes the
+ * same object to dist/content-defaults.json at build time instead, so
+ * there is one source of truth and no import graph to get wrong.
  */
-const SHIPPED_CONTENT = {
-  hero: defaultHero,
-  about: defaultAbout,
-  skills: skillGroups,
-  projects,
-  certs,
-  timeline,
-  contact: defaultContact,
-};
+async function shippedContent(req: VercelRequest): Promise<unknown> {
+  const host =
+    process.env.VERCEL_URL ||
+    (req.headers["x-forwarded-host"] as string | undefined) ||
+    req.headers.host;
+  if (!host) return {};
+  const proto = host.startsWith("localhost") ? "http" : "https";
+  try {
+    const res = await fetch(`${proto}://${host}/content-defaults.json`);
+    return res.ok ? await res.json() : {};
+  } catch {
+    // Grounding on nothing is bad; failing the whole answer is worse.
+    return {};
+  }
+}
 
 /* --------------------------------- handler ------------------------------- */
 
@@ -434,7 +437,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq("id", "default")
       .maybeSingle();
     const published = (data as { content: unknown } | null)?.content ?? null;
-    const summary = summarizeContent(published ?? SHIPPED_CONTENT);
+    const summary = summarizeContent(published ?? (await shippedContent(req)));
 
     /* Gemini's request shape differs from Anthropic's in three ways that
        matter here: the system prompt is its own top-level field, the
