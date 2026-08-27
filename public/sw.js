@@ -26,7 +26,7 @@
  * shipped defaults once the cached copy passes API_MAX_STALE_MS.
  */
 
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const SHELL_CACHE = `pd-shell-${CACHE_VERSION}`;
 const API_CACHE = `pd-api-${CACHE_VERSION}`;
 const ASSET_CACHE = `pd-asset-${CACHE_VERSION}`;
