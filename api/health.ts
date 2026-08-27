@@ -46,6 +46,11 @@ export default async function handler(
   let supabaseModule: "ok" | { error: string } = "ok";
   let siteContentProbe: TableProbe = { ok: false, error: "not attempted" };
   let inquiriesProbe: TableProbe = { ok: false, error: "not attempted" };
+  // Chat tables ship in migration 005. Probing them here is the only
+  // cheap way to tell "migration not run yet" apart from "store down" —
+  // /api/chat answers 200 with an empty transcript for both.
+  let chatSessionsProbe: TableProbe = { ok: false, error: "not attempted" };
+  let chatMessagesProbe: TableProbe = { ok: false, error: "not attempted" };
 
   if (storeConfigured) {
     try {
@@ -57,6 +62,8 @@ export default async function handler(
       );
       siteContentProbe = await probe(supabase, "site_content");
       inquiriesProbe = await probe(supabase, "inquiries");
+      chatSessionsProbe = await probe(supabase, "chat_sessions");
+      chatMessagesProbe = await probe(supabase, "chat_messages");
     } catch (e) {
       supabaseModule = {
         error: e instanceof Error ? e.message : "Failed to import @supabase/supabase-js",
@@ -76,6 +83,8 @@ export default async function handler(
     tables: {
       site_content: siteContentProbe,
       inquiries: inquiriesProbe,
+      chat_sessions: chatSessionsProbe,
+      chat_messages: chatMessagesProbe,
     },
   });
 }
