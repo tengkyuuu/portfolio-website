@@ -2,7 +2,47 @@ import { useEffect, useMemo, useState } from "react";
 import { SYNC_EVENT, type SyncStatus } from "../../lib/content";
 import { clearAdminAuth } from "../../lib/auth";
 import { fetchInquiries } from "../../lib/inquiry-api";
+import { fetchChatSessions } from "../../lib/chat-api";
 import { Button } from "./ui";
+
+/**
+ * Ask for desktop-notification permission. Call this from a click only —
+ * browsers ignore (and users resent) prompts raised from background work.
+ */
+export async function requestChatNotifications(): Promise<void> {
+  if (typeof Notification === "undefined") return;
+  if (Notification.permission !== "default") return;
+  try {
+    await Notification.requestPermission();
+  } catch {
+    /* Safari <16 uses the callback form; not worth a shim */
+  }
+}
+
+/** Desktop ping for a visitor waiting on a live reply. No-op until granted. */
+function notifyWaiting(count: number): void {
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+    return;
+  }
+  try {
+    const n = new Notification(
+      count === 1 ? "A visitor is waiting for a reply" : `${count} visitors are waiting`,
+      {
+        body: "Open the Chat panel in the admin console to answer.",
+        icon: "/icon.svg",
+        // Collapses repeats instead of stacking one per poll.
+        tag: "jvc-chat-waiting",
+      }
+    );
+    n.onclick = () => {
+      window.focus();
+      window.location.hash = "#chat";
+      n.close();
+    };
+  } catch {
+    /* some browsers throw when constructing outside a SW context */
+  }
+}
 
 export type SectionId =
   | "hero"
@@ -12,6 +52,7 @@ export type SectionId =
   | "credentials"
   | "contact"
   | "inbox"
+  | "chat"
   | "history"
   | "tools";
 
@@ -23,11 +64,24 @@ export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string
   { id: "credentials", label: "Credentials", icon: "school", tab: "Credentials tab" },
   { id: "contact", label: "Contact", icon: "mail", tab: "Contact tab" },
   { id: "inbox", label: "Inbox", icon: "inbox", tab: "Messages from the contact form" },
+  { id: "chat", label: "Chat", icon: "forum", tab: "Live conversations — reply as yourself" },
   { id: "history", label: "History", icon: "history", tab: "Version history & track changes" },
   { id: "tools", label: "Tools", icon: "settings", tab: "Backup, import, danger zone" },
 ];
 
 const INBOX_POLL_MS = 20_000;
+const CHAT_POLL_MS = 15_000;
+
+/** Only two sections carry counts; undefined means "no badge at all". */
+function badgeFor(
+  id: SectionId,
+  inboxUnread: number,
+  chatWaiting: number
+): number | undefined {
+  if (id === "inbox") return inboxUnread;
+  if (id === "chat") return chatWaiting;
+  return undefined;
+}
 
 function hashToSection(): SectionId {
   const h = window.location.hash.replace(/^#/, "");
@@ -45,6 +99,8 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
   const [sync, setSync] = useState<SyncStatus | "idle">("idle");
   const [inboxUnread, setInboxUnread] = useState<number>(0);
   const [inboxToast, setInboxToast] = useState<{ count: number; ts: number } | null>(null);
+  const [chatWaiting, setChatWaiting] = useState<number>(0);
+  const [chatToast, setChatToast] = useState<{ count: number; ts: number } | null>(null);
 
   /* ------------------------------------------------------------
      Global inbox watcher: polls /api/inquiries every 20s so the
@@ -84,12 +140,61 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
     };
   }, [active]);
 
-  // Auto-dismiss toast after 6s
+  /* ------------------------------------------------------------
+     Chat watcher: same shape as the inbox one, but a visitor waiting
+     on a live reply is more time-sensitive than a contact-form
+     message, so this one also raises a desktop notification.
+
+     Permission is never requested here — only from the Chat panel,
+     on a real click (see requestChatNotifications). A prompt fired
+     from a background poll is the kind users deny reflexively, and
+     denial is permanent.
+  ------------------------------------------------------------ */
+  useEffect(() => {
+    let cancelled = false;
+    let lastWaiting: number | null = null;
+
+    async function tick() {
+      const result = await fetchChatSessions();
+      if (cancelled || !result.ok) return;
+      const next = result.waitingCount;
+      if (lastWaiting !== null && next > lastWaiting && active !== "chat") {
+        setChatToast({ count: next, ts: Date.now() });
+        notifyWaiting(next);
+      }
+      lastWaiting = next;
+      setChatWaiting(next);
+    }
+
+    void tick();
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") void tick();
+    }, CHAT_POLL_MS);
+    const onFocus = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [active]);
+
+  // Auto-dismiss toasts after 6s
   useEffect(() => {
     if (!inboxToast) return;
     const t = window.setTimeout(() => setInboxToast(null), 6_000);
     return () => window.clearTimeout(t);
   }, [inboxToast]);
+
+  useEffect(() => {
+    if (!chatToast) return;
+    const t = window.setTimeout(() => setChatToast(null), 6_000);
+    return () => window.clearTimeout(t);
+  }, [chatToast]);
 
   // Track real publish status: "saving" while the debounced push is pending,
   // then "saved" (server), "local" (no server / offline), or "error".
@@ -184,7 +289,7 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
                 active={active === s.id}
                 onClick={() => onChange(s.id)}
                 topDivider={s.id === "tools" && i > 0}
-                badge={s.id === "inbox" ? inboxUnread : undefined}
+                badge={badgeFor(s.id, inboxUnread, chatWaiting)}
               />
             ))}
 
@@ -201,7 +306,7 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
         {/* Mobile section picker */}
         <div className="md:hidden fixed bottom-3 left-3 right-3 z-20 bg-paper border border-rule rounded-sm shadow-lg p-2 flex gap-1 overflow-x-auto">
           {SECTIONS.map((s) => {
-            const badge = s.id === "inbox" ? inboxUnread : undefined;
+            const badge = badgeFor(s.id, inboxUnread, chatWaiting);
             return (
               <button
                 key={s.id}
@@ -290,6 +395,59 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
               </div>
               <button
                 onClick={() => setInboxToast(null)}
+                className="opacity-60 hover:opacity-100"
+                aria-label="Dismiss"
+              >
+                <span
+                  className="material-symbols-outlined text-ink-muted"
+                  style={{ fontSize: 16 }}
+                >
+                  close
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Live-chat toast — a visitor is holding for a reply. Offset above
+             the inbox toast so both can be on screen at once. */}
+        {chatToast && active !== "chat" && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="no-print fixed right-6 z-40 max-w-sm bg-paper border border-word-blue rounded-sm shadow-lg overflow-hidden"
+            style={{ bottom: inboxToast ? "13rem" : "1.5rem" }}
+          >
+            <div className="flex items-center gap-2 border-b border-rule bg-word-blue-light px-3 py-1.5">
+              <span
+                className="material-symbols-outlined icon-fill text-word-blue"
+                style={{ fontSize: 14 }}
+              >
+                forum
+              </span>
+              <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-word-blue">
+                Live Chat
+              </span>
+            </div>
+            <div className="p-3 flex items-start gap-3">
+              <div className="flex-1">
+                <p className="font-ui text-[13px] text-ink">
+                  {chatToast.count === 1
+                    ? "A visitor is waiting for a reply."
+                    : `${chatToast.count} visitors are waiting for a reply.`}
+                </p>
+                <button
+                  onClick={() => {
+                    onChange("chat");
+                    setChatToast(null);
+                  }}
+                  className="mt-1.5 font-ui text-[12px] font-medium text-word-blue hover:underline decoration-word-blue underline-offset-2"
+                >
+                  Open Chat →
+                </button>
+              </div>
+              <button
+                onClick={() => setChatToast(null)}
                 className="opacity-60 hover:opacity-100"
                 aria-label="Dismiss"
               >

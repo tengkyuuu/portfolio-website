@@ -90,6 +90,12 @@ function requireAuth(req, res, next) {
   next();
 }
 
+/** Same check as requireAuth, as a predicate — for routes where one method
+ *  serves both the public and the admin (see /api/chat). */
+function localAuthed(req) {
+  return isValidToken((req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
+}
+
 /* --------------------------- login rate limiting -------------------------- */
 
 const FAIL_WINDOW_MS = 10 * 60 * 1000;
@@ -325,11 +331,127 @@ apiApp.get("/api/activity", requireAuth, (_req, res) => {
 
 const chatHits = []; // epoch ms
 
-apiApp.get("/api/chat", (_req, res) => {
+/**
+ * Live-chat store, in memory only.
+ *
+ * Production keeps this in Postgres (supabase/migrations/005_live_chat.sql).
+ * Here it is a Map plus an array, deliberately: dev restarts should start
+ * clean, and this exists so the takeover UI can be exercised without a
+ * database. Transcripts do not survive a reload of the dev server.
+ */
+const chatSessions = new Map(); // id -> { id, mode, createdAt, lastMessageAt, adminReadAt }
+const chatMessages = []; // { id, session_id, role, body, created_at }
+let chatMessageSeq = 0;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function chatSessionId(v) {
+  return typeof v === "string" && UUID_RE.test(v) ? v : null;
+}
+
+function pushChatMessage(sessionId, role, body) {
+  chatMessageSeq += 1;
+  const row = {
+    id: chatMessageSeq,
+    session_id: sessionId,
+    role,
+    body: String(body).slice(0, 4000),
+    created_at: new Date().toISOString(),
+  };
+  chatMessages.push(row);
+  const s = chatSessions.get(sessionId);
+  if (s) s.lastMessageAt = row.created_at;
+  return row;
+}
+
+apiApp.get("/api/chat", (req, res) => {
+  // Admin session list
+  if (req.query.sessions) {
+    if (!localAuthed(req)) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const sessions = [...chatSessions.values()]
+      .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt))
+      .map((s) => {
+        const mine = chatMessages.filter((m) => m.session_id === s.id);
+        const last = mine[mine.length - 1] ?? null;
+        return {
+          id: s.id,
+          mode: s.mode,
+          created_at: s.createdAt,
+          last_message_at: s.lastMessageAt,
+          unread: mine.filter(
+            (m) => m.role === "visitor" && (!s.adminReadAt || m.created_at > s.adminReadAt)
+          ).length,
+          lastRole: last?.role ?? null,
+          preview: last ? last.body.slice(0, 140) : "",
+        };
+      });
+    res.json({ sessions, waitingCount: sessions.filter((s) => s.unread > 0).length });
+    return;
+  }
+
+  // Transcript — visitor poll, or admin read (which marks it read)
+  const sessionId = chatSessionId(req.query.session);
+  if (req.query.session) {
+    if (!sessionId) {
+      res.status(400).json({ error: "Invalid session id." });
+      return;
+    }
+    const asAdmin = Boolean(req.query.admin);
+    if (asAdmin && !localAuthed(req)) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const s = chatSessions.get(sessionId);
+    if (!s) {
+      res.json({ mode: "ai", messages: [] });
+      return;
+    }
+    const after = typeof req.query.after === "string" ? req.query.after : null;
+    const messages = chatMessages.filter(
+      (m) => m.session_id === sessionId && (!after || m.created_at > after)
+    );
+    if (asAdmin) s.adminReadAt = new Date().toISOString();
+    res.json({ mode: s.mode, messages });
+    return;
+  }
+
   res.json({ configured: Boolean(env("GEMINI_API_KEY")) });
 });
 
 apiApp.post("/api/chat", async (req, res) => {
+  const action = req.body?.action;
+
+  // Admin: reply as yourself, or give the session back to the model.
+  if (action === "reply" || action === "handback") {
+    if (!localAuthed(req)) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const sessionId = chatSessionId(req.body?.sessionId);
+    if (!sessionId || !chatSessions.get(sessionId)) {
+      res.status(404).json({ error: "No such session." });
+      return;
+    }
+    const s = chatSessions.get(sessionId);
+    if (action === "handback") {
+      s.mode = "ai";
+      res.json({ ok: true, mode: "ai" });
+      return;
+    }
+    const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    if (!text) {
+      res.status(400).json({ error: "Reply cannot be empty." });
+      return;
+    }
+    const row = pushChatMessage(sessionId, "human", text);
+    s.mode = "human";
+    s.adminReadAt = row.created_at;
+    res.status(201).json({ ok: true, message: row });
+    return;
+  }
+
   const apiKey = env("GEMINI_API_KEY");
   if (!apiKey) {
     res.status(503).json({ error: "The assistant isn't configured. Set GEMINI_API_KEY in .env.local." });
@@ -359,6 +481,26 @@ apiApp.post("/api/chat", async (req, res) => {
     return;
   }
 
+  // Record the visitor's turn, and stay out of it if James has taken over.
+  const sessionId = chatSessionId(req.body?.sessionId);
+  if (sessionId) {
+    if (!chatSessions.has(sessionId)) {
+      const now = new Date().toISOString();
+      chatSessions.set(sessionId, {
+        id: sessionId,
+        mode: "ai",
+        createdAt: now,
+        lastMessageAt: now,
+        adminReadAt: null,
+      });
+    }
+    pushChatMessage(sessionId, "visitor", messages[messages.length - 1].content);
+    if (chatSessions.get(sessionId).mode === "human") {
+      res.json({ mode: "human", reply: null });
+      return;
+    }
+  }
+
   let content = {};
   try {
     content = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
@@ -383,7 +525,7 @@ apiApp.post("/api/chat", async (req, res) => {
   const summary = lines.join("\n").slice(0, 9000);
 
   try {
-    const model = env("GEMINI_MODEL") || "gemini-2.5-flash";
+    const model = env("GEMINI_MODEL") || "gemini-3.6-flash";
     // Gemini puts the system prompt in its own field, calls the assistant
     // role "model", and carries text as an array of parts.
     const upstream = await fetch(
@@ -413,7 +555,9 @@ apiApp.post("/api/chat", async (req, res) => {
       .trim();
     chatHits.push(Date.now());
     logActivity("chat.message", { ip_hash: "local" });
-    res.json({ reply: reply || "…I'm not sure how to answer that one." });
+    const answer = reply || "…I'm not sure how to answer that one.";
+    if (sessionId) pushChatMessage(sessionId, "ai", answer);
+    res.json({ reply: answer, mode: "ai" });
   } catch (e) {
     res.status(500).json({ error: e?.message ?? "Server error" });
   }

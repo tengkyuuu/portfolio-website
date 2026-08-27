@@ -6,6 +6,7 @@ import {
   hashToSection,
   type SectionId,
 } from "./admin/AdminLayout";
+import { ChatEditor } from "./admin/ChatEditor";
 import { ContactEditor } from "./admin/ContactEditor";
 import { CredentialsEditor } from "./admin/CredentialsEditor";
 import { HeroEditor } from "./admin/HeroEditor";
@@ -39,6 +40,7 @@ export function AdminPage() {
       {section === "credentials" && <CredentialsEditor />}
       {section === "contact" && <ContactEditor />}
       {section === "inbox" && <InboxEditor />}
+      {section === "chat" && <ChatEditor />}
       {section === "history" && <HistoryPanel />}
       {section === "tools" && <ToolsPanel />}
     </AdminLayout>

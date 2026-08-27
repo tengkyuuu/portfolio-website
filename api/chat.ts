@@ -2,12 +2,23 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import crypto from "node:crypto";
 
 /**
- * Office Assistant endpoint.
+ * Office Assistant endpoint — AI answers plus human takeover.
  *
- *   GET  /api/chat  → { configured: boolean } — the client hides the
- *                     assistant button entirely when no API key is set.
- *   POST /api/chat  → { reply } — answers a visitor question about the
- *                     portfolio, grounded in the published site content.
+ *   GET  /api/chat                          → { configured: boolean }
+ *   POST /api/chat  { messages, sessionId } → { reply } | { mode: "human" }
+ *   GET  /api/chat?session=&after=          → visitor polls for new messages
+ *   GET  /api/chat?sessions=1        [auth] → James's session list
+ *   GET  /api/chat?session=&admin=1  [auth] → full transcript, marks read
+ *   POST /api/chat  { action, … }    [auth] → James replies / hands back
+ *
+ * Everything lives in this one function on purpose: the Hobby plan caps a
+ * deployment at 12 Serverless Functions and api/ is already at 12, so a
+ * separate api/conversations.ts would fail the deploy at "Deploying
+ * outputs..." — after a clean build, with CI green. See .vercelignore.
+ *
+ * Human takeover: once James replies, the session flips to mode='human' and
+ * this endpoint stops calling Gemini for it entirely — no double-answering
+ * and no spend on a conversation a person has picked up.
  *
  * Guardrails:
  *   • Grounding: the system prompt embeds a text summary of site_content
@@ -25,7 +36,7 @@ import crypto from "node:crypto";
  * your key can actually reach with:
  *   curl -H "x-goog-api-key: $GEMINI_API_KEY"  *     https://generativelanguage.googleapis.com/v1beta/models
  */
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 const MAX_TOKENS = 400;
 const PER_IP_PER_10MIN = 15;
 const GLOBAL_PER_DAY = 300;
@@ -56,6 +67,81 @@ function clientIp(headers: Record<string, string | string[] | undefined>): strin
     (headers["x-real-ip"] as string | undefined);
   if (!raw) return null;
   return raw.split(",")[0]?.trim() || null;
+}
+
+/* ------------------------------ admin auth ------------------------------- */
+/* Inlined rather than imported from api/_lib — same reason as the rest of
+   this file: Vercel's dependency tracer bundles self-contained functions
+   reliably and shared folders it does not. Mirrors api/inquiries.ts. */
+
+function extractBearer(h: string | string[] | undefined): string | null {
+  const s = Array.isArray(h) ? h[0] : h;
+  if (!s) return null;
+  const m = s.match(/^Bearer\s+(.+)$/i);
+  return m ? m[1].trim() : null;
+}
+
+function verifyToken(token: string | null | undefined): boolean {
+  if (!token) return false;
+  const secret = process.env.ADMIN_TOKEN_SECRET;
+  if (!secret) return false;
+  const dot = token.indexOf(".");
+  if (dot < 0) return false;
+  const body = token.slice(0, dot);
+  const sig = token.slice(dot + 1);
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("base64url");
+  const a = new Uint8Array(Buffer.from(sig));
+  const b = new Uint8Array(Buffer.from(expected));
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+  try {
+    const payload = JSON.parse(
+      Buffer.from(body, "base64url").toString("utf8")
+    ) as { exp: number };
+    return payload.exp > Math.floor(Date.now() / 1000);
+  } catch {
+    return false;
+  }
+}
+
+function isAdmin(req: VercelRequest): boolean {
+  return verifyToken(extractBearer(req.headers.authorization));
+}
+
+/* ------------------------------ live chat -------------------------------- */
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_REPLY_CHARS = 4000;
+const SESSION_LIST_LIMIT = 50;
+/** Bounds the aggregate query behind the admin session list. */
+const RECENT_MESSAGE_SCAN = 1000;
+const TRANSCRIPT_LIMIT = 300;
+
+type Role = "visitor" | "ai" | "human";
+type StoredMessage = {
+  id: number;
+  session_id: string;
+  role: Role;
+  body: string;
+  created_at: string;
+};
+
+function firstQuery(v: string | string[] | undefined): string | null {
+  if (Array.isArray(v)) return v[0] ?? null;
+  return v ?? null;
+}
+
+/**
+ * A session id is the visitor's only credential — reject anything malformed
+ * before it reaches a query.
+ *
+ * Exported for tests: this is the boundary that keeps a crafted `?session=`
+ * from reaching Postgres, so its shape is worth pinning.
+ */
+export function validSessionId(v: unknown): string | null {
+  return typeof v === "string" && UUID_RE.test(v) ? v : null;
 }
 
 /* ------------------------- content → text summary ------------------------ */
@@ -180,6 +266,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const configured = Boolean(process.env.GEMINI_API_KEY) && isStoreConfigured();
 
   if (req.method === "GET") {
+    // Admin: the session list behind the Chat panel's badge.
+    if (firstQuery(req.query.sessions)) {
+      if (!isAdmin(req)) return res.status(401).json({ error: "Unauthorized" });
+      return adminSessionList(res);
+    }
+    // A session id present means "give me this transcript" — the admin
+    // variant additionally marks it read, so it needs auth.
+    const sessionParam = firstQuery(req.query.session);
+    if (sessionParam) {
+      const asAdmin = Boolean(firstQuery(req.query.admin));
+      if (asAdmin && !isAdmin(req)) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      return readTranscript(res, sessionParam, firstQuery(req.query.after), asAdmin);
+    }
     return res.status(200).json({ configured });
   }
 
@@ -188,19 +289,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const body = typeof req.body === "string" ? safeJson(req.body) : (req.body ?? {});
+  const action = (body as { action?: unknown } | null)?.action;
+
+  // Admin actions never touch Gemini, so they work even with no API key.
+  if (action === "reply" || action === "handback") {
+    if (!isAdmin(req)) return res.status(401).json({ error: "Unauthorized" });
+    if (!isStoreConfigured()) {
+      return res.status(503).json({ error: "No content store configured." });
+    }
+    return action === "reply" ? adminReply(res, body) : adminHandback(res, body);
+  }
+
   if (!configured) {
     return res.status(503).json({ error: "The assistant isn't configured on this deployment." });
   }
 
-  const body = typeof req.body === "string" ? safeJson(req.body) : (req.body ?? {});
   const messages = validateMessages(body);
   if (!messages) {
     return res.status(400).json({ error: "Invalid messages payload." });
   }
+  const sessionId = validSessionId((body as { sessionId?: unknown }).sessionId);
 
   try {
     const supabase = await getSupabase();
     const ipHash = hashIp(clientIp(req.headers));
+
+    /* Persist the visitor's turn and find out who owns this conversation.
+       A client that predates sessions (cached bundle) sends no sessionId —
+       it keeps the old stateless behaviour rather than erroring. */
+    let mode: "ai" | "human" = "ai";
+    if (sessionId) {
+      const uaRaw = req.headers["user-agent"];
+      const userAgent = (Array.isArray(uaRaw) ? uaRaw[0] : uaRaw) ?? null;
+      mode = await recordVisitorTurn(
+        supabase,
+        sessionId,
+        messages[messages.length - 1].content,
+        ipHash,
+        userAgent ? userAgent.slice(0, 500) : null
+      );
+    }
+
+    // James has this one. Stay out of it — and spend nothing.
+    if (mode === "human") {
+      return res.status(200).json({ mode: "human", reply: null });
+    }
 
     // Rate limits via activity_log (content of messages is never stored).
     try {
@@ -277,7 +411,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const reply = extractReply((await upstream.json()) as GeminiResponse);
+    const reply =
+      extractReply((await upstream.json()) as GeminiResponse) ||
+      "…I'm not sure how to answer that one.";
+
+    // Keep the AI's turn in the transcript so James sees what the visitor
+    // was already told before he takes over.
+    if (sessionId) {
+      try {
+        await supabase
+          .from("chat_messages")
+          .insert({ session_id: sessionId, role: "ai", body: reply.slice(0, MAX_REPLY_CHARS) });
+      } catch {
+        /* the visitor still gets the answer below */
+      }
+    }
 
     // Log usage (count only) — fire-and-forget.
     try {
@@ -288,13 +436,264 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       /* best-effort */
     }
 
-    return res.status(200).json({ reply: reply || "…I'm not sure how to answer that one." });
+    return res.status(200).json({ reply, mode: "ai" });
   } catch (e) {
     return res.status(500).json({
       error: e instanceof Error ? e.message : "Server error",
     });
   }
 }
+
+/* --------------------------- live-chat handlers -------------------------- */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/**
+ * Insert the visitor's message, creating the session on first contact, and
+ * report who is answering.
+ *
+ * The session row is upserted with `ignoreDuplicates` so a returning visitor
+ * keeps their existing mode — a plain upsert would reset mode to 'ai' and
+ * silently hand a taken-over conversation back to the model.
+ */
+async function recordVisitorTurn(
+  supabase: any,
+  sessionId: string,
+  body: string,
+  ipHash: string | null,
+  userAgent: string | null
+): Promise<"ai" | "human"> {
+  try {
+    await supabase
+      .from("chat_sessions")
+      .upsert(
+        { id: sessionId, ip_hash: ipHash, user_agent: userAgent },
+        { onConflict: "id", ignoreDuplicates: true }
+      );
+    await supabase
+      .from("chat_messages")
+      .insert({ session_id: sessionId, role: "visitor", body: body.slice(0, MAX_REPLY_CHARS) });
+    await supabase
+      .from("chat_sessions")
+      .update({ last_message_at: new Date().toISOString() })
+      .eq("id", sessionId);
+
+    const { data } = await supabase
+      .from("chat_sessions")
+      .select("mode")
+      .eq("id", sessionId)
+      .maybeSingle();
+    return (data as { mode?: string } | null)?.mode === "human" ? "human" : "ai";
+  } catch {
+    // A storage failure must not cost the visitor their answer — fall back
+    // to the stateless behaviour and let the AI reply.
+    return "ai";
+  }
+}
+
+/**
+ * Transcript read, shared by the visitor poll and the admin view.
+ *
+ * Public for the visitor: the session uuid IS the credential. Unguessable,
+ * and it only ever exposes that one conversation.
+ */
+async function readTranscript(
+  res: VercelResponse,
+  rawSessionId: string,
+  after: string | null,
+  asAdmin: boolean
+) {
+  const sessionId = validSessionId(rawSessionId);
+  if (!sessionId) return res.status(400).json({ error: "Invalid session id." });
+  if (!isStoreConfigured()) return res.status(200).json({ mode: "ai", messages: [] });
+
+  try {
+    const supabase = await getSupabase();
+    const { data: session } = await supabase
+      .from("chat_sessions")
+      .select("mode")
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    // Unknown session is not an error — a visitor whose localStorage
+    // survived a database reset should just start a fresh conversation.
+    if (!session) return res.status(200).json({ mode: "ai", messages: [] });
+
+    let q = supabase
+      .from("chat_messages")
+      .select("id, session_id, role, body, created_at")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true })
+      .limit(TRANSCRIPT_LIMIT);
+    if (after) q = q.gt("created_at", after);
+    const { data: messages, error } = await q;
+    if (error) throw error;
+
+    // Opening a session in the admin is what marks it read.
+    if (asAdmin) {
+      try {
+        await supabase
+          .from("chat_sessions")
+          .update({ admin_read_at: new Date().toISOString() })
+          .eq("id", sessionId);
+      } catch {
+        /* the transcript still renders */
+      }
+    }
+
+    return res.status(200).json({
+      mode: (session as { mode?: string }).mode === "human" ? "human" : "ai",
+      messages: (messages ?? []) as StoredMessage[],
+    });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ error: e instanceof Error ? e.message : "Server error" });
+  }
+}
+
+/**
+ * The admin session list.
+ *
+ * Two queries, not N+1: pull the recent sessions, then one bounded sweep of
+ * their messages, and fold the preview and unread count in memory. At
+ * portfolio traffic that is far cheaper than a per-session count query.
+ */
+async function adminSessionList(res: VercelResponse) {
+  if (!isStoreConfigured()) {
+    return res.status(200).json({ sessions: [], waitingCount: 0 });
+  }
+  try {
+    const supabase = await getSupabase();
+    const { data: sessions, error } = await supabase
+      .from("chat_sessions")
+      .select("id, mode, created_at, last_message_at, admin_read_at, user_agent")
+      .order("last_message_at", { ascending: false })
+      .limit(SESSION_LIST_LIMIT);
+    if (error) throw error;
+
+    const rows = (sessions ?? []) as {
+      id: string;
+      mode: string;
+      created_at: string;
+      last_message_at: string;
+      admin_read_at: string | null;
+      user_agent: string | null;
+    }[];
+    if (rows.length === 0) {
+      return res.status(200).json({ sessions: [], waitingCount: 0 });
+    }
+
+    const { data: msgs } = await supabase
+      .from("chat_messages")
+      .select("session_id, role, body, created_at")
+      .in(
+        "session_id",
+        rows.map((r) => r.id)
+      )
+      .order("created_at", { ascending: false })
+      .limit(RECENT_MESSAGE_SCAN);
+
+    const bySession = new Map<
+      string,
+      { last: { role: Role; body: string; created_at: string } | null; unread: number }
+    >();
+    for (const r of rows) bySession.set(r.id, { last: null, unread: 0 });
+
+    for (const m of (msgs ?? []) as Omit<StoredMessage, "id">[]) {
+      const agg = bySession.get(m.session_id);
+      if (!agg) continue;
+      // Descending scan, so the first hit per session is the newest.
+      if (!agg.last) agg.last = { role: m.role, body: m.body, created_at: m.created_at };
+      const readAt = rows.find((r) => r.id === m.session_id)?.admin_read_at;
+      if (m.role === "visitor" && (!readAt || m.created_at > readAt)) agg.unread += 1;
+    }
+
+    const out = rows.map((r) => {
+      const agg = bySession.get(r.id)!;
+      return {
+        id: r.id,
+        mode: r.mode === "human" ? "human" : "ai",
+        created_at: r.created_at,
+        last_message_at: r.last_message_at,
+        unread: agg.unread,
+        lastRole: agg.last?.role ?? null,
+        preview: agg.last ? agg.last.body.slice(0, 140) : "",
+      };
+    });
+
+    return res.status(200).json({
+      sessions: out,
+      waitingCount: out.filter((s) => s.unread > 0).length,
+    });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ error: e instanceof Error ? e.message : "Server error" });
+  }
+}
+
+/** James replies. This is what flips the session away from the AI. */
+async function adminReply(res: VercelResponse, body: unknown) {
+  const sessionId = validSessionId((body as { sessionId?: unknown })?.sessionId);
+  const raw = (body as { text?: unknown })?.text;
+  const text = typeof raw === "string" ? raw.trim() : "";
+  if (!sessionId) return res.status(400).json({ error: "Invalid session id." });
+  if (!text) return res.status(400).json({ error: "Reply cannot be empty." });
+  if (text.length > MAX_REPLY_CHARS) {
+    return res.status(400).json({ error: `Reply is over ${MAX_REPLY_CHARS} characters.` });
+  }
+
+  try {
+    const supabase = await getSupabase();
+    const { data: session } = await supabase
+      .from("chat_sessions")
+      .select("id")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (!session) return res.status(404).json({ error: "No such session." });
+
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .insert({ session_id: sessionId, role: "human", body: text })
+      .select("id, session_id, role, body, created_at")
+      .single();
+    if (error) throw error;
+
+    const now = new Date().toISOString();
+    await supabase
+      .from("chat_sessions")
+      .update({ mode: "human", last_message_at: now, admin_read_at: now })
+      .eq("id", sessionId);
+
+    return res.status(201).json({ ok: true, message: data as StoredMessage });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ error: e instanceof Error ? e.message : "Server error" });
+  }
+}
+
+/** Give a session back to the AI after a manual reply. */
+async function adminHandback(res: VercelResponse, body: unknown) {
+  const sessionId = validSessionId((body as { sessionId?: unknown })?.sessionId);
+  if (!sessionId) return res.status(400).json({ error: "Invalid session id." });
+  try {
+    const supabase = await getSupabase();
+    const { error } = await supabase
+      .from("chat_sessions")
+      .update({ mode: "ai" })
+      .eq("id", sessionId);
+    if (error) throw error;
+    return res.status(200).json({ ok: true, mode: "ai" });
+  } catch (e) {
+    return res
+      .status(500)
+      .json({ error: e instanceof Error ? e.message : "Server error" });
+  }
+}
+
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /* ------------------------------ response shape --------------------------- */
 
