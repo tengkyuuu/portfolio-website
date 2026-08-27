@@ -278,10 +278,13 @@ ${summary}`;
  * there is one source of truth and no import graph to get wrong.
  */
 async function shippedContent(req: VercelRequest): Promise<unknown> {
+  // The public host the visitor actually reached, not VERCEL_URL: that
+  // names the per-deployment URL, which Deployment Protection can gate
+  // behind auth — the fetch then gets an HTML login page, not our JSON.
   const host =
-    process.env.VERCEL_URL ||
     (req.headers["x-forwarded-host"] as string | undefined) ||
-    req.headers.host;
+    req.headers.host ||
+    process.env.VERCEL_URL;
   if (!host) return {};
   const proto = host.startsWith("localhost") ? "http" : "https";
   try {
