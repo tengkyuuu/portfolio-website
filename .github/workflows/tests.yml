@@ -76,9 +76,12 @@ jobs:
                total:      ($t.numTotalTests      // 0),
                passed:     ($t.numPassedTests     // 0),
                failed:     ($t.numFailedTests     // 0),
-               files:      ($t.numTotalTestSuites // 0),
-               durationMs: (if ($t.startTime // null) and ($t.endTime // null)
-                            then ($t.endTime - $t.startTime) else null end),
+               files:      ($t.testResults | length),
+               durationMs: (
+                 (($t.testResults | map(.endTime // 0) | max) // 0) as $end |
+                 if ($t.startTime // 0) > 0 and $end > ($t.startTime // 0)
+                 then ($end - $t.startTime) else null end
+               ),
                coverage:   (if $cov.total then {
                               statements: $cov.total.statements.pct,
                               branches:   $cov.total.branches.pct,
