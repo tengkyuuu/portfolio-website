@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LANGUAGES, useI18n, type LanguageId } from "../lib/i18n";
+import { NowPlaying } from "./NowPlaying";
 
 type FooterProps = {
   currentPage: number;
@@ -94,6 +95,7 @@ export function Footer({
           </span>{" "}
           {t("status.accessibility")}
         </span>
+        <NowPlaying />
       </div>
 
       <div className="flex items-center gap-2">

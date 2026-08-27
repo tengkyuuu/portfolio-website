@@ -441,7 +441,19 @@
   to   { transform: translateX(60%); }
 }
 
+/* Now Playing — three bars bouncing in the status bar. */
+@keyframes eq-bar {
+  0%, 100% { transform: scaleY(0.3); }
+  50%      { transform: scaleY(1); }
+}
+.eq-bar {
+  transform-origin: bottom center;
+  animation: eq-bar 900ms ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .eq-bar { animation: none; transform: scaleY(0.7); }
+
   .meter-fill,
   .seg-in,
   .skill-row-in,
