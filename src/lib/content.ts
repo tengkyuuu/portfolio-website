@@ -88,7 +88,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     name: "James Vincent Calunsag",
     role: "Computer Engineer · Embedded · Frontend · Design",
     email: "jamescalunsag13@gmail.com",
-    website: "localhost:3000",
+    website: "https://engrjamescalunsag.vercel.app/",
     location: "Dapitan City, PH",
     available: true,
     availableText: "Available for work",
@@ -110,7 +110,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     specs: [
       { label: "Role", value: "Computer Engineer" },
       { label: "Focus", value: "Embedded · Frontend · Design" },
-      { label: "Currently", value: "BS CpE, JRMSU Dapitan" },
+      { label: "Currently", value: "BSCpE, JRMSU Dapitan" },
       { label: "Location", value: "Dapitan City, PH" },
       { label: "Tooling", value: "ESP32 · React · Figma" },
       { label: "Open to", value: "Freelance · Internships" },

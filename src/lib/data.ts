@@ -159,6 +159,7 @@ export const projects: Project[] = [
         alt: "FameCRM sign-in page — 'Your agency, supercharged' panel beside a login form.",
       },
     ],
+    demoUrl: "https://www.famecrm.com/",
     links: [{ label: "Repo", href: "#" }],
   },
   {
@@ -189,6 +190,7 @@ export const projects: Project[] = [
         alt: "SHM live dashboard — Miputak Dacu Node showing 2.97 mm current deflection with acceleration and velocity sensor charts.",
       },
     ],
+    demoUrl: "https://shm-dashboard.vercel.app/",
     links: [{ label: "Repo", href: "#" }],
   },
   {
@@ -319,15 +321,58 @@ export const projects: Project[] = [
     year: "2026",
     page: "08",
     figCaption:
-      "FIG 7.1: Rallys Equities — homepage hero in dark mode, with a live KSE-100 index card showing a price chart, sub-indices, and a five-stock ticker.",
+      "FIG 7.1: Rallys Equities — homepage hero in light mode, with a live KSE-100 index card showing a price chart, sub-indices, and a five-stock ticker.",
     challenge:
       "A SECP-licensed PSX brokerage needed a credible, content-heavy investor site — real market data, dozens of compliance and investor-relations pages, eight financial calculators — without an engineering team or a budget for a CMS platform. With the site a single static HTML file and no backend behind it, every future change — a new blog post, a swapped photo, a colour tweak, a contact form landing somewhere readable — meant reopening the codebase and redeploying.",
     solution:
       "One dependency-free HTML file, vanilla JS and no build step, so it stays trivially deployable to Vercel — with Supabase layered on as an invisible backend. A click-to-edit visual CMS writes draft and published JSON to Postgres, images go to Supabase Storage, and forms insert straight into a submissions table under row-level security. The owner controls content, theme, and blog posts without touching code or running a server.",
+    gallery: [
+      {
+        src: "/projects/rallys-equities.jpg",
+        alt: "Rallys Equities homepage on cream — a green PSX ticker strip above an 'Invest in Pakistan's Future' headline, beside a dark market panel showing the KSE-100 index, a line chart, and top movers.",
+      },
+    ],
     demoUrl: "https://rallysequities.com",
     links: [
       { label: "Live site", href: "https://rallysequities.com" },
       { label: "Repo", href: "https://github.com/tengkyuuu/rallys-equities-website" },
+    ],
+  },
+  {
+    id: "myktech",
+    index: "08",
+    title: "MYKTECH — Software Studio Website",
+    blurb:
+      "An immersive, awwwards-style marketing site for an IT studio — a WebGL hero, scroll-driven storytelling, and a real working contact pipeline.",
+    tags: ["Next.js", "WebGL", "GSAP"],
+    stack: [
+      "Next.js 15 (App Router)",
+      "React 19",
+      "TypeScript",
+      "Tailwind CSS",
+      "GSAP + ScrollTrigger",
+      "React Three Fiber",
+      "Lenis smooth scroll",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-08",
+    year: "2026",
+    page: "09",
+    figCaption:
+      "FIG 8.1: MYKTECH — the WebGL gradient hero with the outlined-and-gradient headline over a pale studio backdrop.",
+    challenge:
+      "MYKTECH needed a site that proved a small IT studio ships software with genuine craft — memorable and immersive, yet clean and editorial rather than the usual templated agency look. It also had to work end to end: a functioning lead pipeline, real SEO, and fast, accessible performance on desktop and mobile, all on one maintainable codebase.",
+    solution:
+      "A Next.js 15 App Router site on a custom design system — Syne display type with Geist, a slate palette holding one reserved magenta-to-gold accent, and a bespoke gradient K mark. GSAP and ScrollTrigger drive the experience against Lenis smooth scroll: a WebGL gradient-blob hero, horizontally pinned services, and a 160-frame showreel scrubbed onto canvas — every bit of it gated behind prefers-reduced-motion.",
+    gallery: [
+      {
+        src: "/projects/myktech.jpg",
+        alt: "MYKTECH homepage on pale grey — a pill navbar above the headline 'We build software that feels designed', with 'software that' in outlined type and 'designed.' in a pink-to-orange gradient.",
+      },
+    ],
+    demoUrl: "https://it-company-website-omega.vercel.app/",
+    links: [
+      { label: "Live site", href: "https://it-company-website-omega.vercel.app/" },
     ],
   },
 ];
@@ -373,8 +418,7 @@ export const skillGroups: SkillGroup[] = [
       "Adobe Photoshop",
       "Illustrator",
       "UI / UX",
-      "Branding",
-      "Typography",
+      "Framer",
     ],
   },
   {
@@ -450,9 +494,9 @@ export type TimelineEntry = {
 
 export const timeline: TimelineEntry[] = [
   {
-    range: "2021 — Present",
-    title: "BS Computer Engineering — 1.76 GWA",
-    org: "Jose Rizal Memorial State University, Dapitan",
+    range: "2022 — 2026",
+    title: "BS Computer Engineering",
+    org: "Jose Rizal Memorial State University",
     blurb:
       "Lead software engineer on our IoT-based thesis, and Vice President for External Affairs of ICpEP.SE.",
   },

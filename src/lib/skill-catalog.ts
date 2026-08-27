@@ -173,6 +173,11 @@ const RAW: Record<string, SkillMeta> = {
     level: "weekly",
     why: "Vector work for logos and marks. Pathfinder + Shape Builder are the shortest path to a clean icon.",
   },
+  "Framer": {
+    // Logo only for now — add `level` and `why` in your own words and the
+    // Skills panel will show a cadence meter and a detail card for it.
+    logo: "framermotion/framermotion-original",
+  },
   "UI / UX": {
     level: "daily",
     why: "The design side of building. Wireframe → prototype → hand-off → build → ship. I do the whole loop, not just one stage.",
