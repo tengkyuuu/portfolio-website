@@ -530,3 +530,119 @@ export const navLinks = [
   { label: "Credentials", href: "#credentials" },
   { label: "Contact", href: "#contact" },
 ];
+
+/* ─── HOW I WORK ──────────────────────────────────────────────────────
+   Every stage below points at a file that actually exists in this repo.
+   If you change the workflow, change the artifact path too — the Process
+   tab links to it, and data.test.ts asserts the file is really there. */
+
+export type ProcessStage = {
+  /** Two-digit ordinal, rendered as the step number. */
+  n: string;
+  title: string;
+  /** One line, shown collapsed. */
+  summary: string;
+  /** The reasoning. Two or three sentences. */
+  detail: string;
+  /** A real path in this repository that demonstrates the stage. */
+  artifact?: { label: string; path: string };
+};
+
+export const processStages: ProcessStage[] = [
+  {
+    n: "01",
+    title: "Write the spec before the prompt",
+    summary:
+      "A new project entry starts as a filled-in contract, not a conversation.",
+    detail:
+      "Documenting a repo means pasting a fixed prompt into it that returns one JSON object with a rigid shape — field-by-field rules, hard limits on invention, and a mandatory \"uncertain\" array listing everything the model inferred rather than confirmed. The uncertainty list is the point: it tells me exactly which claims to go and verify before any of it reaches the site.",
+    artifact: { label: "docs/project-intake-prompt.md", path: "docs/project-intake-prompt.md" },
+  },
+  {
+    n: "02",
+    title: "Put the conventions where the agent reads them",
+    summary: "Standing rules live in CLAUDE.md, not in my memory of them.",
+    detail:
+      "Anything I would otherwise repeat every session — the deployment limits, which file is the source of truth for content, what a commit message has to explain — is written down in the file Claude Code loads automatically. A convention that only exists in chat history gets violated the next session.",
+    artifact: { label: "CLAUDE.md", path: "CLAUDE.md" },
+  },
+  {
+    n: "03",
+    title: "Keep the plan in the open",
+    summary: "A tiered backlog, with shipped work marked shipped.",
+    detail:
+      "Features are graded by payoff against scope before anything is built, and the list records what actually landed. It stops the same idea being relitigated, and it makes the next thing to build a lookup rather than a decision.",
+    artifact: { label: "ROADMAP.md", path: "ROADMAP.md" },
+  },
+  {
+    n: "04",
+    title: "Commits explain the cause, not the change",
+    summary: "The diff shows what moved. The message says why it had to.",
+    detail:
+      "A subject line plus a body that states the problem, the mechanism behind it, and the reasoning for this fix over the alternatives. Six months later the diff is still readable but the reason is gone, and the reason is the expensive part to reconstruct.",
+  },
+  {
+    n: "05",
+    title: "Turn every incident into a test",
+    summary: "Bugs that cost a day get a guard so they cannot cost another.",
+    detail:
+      "The suite is weighted toward things that have actually gone wrong here: a cache that hid freshly deployed content, project numbering that silently collided, a deployment cap that fails after the build succeeds so the log stays green. Each one is now a failing test before it is a broken site.",
+    artifact: { label: "api/limits.test.ts", path: "api/limits.test.ts" },
+  },
+  {
+    n: "06",
+    title: "CI is the checkpoint, not the reviewer",
+    summary: "Machines gate the merge; I decide what ships.",
+    detail:
+      "Every push runs typecheck and the full suite and blocks on red, then publishes counts, coverage and Lighthouse scores to a dashboard on this site. Automation tells me the state of the build. It does not get to tell me the work is done.",
+    artifact: { label: ".github/workflows/tests.yml", path: ".github/workflows/tests.yml" },
+  },
+];
+
+/* ─── NOW ─────────────────────────────────────────────────────────────
+   A /now page: what has my attention this month. Keep it short and
+   keep it current — a stale Now page is worse than no Now page. */
+
+export type NowGroup = {
+  label: string;
+  icon: string;
+  items: { name: string; note: string }[];
+};
+
+/** Month this list was last reviewed. Shown verbatim on the tab. */
+export const nowUpdated = "August 2026";
+
+export const nowGroups: NowGroup[] = [
+  {
+    label: "Learning",
+    icon: "school",
+    items: [
+      {
+        name: "React Native",
+        note: "Moving from Flutter's widget tree to a JS-driven native runtime, and learning where that trade actually bites.",
+      },
+      {
+        name: "Reanimated 3",
+        note: "Animations that run on the UI thread instead of the JS one — the shared-value and worklet model.",
+      },
+      {
+        name: "TanStack Query",
+        note: "Treating server state as a cache with rules rather than something to hand-roll into component state.",
+      },
+    ],
+  },
+  {
+    label: "Building",
+    icon: "construction",
+    items: [
+      {
+        name: "This document",
+        note: "A portfolio built as a Word file. Live chat, a grounded assistant, and a status dashboard that reports its own test and Lighthouse scores.",
+      },
+      {
+        name: "Client frontends",
+        note: "Freelance SaaS and marketing work — design system through to deployment.",
+      },
+    ],
+  },
+];

@@ -43,6 +43,8 @@ const en: Dict = {
   "nav.projects": "Projects",
   "nav.about": "About",
   "nav.skills": "Skills",
+  "nav.process": "How I Work",
+  "nav.now": "Now",
   "nav.credentials": "Credentials",
   "nav.contact": "Contact",
 
@@ -84,6 +86,8 @@ const ceb: Dict = {
   "nav.projects": "Mga Proyekto",
   "nav.about": "Bahin",
   "nav.skills": "Kahibalo",
+  "nav.process": "Paagi sa Pagtrabaho",
+  "nav.now": "Karon",
   "nav.credentials": "Katibayan",
   "nav.contact": "Kontak",
 
@@ -121,6 +125,8 @@ const tl: Dict = {
   "nav.projects": "Mga Proyekto",
   "nav.about": "Tungkol",
   "nav.skills": "Kakayahan",
+  "nav.process": "Paraan ng Pagtatrabaho",
+  "nav.now": "Ngayon",
   "nav.credentials": "Katibayan",
   "nav.contact": "Kontak",
 
@@ -158,6 +164,8 @@ const cbk: Dict = {
   "nav.projects": "Mga Proyecto",
   "nav.about": "Acerca",
   "nav.skills": "Habilidad",
+  "nav.process": "Manera de Trabaja",
+  "nav.now": "Ahora",
   "nav.credentials": "Credencial",
   "nav.contact": "Contacto",
 

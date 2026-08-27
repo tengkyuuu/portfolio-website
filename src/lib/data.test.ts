@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { certs, projects, skillGroups, timeline } from "./data";
+import {
+  certs,
+  nowGroups,
+  nowUpdated,
+  processStages,
+  projects,
+  skillGroups,
+  timeline,
+} from "./data";
 import { getSkillMeta, skillLogoUrl } from "./skill-catalog";
 
 /**
@@ -186,5 +194,67 @@ describe("source hygiene", () => {
     // files — 100 KB of base64 here lands in every visitor's JS bundle.
     const src = readFileSync(resolve(process.cwd(), "src/lib/data.ts"), "utf8");
     expect(src.includes("data:image/"), "inline data URL in data.ts").toBe(false);
+  });
+});
+
+describe("processStages", () => {
+  it("numbers stages sequentially from 01", () => {
+    processStages.forEach((s, i) => {
+      expect(s.n, `${s.title}`).toBe(String(i + 1).padStart(2, "0"));
+    });
+  });
+
+  it("has unique titles", () => {
+    const titles = processStages.map((s) => s.title);
+    expect(new Set(titles).size).toBe(titles.length);
+  });
+
+  it("fills summary and detail for every stage", () => {
+    for (const s of processStages) {
+      expect(s.summary.trim(), `${s.n} summary`).toBeTruthy();
+      expect(s.detail.length, `${s.n} detail is too thin`).toBeGreaterThan(80);
+    }
+  });
+
+  it("points every artifact at a file that really exists", () => {
+    // The Process tab links these. A stage describing a workflow the repo
+    // no longer follows is worse than no stage at all.
+    for (const s of processStages) {
+      if (!s.artifact) continue;
+      const full = resolve(process.cwd(), s.artifact.path);
+      expect(existsSync(full), `missing ${s.artifact.path} (stage ${s.n})`).toBe(true);
+    }
+  });
+
+  it("labels each artifact with its own path", () => {
+    for (const s of processStages) {
+      if (!s.artifact) continue;
+      expect(s.artifact.label, `stage ${s.n} label`).toBe(s.artifact.path);
+    }
+  });
+});
+
+describe("nowGroups", () => {
+  it("has at least one group, each with items", () => {
+    expect(nowGroups.length).toBeGreaterThan(0);
+    for (const g of nowGroups) {
+      expect(g.label.trim()).toBeTruthy();
+      expect(g.icon.trim(), `${g.label} icon`).toBeTruthy();
+      expect(g.items.length, `${g.label} is empty`).toBeGreaterThan(0);
+    }
+  });
+
+  it("gives every item a name and a note", () => {
+    for (const g of nowGroups) {
+      for (const item of g.items) {
+        expect(item.name.trim()).toBeTruthy();
+        expect(item.note.trim(), `${item.name} note`).toBeTruthy();
+      }
+    }
+  });
+
+  it("records when the page was last reviewed", () => {
+    // A Now page with no date is just an About page that lies.
+    expect(nowUpdated).toMatch(/^[A-Z][a-z]+ \d{4}$/);
   });
 });

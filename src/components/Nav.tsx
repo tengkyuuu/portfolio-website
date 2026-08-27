@@ -8,6 +8,8 @@ export type TabId =
   | "work"
   | "about"
   | "stack"
+  | "process"
+  | "now"
   | "credentials"
   | "contact";
 
@@ -18,6 +20,8 @@ export const tabs: TabMeta[] = [
   { id: "work", key: "nav.projects" },
   { id: "about", key: "nav.about" },
   { id: "stack", key: "nav.skills" },
+  { id: "process", key: "nav.process" },
+  { id: "now", key: "nav.now" },
   { id: "credentials", key: "nav.credentials" },
   { id: "contact", key: "nav.contact" },
 ];

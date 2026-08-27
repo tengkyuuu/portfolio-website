@@ -17,6 +17,8 @@ import { SearchPalette } from "./components/SearchPalette";
 import { Hero } from "./components/Hero";
 import { About } from "./components/About";
 import { Skills } from "./components/Skills";
+import { Process } from "./components/Process";
+import { Now } from "./components/Now";
 import { Projects } from "./components/Projects";
 import { Certifications } from "./components/Certifications";
 import { Contact } from "./components/Contact";
@@ -213,6 +215,8 @@ function PortfolioDoc() {
                 {active === "top" && <Hero />}
                 {active === "about" && <About />}
                 {active === "stack" && <Skills />}
+                {active === "process" && <Process />}
+                {active === "now" && <Now />}
                 {active === "credentials" && <Certifications />}
                 {active === "contact" && <Contact />}
               </>

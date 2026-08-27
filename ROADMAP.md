@@ -20,6 +20,10 @@ or nice-to-have · **T4** = big infra, only if the portfolio grows.
 - ✅ Email reply templates (inbox → Reply → Compose modal, Gmail/mailto/copy)
 - ✅ Contact scheduling (admin-configurable Cal.com/Calendly embed on Contact)
 - ✅ Chatbot — Blue, the Office Assistant 📎 (grounded in site content, needs GEMINI_API_KEY on Vercel)
+- ✅ How I Work tab (agent-in-the-loop workflow, each stage linked to a real repo artifact)
+- ✅ Now tab (what I am learning/building + live GitHub panel via /api/github)
+- ✅ Vitest suite + /status Test Suite card (needs ADMIN_TOKEN_SECRET repo secret)
+- ✅ Spotify "Now Playing" in the status bar (needs SPOTIFY_* on Vercel)
 - ✅ Lighthouse CI (GitHub Action → /api/lighthouse → /status card, needs ADMIN_TOKEN_SECRET repo secret)
 
 ---
