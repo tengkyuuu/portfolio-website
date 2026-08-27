@@ -59,6 +59,22 @@ type Lighthouse = {
   fetchedAt: string;
 };
 
+type TestRun = {
+  total: number;
+  passed: number;
+  failed: number;
+  files: number;
+  durationMs: number | null;
+  coverage: {
+    statements: number;
+    branches: number;
+    functions: number;
+    lines: number;
+  } | null;
+  commit: string | null;
+  fetchedAt: string;
+};
+
 export function StatusPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [metricsError, setMetricsError] = useState<string | null>(null);
@@ -66,6 +82,7 @@ export function StatusPage() {
   const [inp, setInp] = useState<Vital>({ value: null, rating: null });
   const [cls, setCls] = useState<Vital>({ value: null, rating: null });
   const [lighthouse, setLighthouse] = useState<Lighthouse | null | "unset">(null);
+  const [tests, setTests] = useState<TestRun | null | "unset">(null);
 
   // Fetch last Lighthouse run (posted by the GitHub Action)
   useEffect(() => {
@@ -77,6 +94,22 @@ export function StatusPage() {
       })
       .catch(() => {
         if (alive) setLighthouse("unset");
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Fetch last test run (posted by the GitHub Action)
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/tests")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: TestRun) => {
+        if (alive) setTests(d);
+      })
+      .catch(() => {
+        if (alive) setTests("unset");
       });
     return () => {
       alive = false;
@@ -320,6 +353,53 @@ export function StatusPage() {
               />
               <Row dt="Built" dd={formatWhen(metrics.generatedAt)} full />
             </dl>
+          )}
+        </Card>
+
+        {/* Test suite panel */}
+        <Card icon="science" title="Test Suite">
+          {tests === null ? (
+            <SkeletonRows count={2} />
+          ) : tests === "unset" ? (
+            <p className="font-ui text-[13px] text-ink-subtle italic">
+              No test data yet. The GitHub Action in{" "}
+              <code className="bg-ribbon px-1 rounded-sm">.github/workflows/tests.yml</code>{" "}
+              publishes results after each push to main — add the{" "}
+              <code className="bg-ribbon px-1 rounded-sm">ADMIN_TOKEN_SECRET</code>{" "}
+              repo secret on GitHub to enable it.
+            </p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <LighthouseScore
+                  label="Passing"
+                  value={tests.total ? Math.round((tests.passed / tests.total) * 100) : 0}
+                />
+                <Stat label="Tests" value={String(tests.total)} />
+                <Stat label="Files" value={String(tests.files)} />
+                <Stat label="Failed" value={String(tests.failed)} emphasis={tests.failed > 0} />
+              </div>
+              {tests.coverage && (
+                <dl className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <Stat label="Statements" value={`${tests.coverage.statements}%`} />
+                  <Stat label="Branches" value={`${tests.coverage.branches}%`} />
+                  <Stat label="Functions" value={`${tests.coverage.functions}%`} />
+                  <Stat label="Lines" value={`${tests.coverage.lines}%`} />
+                </dl>
+              )}
+              <p className="mt-3 font-ui text-[11px] text-ink-subtle">
+                Ran {formatWhen(tests.fetchedAt)}
+                {tests.commit && (
+                  <>
+                    {" · commit "}
+                    <code className="bg-ribbon px-1 rounded-sm">{tests.commit}</code>
+                  </>
+                )}
+                {tests.durationMs !== null &&
+                  ` · ${(tests.durationMs / 1000).toFixed(1)}s`}
+                {" · Vitest via GitHub Actions"}
+              </p>
+            </>
           )}
         </Card>
 

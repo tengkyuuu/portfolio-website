@@ -480,6 +480,7 @@ function SkillMatrix({
                   }}
                   onFocus={() => onEnter(row)}
                   onBlur={onLeave}
+                  aria-label={`Open ${row.name}`}
                   className="inline-flex items-center gap-2 text-left font-medium text-ink hover:text-word-blue focus:outline-none focus-visible:underline underline-offset-2"
                 >
                   <SkillLogo row={row} size={15} />
@@ -574,6 +575,14 @@ function SkillRowButton({
   onEnter: () => void;
   onLeave: () => void;
 }) {
+  // The visible content reads as "ESP321x3/3" to a screen reader, so the
+  // button gets an explicit name saying what it opens and what it shows.
+  const cadenceText = row.level
+    ? LEVEL_LABEL[row.level].toLowerCase()
+    : "cadence not recorded";
+  const projectText =
+    row.projects.length === 1 ? "1 project" : `${row.projects.length} projects`;
+
   return (
     <li
       className={reduced ? undefined : "skill-row-in"}
@@ -586,6 +595,7 @@ function SkillRowButton({
         onFocus={onEnter}
         onBlur={onLeave}
         title={`Open ${row.name}`}
+        aria-label={`Open ${row.name} — ${cadenceText}, ${projectText}`}
         className="skill-scan group relative w-full flex items-center gap-2 px-1.5 py-[5px] rounded-sm text-left hover:bg-word-blue-light focus:outline-none focus-visible:bg-word-blue-light focus-visible:ring-1 focus-visible:ring-word-blue transition-colors"
       >
         <SkillLogo row={row} size={15} />

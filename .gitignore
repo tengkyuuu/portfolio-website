@@ -17,3 +17,7 @@ dist-ssr
 
 # Runtime content store (local dev server only — not deployed)
 server/data/
+
+# Test artefacts
+coverage
+test-results.json

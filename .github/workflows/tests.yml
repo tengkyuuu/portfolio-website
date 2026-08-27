@@ -1,0 +1,105 @@
+# Runs the Vitest suite on every push and publishes the result to
+# /api/tests, where the /status dashboard reads it.
+#
+# Setup (one time): the same ADMIN_TOKEN_SECRET repo secret the Lighthouse
+# workflow already uses. Without it the suite still runs and still gates
+# the push — only the dashboard publish is skipped.
+#
+# Triggers: every push to main, every pull request, and manual dispatch.
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SITE_URL: https://engrjamescalunsag.vercel.app
+
+jobs:
+  vitest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc -b
+
+      - name: Test
+        id: test
+        # Keep going so a red suite still publishes its numbers; the
+        # explicit gate below is what actually fails the job.
+        continue-on-error: true
+        run: |
+          npx vitest run --coverage \
+            --reporter=default --reporter=json --outputFile=test-results.json
+
+      - name: Publish to /status
+        # Only from main — PR runs shouldn't overwrite the published number.
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          TOKEN: ${{ secrets.ADMIN_TOKEN_SECRET }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::ADMIN_TOKEN_SECRET is not set — skipping publish."
+            exit 0
+          fi
+          if [ ! -f test-results.json ]; then
+            echo "::warning::No test-results.json — skipping publish."
+            exit 0
+          fi
+
+          PAYLOAD=$(jq -c -n \
+            --slurpfile r test-results.json \
+            --slurpfile c <(cat coverage/coverage-summary.json 2>/dev/null || echo '{}') \
+            --arg commit "${GITHUB_SHA:0:7}" \
+            '($r[0]) as $t | ($c[0] // {}) as $cov | {
+               total:      ($t.numTotalTests      // 0),
+               passed:     ($t.numPassedTests     // 0),
+               failed:     ($t.numFailedTests     // 0),
+               files:      ($t.numTotalTestSuites // 0),
+               durationMs: (if ($t.startTime // null) and ($t.endTime // null)
+                            then ($t.endTime - $t.startTime) else null end),
+               coverage:   (if $cov.total then {
+                              statements: $cov.total.statements.pct,
+                              branches:   $cov.total.branches.pct,
+                              functions:  $cov.total.functions.pct,
+                              lines:      $cov.total.lines.pct
+                            } else null end),
+               commit: $commit
+             }')
+          echo "Payload: $PAYLOAD"
+
+          STATUS=$(curl -s -o /tmp/resp.json -w "%{http_code}" \
+            -X POST "$SITE_URL/api/tests" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+          cat /tmp/resp.json
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Posting test results failed with HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Fail if the suite was red
+        if: steps.test.outcome != 'success'
+        run: |
+          echo "::error::Vitest reported failures — see the Test step above."
+          exit 1
