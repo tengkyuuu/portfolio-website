@@ -297,6 +297,39 @@ export const projects: Project[] = [
       { label: "Repo", href: "https://github.com/mykd13/flux-website" },
     ],
   },
+  {
+    id: "rallys-equities",
+    index: "07",
+    title: "Rallys Equities",
+    blurb:
+      "Investor-facing website and admin CMS for a licensed PSX brokerage in Lahore — a single 4,400-line vanilla-JS SPA with live market data, eight financial calculators, and a click-to-edit content editor. No framework, no build step.",
+    tags: ["Vanilla JS", "Supabase", "Vercel", "Node.js"],
+    stack: [
+      "Vanilla JavaScript",
+      "Supabase Postgres",
+      "Supabase Auth",
+      "Supabase Edge Functions (Deno)",
+      "Vercel Serverless Functions",
+      "Node.js / Express",
+      "SQLite (node:sqlite)",
+      "Multer + Nodemailer",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-07",
+    year: "2026",
+    page: "08",
+    figCaption:
+      "FIG 7.1: Rallys Equities — homepage hero in dark mode, with a live KSE-100 index card showing a price chart, sub-indices, and a five-stock ticker.",
+    challenge:
+      "A SECP-licensed PSX brokerage needed a credible, content-heavy investor site — real market data, dozens of compliance and investor-relations pages, eight financial calculators — without an engineering team or a budget for a CMS platform. With the site a single static HTML file and no backend behind it, every future change — a new blog post, a swapped photo, a colour tweak, a contact form landing somewhere readable — meant reopening the codebase and redeploying.",
+    solution:
+      "One dependency-free HTML file, vanilla JS and no build step, so it stays trivially deployable to Vercel — with Supabase layered on as an invisible backend. A click-to-edit visual CMS writes draft and published JSON to Postgres, images go to Supabase Storage, and forms insert straight into a submissions table under row-level security. The owner controls content, theme, and blog posts without touching code or running a server.",
+    demoUrl: "https://rallysequities.com",
+    links: [
+      { label: "Live site", href: "https://rallysequities.com" },
+      { label: "Repo", href: "https://github.com/tengkyuuu/rallys-equities-website" },
+    ],
+  },
 ];
 
 export type SkillGroup = {
