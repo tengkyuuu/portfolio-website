@@ -16,11 +16,16 @@ import crypto from "node:crypto";
  *   • Rate limits via activity_log rows (action=chat.message): 15 per
  *     10 min per salted IP hash, 300 per day globally — bounds worst-case
  *     API spend even under abuse. Message content is NOT logged.
- *   • Anthropic called with raw fetch (no SDK) — keeps the function
+ *   • Gemini called with raw fetch (no SDK) — keeps the function
  *     self-contained, which we've learned Vercel bundles reliably.
  */
 
-const MODEL = "claude-haiku-4-5-20251001";
+/**
+ * Overridable by env so a model rename never needs a code change. List what
+ * your key can actually reach with:
+ *   curl -H "x-goog-api-key: $GEMINI_API_KEY"  *     https://generativelanguage.googleapis.com/v1beta/models
+ */
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const MAX_TOKENS = 400;
 const PER_IP_PER_10MIN = 15;
 const GLOBAL_PER_DAY = 300;
@@ -172,7 +177,7 @@ function validateMessages(body: unknown): ChatMessage[] | null {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const configured = Boolean(process.env.ANTHROPIC_API_KEY) && isStoreConfigured();
+  const configured = Boolean(process.env.GEMINI_API_KEY) && isStoreConfigured();
 
   if (req.method === "GET") {
     return res.status(200).json({ configured });
@@ -238,21 +243,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .maybeSingle();
     const summary = summarizeContent((data as { content: unknown } | null)?.content ?? {});
 
-    const upstream = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY as string,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        temperature: 0.3,
-        system: systemPrompt(summary),
-        messages,
-      }),
-    });
+    // Gemini's request shape differs from Anthropic's in three ways that
+    // matter here: the system prompt is its own top-level field, the
+    // assistant role is called "model", and text is an array of parts.
+    const upstream = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY as string,
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt(summary) }] },
+          contents: messages.map((m) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+          })),
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: MAX_TOKENS,
+          },
+        }),
+      }
+    );
 
     if (!upstream.ok) {
       const detail = (await upstream.json().catch(() => null)) as {
@@ -263,15 +277,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const result = (await upstream.json()) as {
-      content?: { type: string; text?: string }[];
-    };
-    const reply =
-      result.content
-        ?.filter((b) => b.type === "text")
-        .map((b) => b.text ?? "")
-        .join("")
-        .trim() ?? "";
+    const reply = extractReply((await upstream.json()) as GeminiResponse);
 
     // Log usage (count only) — fire-and-forget.
     try {
@@ -288,6 +294,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: e instanceof Error ? e.message : "Server error",
     });
   }
+}
+
+/* ------------------------------ response shape --------------------------- */
+
+export type GeminiResponse = {
+  candidates?: {
+    content?: { parts?: { text?: string }[] };
+    finishReason?: string;
+  }[];
+  /** Set instead of candidates when a safety filter refused the prompt. */
+  promptFeedback?: { blockReason?: string };
+};
+
+/**
+ * Pull the answer out of a Gemini response.
+ *
+ * Returns "" for every shape that carries no usable text — a safety block,
+ * an empty candidate list, a candidate with no parts — so the caller's
+ * fallback line covers all of them without special-casing each.
+ */
+export function extractReply(result: GeminiResponse): string {
+  const parts = result.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return "";
+  return parts
+    .map((p) => (typeof p.text === "string" ? p.text : ""))
+    .join("")
+    .trim();
 }
 
 function safeJson(s: string): unknown {

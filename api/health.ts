@@ -33,7 +33,7 @@ export default async function handler(
     ADMIN_TOKEN_SECRET: Boolean(process.env.ADMIN_TOKEN_SECRET),
     SUPABASE_URL: Boolean(process.env.SUPABASE_URL),
     SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    ANTHROPIC_API_KEY: Boolean(process.env.ANTHROPIC_API_KEY),
+    GEMINI_API_KEY: Boolean(process.env.GEMINI_API_KEY),
   };
 
   const authConfigured =
