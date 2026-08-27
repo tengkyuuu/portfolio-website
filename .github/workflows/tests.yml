@@ -53,6 +53,8 @@ jobs:
 
       - name: Publish to /status
         # Only from main — PR runs shouldn't overwrite the published number.
+        # Never fails the job: this is telemetry, the suite is the gate.
+        continue-on-error: true
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           TOKEN: ${{ secrets.ADMIN_TOKEN_SECRET }}
@@ -87,16 +89,24 @@ jobs:
              }')
           echo "Payload: $PAYLOAD"
 
-          STATUS=$(curl -s -o /tmp/resp.json -w "%{http_code}" \
-            -X POST "$SITE_URL/api/tests" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD")
-          cat /tmp/resp.json
-          if [ "$STATUS" != "200" ]; then
-            echo "::error::Posting test results failed with HTTP $STATUS"
-            exit 1
-          fi
+          # This job starts the moment the push lands, but Vercel needs a
+          # couple of minutes to build. A 404 means the function is not
+          # live on this deploy yet, so retry instead of reporting failure.
+          for attempt in 1 2 3 4 5 6 7 8; do
+            STATUS=$(curl -s -o /tmp/resp.json -w "%{http_code}" \
+              -X POST "$SITE_URL/api/tests" \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$PAYLOAD")
+            cat /tmp/resp.json; echo
+            if [ "$STATUS" = "200" ]; then
+              echo "Published on attempt $attempt."
+              exit 0
+            fi
+            echo "Attempt $attempt: HTTP $STATUS - waiting for the deploy."
+            sleep 30
+          done
+          echo "::warning::Could not publish test results (last HTTP $STATUS)."
 
       - name: Fail if the suite was red
         if: steps.test.outcome != 'success'
