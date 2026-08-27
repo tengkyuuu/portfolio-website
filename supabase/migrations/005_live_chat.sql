@@ -1,5 +1,5 @@
--- Live chat — visitor conversations with the Office Assistant, plus James's
--- own replies when he takes a session over.
+-- Live chat — visitor conversations with Blue (the Office Assistant), plus
+-- James's own replies when he takes a session over.
 --
 -- Design notes:
 --   * A session id is a uuid the visitor's browser generates and keeps in

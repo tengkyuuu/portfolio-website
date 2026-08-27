@@ -11,8 +11,7 @@ import { requestChatNotifications } from "./AdminLayout";
 import { Button, Card, Textarea } from "./ui";
 
 /**
- * Chat — read what visitors asked the Office Assistant, and answer them
- * yourself.
+ * Chat — read what visitors asked Blue, and answer them yourself.
  *
  * Two panes: sessions on the left (newest activity first, unread badged),
  * transcript plus a reply box on the right. Both poll, because Vercel
@@ -20,8 +19,8 @@ import { Button, Card, Textarea } from "./ui";
  * story here, and it's deliberately slower when the tab is hidden.
  *
  * Sending a reply flips the session to mode='human' server-side, which stops
- * the model answering it. The "Hand back to the assistant" button is the only
- * way out of that, so it stays visible on every taken-over session.
+ * Blue answering it. The "Hand back to Blue" button is the only way out of
+ * that, so it stays visible on every taken-over session.
  */
 
 const SESSIONS_POLL_MS = 15_000;
@@ -139,7 +138,7 @@ export function ChatEditor() {
           ? `${sessions.length} conversation${sessions.length === 1 ? "" : "s"}${
               waiting > 0 ? ` · ${waiting} waiting on you` : ""
             }`
-          : "Conversations visitors had with the Office Assistant."
+          : "Conversations visitors had with Blue."
       }
       actions={
         <div className="flex items-center gap-1.5">
@@ -175,7 +174,7 @@ export function ChatEditor() {
 
       {loadedOnce && sessions.length === 0 && !loadError ? (
         <p className="font-ui text-[13px] text-ink-subtle italic">
-          No conversations yet. When someone talks to the Office Assistant, the
+          No conversations yet. When someone talks to Blue, the
           thread shows up here and you can answer it yourself.
         </p>
       ) : (
@@ -239,12 +238,12 @@ export function ChatEditor() {
                   <span className="font-ui text-[10px] text-ink-subtle">
                     {mode === "human"
                       ? "You're answering this one"
-                      : "The assistant is answering"}
+                      : "Blue is answering"}
                   </span>
                   <span className="flex-1" />
                   {mode === "human" && (
                     <Button variant="ghost" icon="smart_toy" onClick={() => void giveBackToAI()}>
-                      Hand back to the assistant
+                      Hand back to Blue
                     </Button>
                   )}
                 </div>
@@ -275,7 +274,7 @@ export function ChatEditor() {
                     value={draft}
                     onChange={setDraft}
                     rows={3}
-                    placeholder="Reply as yourself — this stops the assistant answering this conversation."
+                    placeholder="Reply as yourself — this stops Blue answering this conversation."
                   />
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-ui text-[10px] text-ink-subtle">
@@ -326,7 +325,7 @@ function Bubble({ message }: { message: ChatMessage }) {
             (mine ? "text-word-blue" : "text-ink-subtle")
           }
         >
-          {mine ? "You" : "📎 Assistant"}
+          {mine ? "You" : "📎 Blue"}
         </div>
         <div
           className={

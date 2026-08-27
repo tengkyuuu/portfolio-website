@@ -7,7 +7,7 @@ import {
 } from "../lib/chat-api";
 
 /**
- * Office Assistant — the Clippy homage. 📎
+ * Blue — the Office Assistant, and a Clippy homage. 📎
  *
  * Floating paperclip button (bottom-right, above the status bar) that opens a
  * Word-styled chat panel. Answers come from /api/chat, which grounds a small
@@ -31,7 +31,7 @@ import {
 type Persisted = ChatMessage;
 
 const GREETING =
-  "Hi! 📎 It looks like you're browsing a portfolio. I can answer questions about James — his projects, skills, experience, or how to reach him. What would you like to know?";
+  "Hi, I'm Blue. 📎 It looks like you're browsing a portfolio — I can answer questions about James: his projects, skills, experience, or how to reach him. What would you like to know?";
 
 const STARTERS = [
   "What projects has James built?",
@@ -222,7 +222,7 @@ export function Assistant() {
         ]);
       }
     } catch {
-      setError("Couldn't reach the assistant. Check your connection and try again.");
+      setError("Couldn't reach Blue. Check your connection and try again.");
     } finally {
       setThinking(false);
       setPending(null);
@@ -242,10 +242,10 @@ export function Assistant() {
           onClick={() => setOpen(true)}
           aria-label={
             unseen > 0
-              ? `Open the Office Assistant — ${unseen} new message${unseen === 1 ? "" : "s"}`
-              : "Open the Office Assistant"
+              ? `Open Blue — ${unseen} new message${unseen === 1 ? "" : "s"}`
+              : "Open Blue"
           }
-          title="Ask the Office Assistant"
+          title="Ask Blue"
           className="no-print fixed bottom-10 right-4 z-40 grid place-items-center w-12 h-12 rounded-full bg-word-blue hover:bg-word-blue-dark text-white shadow-lg transition-transform hover:scale-105"
         >
           <span className="text-[22px] leading-none" aria-hidden="true">
@@ -266,7 +266,7 @@ export function Assistant() {
       {open && (
         <div
           role="dialog"
-          aria-label="Office Assistant"
+          aria-label="Blue"
           className="no-print fixed bottom-10 right-4 z-40 w-[min(380px,calc(100vw-2rem))] bg-paper border border-rule rounded-sm shadow-2xl flex flex-col overflow-hidden"
           style={{ height: "min(540px, calc(100svh - 8rem))" }}
         >
@@ -277,7 +277,7 @@ export function Assistant() {
             </span>
             <div className="flex-1 min-w-0 leading-tight">
               <div className="font-ui text-[12px] font-semibold text-ink">
-                {mode === "human" ? "James Calunsag" : "Office Assistant"}
+                {mode === "human" ? "James Calunsag" : "Blue"}
               </div>
               <div className="font-ui text-[10px] text-ink-subtle">
                 {mode === "human" ? "Replying personally" : "Ask about this document"}
@@ -285,7 +285,7 @@ export function Assistant() {
             </div>
             <button
               onClick={() => setOpen(false)}
-              aria-label="Close assistant"
+              aria-label="Close Blue"
               className="grid w-7 h-7 place-items-center rounded-sm text-ink-muted hover:bg-ribbon-hover hover:text-ink transition-colors"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
@@ -335,7 +335,7 @@ export function Assistant() {
                 <div
                   className="bg-row-alt border border-rule rounded-sm rounded-tl-none px-3 py-2"
                   role="status"
-                  aria-label="Assistant is typing"
+                  aria-label="Blue is typing"
                 >
                   <span className="inline-flex gap-1">
                     {[0, 150, 300].map((delay) => (
@@ -357,7 +357,7 @@ export function Assistant() {
                 className="border border-word-blue/30 bg-word-blue-light/50 rounded-sm px-2.5 py-1.5 font-ui text-[11px] text-ink-muted"
               >
                 James is answering this conversation himself — replies may take a
-                little longer than the assistant's.
+                little longer than Blue's.
               </div>
             )}
 
