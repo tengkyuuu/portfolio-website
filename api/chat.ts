@@ -1,5 +1,14 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import crypto from "node:crypto";
+import {
+  certs,
+  defaultAbout,
+  defaultContact,
+  defaultHero,
+  projects,
+  skillGroups,
+  timeline,
+} from "../src/lib/data";
 
 /**
  * Blue — the Office Assistant. AI answers plus human takeover.
@@ -267,6 +276,20 @@ Rules:
 ${summary}`;
 }
 
+/**
+ * The defaults compiled into the site bundle, in the same shape the
+ * published row uses, so summarizeContent cannot tell them apart.
+ */
+const SHIPPED_CONTENT = {
+  hero: defaultHero,
+  about: defaultAbout,
+  skills: skillGroups,
+  projects,
+  certs,
+  timeline,
+  contact: defaultContact,
+};
+
 /* --------------------------------- handler ------------------------------- */
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -398,13 +421,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // If the limit check itself fails, allow the request (bounded by max_tokens).
     }
 
-    // Ground on the published content.
+    // Ground on the published content, falling back to what shipped.
+    //
+    // These are two different sources and either can be the live one. A
+    // snapshot published from /admin overrides data.ts wholesale; with no
+    // row, the site renders the bundled defaults. Grounding only on the row
+    // meant that resetting content left the assistant live, answering, and
+    // certain the portfolio had no projects in it.
     const { data } = await supabase
       .from("site_content")
       .select("content")
       .eq("id", "default")
       .maybeSingle();
-    const summary = summarizeContent((data as { content: unknown } | null)?.content ?? {});
+    const published = (data as { content: unknown } | null)?.content ?? null;
+    const summary = summarizeContent(published ?? SHIPPED_CONTENT);
 
     /* Gemini's request shape differs from Anthropic's in three ways that
        matter here: the system prompt is its own top-level field, the

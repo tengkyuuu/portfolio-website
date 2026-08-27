@@ -16,6 +16,9 @@ import {
   skillGroups as defaultSkills,
   certs as defaultCerts,
   timeline as defaultTimeline,
+  defaultHero,
+  defaultAbout,
+  defaultContact,
   type Project,
   type ProjectImage,
   type SkillGroup,
@@ -83,63 +86,13 @@ export type SiteContent = {
 };
 
 export const DEFAULT_CONTENT: SiteContent = {
-  hero: {
-    eyebrow: "Portfolio · 2026 Edition",
-    name: "James Vincent Calunsag",
-    role: "Computer Engineer · Embedded · Frontend · Design",
-    email: "jamescalunsag13@gmail.com",
-    website: "https://engrjamescalunsag.vercel.app/",
-    location: "Dapitan City, PH",
-    available: true,
-    availableText: "Available for work",
-    tagline:
-      "The ability to <em>adapt</em> is what makes a good <em>engineer</em>.",
-    abstract:
-      "This document is a working portfolio: a record of selected projects, credentials, and ways to get in touch. It is laid out the way I think — like a Word document: structured, hierarchical, deliberate about typography.\n\nUse the ribbon above to navigate. Each tab is its own page.",
-    showContents: true,
-  },
-  about: {
-    paragraphs:
-      "I'm a **Computer Engineer** who works where hardware meets software — ESP32 firmware and PCBs on one side, production React and brand systems on the other. I think from the silicon up and care about the surface: *powerful under the hood, calm on top.*",
-    highlights: [
-      "Embedded systems — firmware, sensors, PCB design",
-      "Frontend engineering — React, TypeScript, responsive UI",
-      "Graphic & product design — branding, UI/UX, Figma",
-      "Systems thinking across the hardware–software seam",
-    ],
-    specs: [
-      { label: "Role", value: "Computer Engineer" },
-      { label: "Focus", value: "Embedded · Frontend · Design" },
-      { label: "Currently", value: "BSCpE, JRMSU Dapitan" },
-      { label: "Location", value: "Dapitan City, PH" },
-      { label: "Tooling", value: "ESP32 · React · Figma" },
-      { label: "Open to", value: "Freelance · Internships" },
-    ],
-  },
+  hero: defaultHero,
+  about: defaultAbout,
   skills: defaultSkills,
   projects: defaultProjects,
   certs: defaultCerts,
   timeline: defaultTimeline,
-  contact: {
-    intro:
-      "Open to freelance, internships, and collaborations across embedded, frontend, and design. The fastest way to reach me is [email](mailto:jamesvincent.calunsag@example.com) — I read everything.",
-    channels: [
-      {
-        label: "Email",
-        value: "jamescalunsag13@gmail.com",
-        href: "mailto:jamescalunsag13@gmail.com",
-        icon: "mail",
-      },
-      { label: "GitHub", value: "github.com/jvc", href: "https://github.com/tengkyuuu", icon: "code" },
-      {
-        label: "LinkedIn",
-        value: "linkedin.com/in/jvc",
-        href: "https://www.linkedin.com/in/james-vincent-calunsag-7616bb353?utm_source=share_via&utm_content=profile&utm_medium=member_android",
-        icon: "link",
-      },
-      { label: "Location", value: "Dapitan City, PH", href: "#", icon: "location_on" },
-    ],
-  },
+  contact: defaultContact,
 };
 
 function shallowMerge<T extends object>(defaults: T, override?: Partial<T>): T {
