@@ -52,6 +52,18 @@ const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
  */
 const THINKING_OFF = { thinkingConfig: { thinkingBudget: 0 } } as const;
 const MAX_TOKENS = 800;
+
+/**
+ * Whether this model accepts thinkingConfig. gemini-3.6-flash does not, and
+ * without this memo every single message would pay a wasted 400 before the
+ * real call — doubling upstream latency for good. Flipped on first rejection
+ * and held for the life of the warm instance, so the probe costs one request
+ * per cold start rather than one per visitor message.
+ *
+ * Not a const: GEMINI_MODEL is env-overridable, and a model that does support
+ * the field should get the cheaper no-thinking path without a code change.
+ */
+let thinkingConfigAccepted = true;
 const PER_IP_PER_10MIN = 15;
 const GLOBAL_PER_DAY = 300;
 
@@ -426,8 +438,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
        — matching on the message missed it and took the assistant down. The
        fallback is free: a request that's malformed for some other reason
        fails the second time too and still 502s below. */
-    let upstream = await callModel(true);
-    if (!upstream.ok && upstream.status === 400) {
+    let upstream = await callModel(thinkingConfigAccepted);
+    if (!upstream.ok && upstream.status === 400 && thinkingConfigAccepted) {
+      thinkingConfigAccepted = false;
       upstream = await callModel(false);
     }
 
