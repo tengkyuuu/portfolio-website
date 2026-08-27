@@ -394,81 +394,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .maybeSingle();
     const summary = summarizeContent((data as { content: unknown } | null)?.content ?? {});
 
-    // Gemini's request shape differs from Anthropic's in three ways that
-    // matter here: the system prompt is its own top-level field, the
-    // assistant role is called "model", and text is an array of parts.
-    const upstream = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-goog-api-key": process.env.GEMINI_API_KEY as string,
-        },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt(summary) }] },
-          contents: messages.map((m) => ({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: m.content }],
-          })),
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: MAX_TOKENS,
-            ...THINKING_OFF,
+    /* Gemini's request shape differs from Anthropic's in three ways that
+       matter here: the system prompt is its own top-level field, the
+       assistant role is called "model", and text is an array of parts. */
+    const callModel = (suppressThinking: boolean) =>
+      fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-goog-api-key": process.env.GEMINI_API_KEY as string,
           },
-        }),
-      }
-    );
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt(summary) }] },
+            contents: messages.map((m) => ({
+              role: m.role === "assistant" ? "model" : "user",
+              parts: [{ text: m.content }],
+            })),
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: MAX_TOKENS,
+              ...(suppressThinking ? THINKING_OFF : {}),
+            },
+          }),
+        }
+      );
+
+    /* Retry on ANY 400, not just one that names the field. Gemini rejected
+       thinkingConfig with the generic "Request contains an invalid argument."
+       — matching on the message missed it and took the assistant down. The
+       fallback is free: a request that's malformed for some other reason
+       fails the second time too and still 502s below. */
+    let upstream = await callModel(true);
+    if (!upstream.ok && upstream.status === 400) {
+      upstream = await callModel(false);
+    }
 
     if (!upstream.ok) {
       const detail = (await upstream.json().catch(() => null)) as {
         error?: { message?: string };
       } | null;
-      const message = detail?.error?.message ?? "";
-
-      /* thinkingConfig is model-dependent and GEMINI_MODEL is overridable by
-         env, so a model that rejects the field must not take the assistant
-         down. Retry once without it rather than 502-ing the visitor. */
-      if (upstream.status === 400 && /thinking/i.test(message)) {
-        const retry = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              "x-goog-api-key": process.env.GEMINI_API_KEY as string,
-            },
-            body: JSON.stringify({
-              systemInstruction: { parts: [{ text: systemPrompt(summary) }] },
-              contents: messages.map((m) => ({
-                role: m.role === "assistant" ? "model" : "user",
-                parts: [{ text: m.content }],
-              })),
-              generationConfig: { temperature: 0.3, maxOutputTokens: MAX_TOKENS },
-            }),
-          }
-        );
-        if (retry.ok) {
-          const retried =
-            extractReply((await retry.json()) as GeminiResponse) ||
-            "…I'm not sure how to answer that one.";
-          if (sessionId) {
-            try {
-              await supabase.from("chat_messages").insert({
-                session_id: sessionId,
-                role: "ai",
-                body: retried.slice(0, MAX_REPLY_CHARS),
-              });
-            } catch {
-              /* the visitor still gets the answer */
-            }
-          }
-          return res.status(200).json({ reply: retried, mode: "ai" });
-        }
-      }
-
       return res.status(502).json({
-        error: message || `Assistant unavailable (${upstream.status}).`,
+        error: detail?.error?.message ?? `Assistant unavailable (${upstream.status}).`,
       });
     }
 

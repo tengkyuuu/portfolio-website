@@ -539,7 +539,7 @@ apiApp.post("/api/chat", async (req, res) => {
             role: m.role === "assistant" ? "model" : "user",
             parts: [{ text: m.content }],
           })),
-          generationConfig: { temperature: 0.3, maxOutputTokens: 800, thinkingConfig: { thinkingBudget: 0 } },
+          generationConfig: { temperature: 0.3, maxOutputTokens: 800 },
         }),
       }
     );
