@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  commitsFromEvents,
+  commitsFromSearch,
   dayKey,
   daysFromCalendar,
   daysFromEvents,
@@ -98,36 +98,56 @@ describe("daysFromEvents", () => {
   });
 });
 
-describe("commitsFromEvents", () => {
-  it("flattens pushes newest-first and keeps only the subject line", () => {
-    const out = commitsFromEvents([
-      push("2026-08-27T10:00:00Z", "tengkyuuu/repo", [
-        { sha: "aaaaaaa1111", message: "First\n\nlong body that should not appear" },
-        { sha: "bbbbbbb2222", message: "Second" },
-      ]),
-    ]);
-    expect(out.map((c) => c.message)).toEqual(["Second", "First"]);
-    expect(out[0].sha).toBe("bbbbbbb");
-    expect(out[0].url).toBe("https://github.com/tengkyuuu/repo/commit/bbbbbbb2222");
+describe("commitsFromSearch", () => {
+  const item = (sha, message, repo = "tengkyuuu/portfolio-website") => ({
+    sha,
+    commit: { message, committer: { date: "2026-08-27T10:00:00Z" } },
+    html_url: `https://github.com/${repo}/commit/${sha}`,
+    repository: { full_name: repo },
   });
 
-  it("skips non-push events", () => {
-    expect(commitsFromEvents([{ type: "WatchEvent", created_at: "2026-08-27T10:00:00Z" }])).toEqual([]);
+  it("keeps only the subject line of each message", () => {
+    const out = commitsFromSearch({
+        items: [item("aaaaaaa1111", "Add the thing\n\nA long body that must not appear")],
+    });
+    expect(out[0].message).toBe("Add the thing");
+  });
+
+  it("shortens the sha and carries repo, url and date", () => {
+    const out = commitsFromSearch({ items: [item("aaaaaaa1111", "Subject")] });
+    expect(out[0]).toEqual({
+      repo: "tengkyuuu/portfolio-website",
+      message: "Subject",
+      sha: "aaaaaaa",
+      url: "https://github.com/tengkyuuu/portfolio-website/commit/aaaaaaa1111",
+      at: "2026-08-27T10:00:00Z",
+    });
   });
 
   it("respects the limit", () => {
-    const many = Array.from({ length: 30 }, (_, i) => ({ sha: `s${i}`, message: `m${i}` }));
-    expect(commitsFromEvents([push("2026-08-27T10:00:00Z", "a/b", many)], 5)).toHaveLength(5);
+    const items = Array.from({ length: 30 }, (_, i) => item(`sha${i}0000000`, `m${i}`));
+    expect(commitsFromSearch({ items }, 5)).toHaveLength(5);
   });
 
-  it("drops commits missing a sha or message", () => {
-    const out = commitsFromEvents([
-      push("2026-08-27T10:00:00Z", "a/b", [
-        { sha: "", message: "no sha" } as never,
-        { sha: "ok1234567", message: "kept" },
-      ]),
-    ]);
+  it("drops entries missing a sha or message", () => {
+    const out = commitsFromSearch({
+      items: [{ sha: "", commit: { message: "no sha" } }, item("ok1234567", "kept")],
+    });
     expect(out.map((c) => c.message)).toEqual(["kept"]);
+  });
+
+  it("returns nothing for a rate-limit or error body", () => {
+    expect(commitsFromSearch({ message: "API rate limit exceeded" })).toEqual([]);
+    expect(commitsFromSearch({})).toEqual([]);
+    expect(commitsFromSearch(null)).toEqual([]);
+  });
+
+  it("falls back to a constructed url when html_url is absent", () => {
+    const raw = item("bbbbbbb2222", "Subject");
+    delete raw.html_url;
+    expect(commitsFromSearch({ items: [raw] })[0].url).toBe(
+      "https://github.com/tengkyuuu/portfolio-website/commit/bbbbbbb2222"
+    );
   });
 });
 

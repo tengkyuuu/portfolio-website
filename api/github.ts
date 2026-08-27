@@ -30,6 +30,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  */
 
 const API = "https://api.github.com";
+const SEARCH = "https://api.github.com/search/commits";
 const GRAPHQL = "https://api.github.com/graphql";
 const EVENT_WINDOW_DAYS = 90;
 const TOP_REPOS = 6;
@@ -128,25 +129,36 @@ export function daysFromEvents(events: any[], now: Date): Day[] {
   return fillDays(counts, from, now);
 }
 
-/** Flatten push events into a newest-first commit list. */
-export function commitsFromEvents(events: any[], limit = RECENT_COMMITS) {
+/**
+ * Shape the commit-search response into the changelog list.
+ *
+ * Why search and not the events feed: GitHub's public events no longer
+ * carry a commit payload — a PushEvent now has only repository_id,
+ * push_id, ref, head and before. There is no message in it to show, so
+ * events can count activity but cannot list commits. Search returns the
+ * subject, the repository and a permalink in a single request.
+ */
+export function commitsFromSearch(json: any, limit = RECENT_COMMITS): Snapshot["commits"] {
+  const items = json?.items;
+  if (!Array.isArray(items)) return [];
   const out: Snapshot["commits"] = [];
-  for (const e of events) {
-    if (e?.type !== "PushEvent" || !Array.isArray(e.payload?.commits)) continue;
-    const repo: string = e.repo?.name ?? "";
-    for (const c of [...e.payload.commits].reverse()) {
-      if (out.length >= limit) return out;
-      const sha: string = typeof c?.sha === "string" ? c.sha : "";
-      if (!sha || typeof c?.message !== "string") continue;
-      out.push({
-        repo,
-        // Subject line only — bodies are long in this repo by convention.
-        message: c.message.split("\n")[0].slice(0, 160),
-        sha: sha.slice(0, 7),
-        url: `https://github.com/${repo}/commit/${sha}`,
-        at: e.created_at,
-      });
-    }
+  for (const it of items) {
+    if (out.length >= limit) break;
+    const sha: string = typeof it?.sha === "string" ? it.sha : "";
+    const message: unknown = it?.commit?.message;
+    if (!sha || typeof message !== "string") continue;
+    const repo: string = it?.repository?.full_name ?? "";
+    out.push({
+      repo,
+      // Subject line only — bodies run long in these repos by convention.
+      message: message.split("\n")[0].slice(0, 160),
+      sha: sha.slice(0, 7),
+      url:
+        typeof it?.html_url === "string"
+          ? it.html_url
+          : `https://github.com/${repo}/commit/${sha}`,
+      at: it?.commit?.committer?.date ?? it?.commit?.author?.date ?? "",
+    });
   }
   return out;
 }
@@ -249,12 +261,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const user = login();
 
   try {
-    const [profileRes, reposRes, eventsRes] = await Promise.all([
+    const [profileRes, reposRes, eventsRes, commitsRes] = await Promise.all([
       fetch(`${API}/users/${user}`, { headers: headers() }),
       fetch(`${API}/users/${user}/repos?per_page=100&sort=pushed&type=owner`, {
         headers: headers(),
       }),
       fetch(`${API}/users/${user}/events/public?per_page=100`, { headers: headers() }),
+      // Search is rate-limited harder than the core API (10/min
+      // unauthenticated); the 15-minute cache keeps us well inside it.
+      fetch(
+        `${SEARCH}?q=author:${user}&sort=committer-date&order=desc&per_page=${RECENT_COMMITS}`,
+        { headers: headers() }
+      ).catch(() => null),
     ]);
 
     if ([profileRes, reposRes, eventsRes].some((r) => r.status === 403 || r.status === 429)) {
@@ -294,7 +312,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const repoList = Array.isArray(repos) ? repos : [];
-    const eventList = Array.isArray(events) ? events : [];
 
     const body: Snapshot = {
       ok: true,
@@ -318,7 +335,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       days,
       languages: languageMix(repoList),
       repos: topRepos(repoList),
-      commits: commitsFromEvents(eventList),
+      commits: commitsRes?.ok ? commitsFromSearch(await commitsRes.json()) : [],
       fetchedAt: new Date().toISOString(),
     };
 
