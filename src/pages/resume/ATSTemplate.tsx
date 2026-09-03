@@ -3,20 +3,32 @@ import { partitionCerts, plain, resumeChannels } from "./shared";
 
 /**
  * ATS-friendly template. Rules:
- *   • Single column, no side-by-side blocks (some ATS parsers ignore
- *     content in narrow right-hand columns).
+ *   • Single column, genuinely. No flex rows, no `justify-content:
+ *     space-between`, no table anywhere in the tree — see ResumePage, which
+ *     deliberately renders this template OUTSIDE the print-frame table the
+ *     Modern one uses. A table wrapper is the classic ATS killer: parsers
+ *     either skip its contents or read them column-wise, and PDF text
+ *     extraction reorders side-by-side runs unpredictably.
+ *   • Every field label and value is on the same text line, in reading
+ *     order, so extraction top-to-bottom equals the visual order.
  *   • System serif stack — no web fonts, no colours, no gradients, no
  *     background fills. Everything renders identically inside a PDF
  *     text-extraction pipeline.
  *   • Section headings are ALL CAPS on their own line.
- *   • Dates on the same line as the role — parsers key off common formats.
- *   • No em-dashes in place of hyphens where a screener might see them
- *     — we still use them in prose, but section separators stay simple.
+ *   • Dates on the same line as the organisation — parsers key off that
+ *     shape, and a date stranded in a right-hand column is a date lost.
+ *   • Structural punctuation stays ASCII: " | " between fields, " - "
+ *     between a title and its issuer. Em dashes and middle dots survive
+ *     most extractors but not all, and they carry no meaning here. Content
+ *     keeps whatever characters it has — project names are not ours to
+ *     transliterate.
+ *   • page-break-inside is avoided per ENTRY, never per section. A section
+ *     taller than the page (eight projects, say) cannot honour it, and
+ *     browsers resolve that by clipping or by dumping a page of whitespace.
  *
  * QA cheat-sheet:
  *   • Try `Ctrl-A / Ctrl-C` the printed PDF then paste into a plain-text
  *     editor. It should read top-to-bottom in reasonable order.
- *   • Contact line is one line: `Name · Email · Location · GitHub · …`.
  *   • No custom fonts, colours, or borders needed for the doc to make sense.
  */
 export function ATSTemplate({ content }: { content: SiteContent }) {
@@ -41,7 +53,7 @@ export function ATSTemplate({ content }: { content: SiteContent }) {
         lineHeight: 1.35,
       }}
     >
-      {/* Header — single line, no styling ATS parsers can trip on */}
+      {/* Header — one field per line, nothing side by side */}
       <header>
         <h1
           style={{
@@ -72,11 +84,11 @@ export function ATSTemplate({ content }: { content: SiteContent }) {
 
       {summary && (
         <AtsSection title="SUMMARY">
-          <p style={sectionParaStyle}>{summary}</p>
+          <p style={bodyStyle}>{summary}</p>
           {highlights.length > 0 && (
-            <ul style={{ paddingLeft: "18pt", margin: "6pt 0 0 0" }}>
+            <ul style={bulletListStyle}>
               {highlights.map((h) => (
-                <li key={h} style={{ fontSize: "10.5pt", marginBottom: "2pt" }}>
+                <li key={h} style={bulletItemStyle}>
                   {h}
                 </li>
               ))}
@@ -87,112 +99,63 @@ export function ATSTemplate({ content }: { content: SiteContent }) {
 
       {skills.length > 0 && (
         <AtsSection title="SKILLS">
-          <dl style={{ margin: 0 }}>
-            {skills.map((g) => (
-              <div
-                key={g.label}
-                style={{ display: "flex", gap: "8pt", marginBottom: "3pt" }}
-              >
-                <dt style={{ fontWeight: 700, fontSize: "10.5pt", minWidth: "80pt" }}>
-                  {g.label}:
-                </dt>
-                <dd style={{ margin: 0, fontSize: "10.5pt" }}>
-                  {g.items.join(", ")}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          {/* One line per group: "Label: a, b, c". A <dl> with flex rows
+              reads as two columns to an extractor; this reads as prose. */}
+          {skills.map((g) => (
+            <p key={g.label} style={{ ...bodyStyle, marginBottom: "3pt" }}>
+              <strong>{g.label}:</strong> {g.items.join(", ")}
+            </p>
+          ))}
         </AtsSection>
       )}
 
       {projects.length > 0 && (
         <AtsSection title="SELECTED PROJECTS">
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {projects.map((p) => (
-              <li key={p.id} style={{ marginBottom: "8pt" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "12pt",
-                    alignItems: "baseline",
-                  }}
-                >
-                  <span style={{ fontWeight: 700, fontSize: "11pt" }}>
-                    {p.title}
-                  </span>
-                  {p.stack && p.stack.length > 0 && (
-                    <span style={{ fontSize: "9.5pt", textAlign: "right" }}>
-                      {p.stack.join(", ")}
-                    </span>
-                  )}
-                </div>
-                <p style={{ fontSize: "10.5pt", margin: "2pt 0 0 0" }}>
-                  {plain(p.blurb)}
-                </p>
-              </li>
-            ))}
-          </ul>
+          {projects.map((p) => (
+            <div key={p.id} style={entryStyle}>
+              <h3 style={entryTitleStyle}>{p.title}</h3>
+              {p.stack && p.stack.length > 0 && (
+                <p style={entryMetaStyle}>Technologies: {p.stack.join(", ")}</p>
+              )}
+              <p style={{ ...bodyStyle, margin: "2pt 0 0 0" }}>
+                {plain(p.blurb)}
+              </p>
+            </div>
+          ))}
         </AtsSection>
       )}
 
       {timeline.length > 0 && (
         <AtsSection title="EDUCATION & EXPERIENCE">
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {timeline.map((t) => (
-              <li key={t.title} style={{ marginBottom: "6pt" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "12pt",
-                    alignItems: "baseline",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: "11pt" }}>
-                      {t.title}
-                    </div>
-                    <div style={{ fontSize: "10pt" }}>{t.org}</div>
-                  </div>
-                  <span style={{ fontSize: "10pt", whiteSpace: "nowrap" }}>
-                    {t.range}
-                  </span>
-                </div>
-                {t.blurb && (
-                  <p style={{ fontSize: "10pt", margin: "1pt 0 0 0" }}>
-                    {plain(t.blurb)}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
+          {timeline.map((t) => (
+            <div key={t.title} style={entryStyle}>
+              <h3 style={entryTitleStyle}>{t.title}</h3>
+              {/* Organisation and dates on one line, in that order — the
+                  shape parsers expect for an employment entry. */}
+              <p style={entryMetaStyle}>{joinInline([t.org, t.range])}</p>
+              {t.blurb && (
+                <p style={{ ...bodyStyle, margin: "2pt 0 0 0" }}>
+                  {plain(t.blurb)}
+                </p>
+              )}
+            </div>
+          ))}
         </AtsSection>
       )}
 
       {certs.length > 0 && (
         <AtsSection title="CERTIFICATIONS">
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+          <ul style={bulletListStyle}>
             {award.map((c) => (
-              <li
-                key={c.title + c.issuer}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "12pt",
-                  fontSize: "10.5pt",
-                  marginBottom: "2pt",
-                }}
-              >
-                <span>
-                  <strong>{c.title}</strong> — {c.issuer}
-                </span>
-                {c.date && <span>{c.date}</span>}
+              <li key={c.title + c.issuer} style={bulletItemStyle}>
+                <strong>{c.title}</strong>
+                {c.issuer ? ` - ${c.issuer}` : ""}
+                {c.date ? ` (${c.date})` : ""}
               </li>
             ))}
             {course.length > 0 && (
-              <li style={{ fontSize: "10.5pt", marginTop: "3pt" }}>
-                <strong>{course.length}x Course Certificates</strong> —{" "}
+              <li style={bulletItemStyle}>
+                <strong>{course.length}x Course Certificates</strong> -{" "}
                 {courseIssuer} ({course.map((c) => c.title).join(", ")})
               </li>
             )}
@@ -211,7 +174,7 @@ function AtsSection({
   children: React.ReactNode;
 }) {
   return (
-    <section style={{ marginBottom: "12pt", pageBreakInside: "avoid" }}>
+    <section style={{ marginBottom: "12pt" }}>
       <h2
         style={{
           fontSize: "10.5pt",
@@ -220,6 +183,9 @@ function AtsSection({
           borderBottom: "0.75pt solid #000",
           paddingBottom: "2pt",
           margin: "0 0 4pt 0",
+          // Never leave a heading alone at the foot of a page.
+          breakAfter: "avoid",
+          pageBreakAfter: "avoid",
         }}
       >
         {title}
@@ -229,11 +195,46 @@ function AtsSection({
   );
 }
 
-const sectionParaStyle: React.CSSProperties = {
+const bodyStyle: React.CSSProperties = {
   fontSize: "10.5pt",
   margin: 0,
+  orphans: 2,
+  widows: 2,
 };
 
+/** One project / role / school. Small enough to keep whole on a page. */
+const entryStyle: React.CSSProperties = {
+  marginBottom: "8pt",
+  breakInside: "avoid",
+  pageBreakInside: "avoid",
+};
+
+const entryTitleStyle: React.CSSProperties = {
+  fontSize: "11pt",
+  fontWeight: 700,
+  margin: 0,
+  lineHeight: 1.3,
+};
+
+const entryMetaStyle: React.CSSProperties = {
+  fontSize: "10pt",
+  margin: "1pt 0 0 0",
+};
+
+const bulletListStyle: React.CSSProperties = {
+  listStyleType: "disc",
+  paddingLeft: "18pt",
+  margin: "6pt 0 0 0",
+};
+
+const bulletItemStyle: React.CSSProperties = {
+  fontSize: "10.5pt",
+  marginBottom: "2pt",
+  breakInside: "avoid",
+  pageBreakInside: "avoid",
+};
+
+/** ASCII pipe rather than a middle dot — see the separator rule above. */
 function joinInline(parts: (string | undefined | null)[]): string {
-  return parts.filter((p): p is string => Boolean(p && p.trim())).join(" · ");
+  return parts.filter((p): p is string => Boolean(p && p.trim())).join(" | ");
 }

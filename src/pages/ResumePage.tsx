@@ -77,44 +77,10 @@ export function ResumePage() {
 
   return (
     <div className="resume-page min-h-svh bg-workspace text-ink py-6 md:py-10 px-3">
-      {/* Route-scoped print overrides. Only /resume loads this component,
-          so site-wide printing is unaffected.
-
-          @page margin 0 removes the browser's own header/footer (date +
-          title live in that margin area). But that also means the sheet's
-          padding only cushions PAGE ONE — later pages would start at the
-          paper's physical edge. So vertical breathing room comes from a
-          repeating table frame instead: Chromium re-renders a table's
-          <thead>/<tfoot> at the top/bottom of EVERY printed page, and the
-          empty spacer rows inside them are 12mm tall in print. Horizontal
-          padding stays on the sheet (it applies to every line anyway). */}
-      <style>{`
-        .resume-print-frame,
-        .resume-print-frame > thead,
-        .resume-print-frame > tbody,
-        .resume-print-frame > tfoot,
-        .resume-print-frame tr,
-        .resume-print-frame td {
-          display: block;
-          width: 100%;
-          border: 0;
-          padding: 0;
-          margin: 0;
-        }
-        .resume-page-spacer { height: 0; }
-
-        @media print {
-          @page { margin: 0; }
-          .resume-sheet { padding: 0 16mm !important; }
-          .resume-print-frame { display: table !important; table-layout: fixed; }
-          .resume-print-frame > thead { display: table-header-group !important; }
-          .resume-print-frame > tbody { display: table-row-group !important; }
-          .resume-print-frame > tfoot { display: table-footer-group !important; }
-          .resume-print-frame tr { display: table-row !important; }
-          .resume-print-frame td { display: table-cell !important; }
-          .resume-page-spacer { height: 12mm; }
-        }
-      `}</style>
+      {/* Route-scoped print overrides. Only /resume loads this component, so
+          site-wide printing is unaffected — and the two templates get
+          different treatment on purpose (see MODERN_PRINT_CSS). */}
+      <style>{template === "ats" ? ATS_PRINT_CSS : MODERN_PRINT_CSS}</style>
       <ResumeToolbar
         role={role}
         template={template}
@@ -123,33 +89,100 @@ export function ResumePage() {
         onDownload={download}
       />
 
-      <table className="resume-print-frame">
-        <thead>
-          <tr>
-            <td>
-              <div className="resume-page-spacer" aria-hidden="true" />
-            </td>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              {template === "ats" ? (
-                <ATSTemplate content={filtered} />
-              ) : (
+      {/* The ATS sheet is rendered bare. Wrapping it in the print-frame
+          table below would put a <table> around the entire résumé, which is
+          the one layout every ATS-parsing guide tells you to avoid: parsers
+          skip table contents or read them column-wise. It doesn't need the
+          frame anyway — with a real @page margin, every page gets its own
+          breathing room without a repeating spacer. */}
+      {template === "ats" ? (
+        <ATSTemplate content={filtered} />
+      ) : (
+        <table className="resume-print-frame">
+          <thead>
+            <tr>
+              <td>
+                <div className="resume-page-spacer" aria-hidden="true" />
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
                 <ModernTemplate content={filtered} />
-              )}
-            </td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <td>
-              <div className="resume-page-spacer" aria-hidden="true" />
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>
+                <div className="resume-page-spacer" aria-hidden="true" />
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      )}
     </div>
   );
 }
+
+/**
+ * Modern template print rules.
+ *
+ * @page margin 0 removes the browser's own header/footer (date + title live
+ * in that margin area). But that also means the sheet's padding only cushions
+ * PAGE ONE — later pages would start at the paper's physical edge. So vertical
+ * breathing room comes from a repeating table frame instead: Chromium
+ * re-renders a table's <thead>/<tfoot> at the top/bottom of EVERY printed
+ * page, and the empty spacer rows inside them are 12mm tall in print.
+ * Horizontal padding stays on the sheet (it applies to every line anyway).
+ *
+ * This is a layout hack traded for a cosmetic win, which is fine for the
+ * template a human reads and wrong for the one a parser reads.
+ */
+const MODERN_PRINT_CSS = `
+  .resume-print-frame,
+  .resume-print-frame > thead,
+  .resume-print-frame > tbody,
+  .resume-print-frame > tfoot,
+  .resume-print-frame tr,
+  .resume-print-frame td {
+    display: block;
+    width: 100%;
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .resume-page-spacer { height: 0; }
+
+  @media print {
+    @page { margin: 0; }
+    .resume-sheet { padding: 0 16mm !important; }
+    .resume-print-frame { display: table !important; table-layout: fixed; }
+    .resume-print-frame > thead { display: table-header-group !important; }
+    .resume-print-frame > tbody { display: table-row-group !important; }
+    .resume-print-frame > tfoot { display: table-footer-group !important; }
+    .resume-print-frame tr { display: table-row !important; }
+    .resume-print-frame td { display: table-cell !important; }
+    .resume-page-spacer { height: 12mm; }
+  }
+`;
+
+/**
+ * ATS template print rules.
+ *
+ * Deliberately almost empty: no @page override, so the site-wide
+ * `@page { size: A4; margin: 14mm }` in index.css applies and the printer
+ * gives every page a real margin. The browser's own header/footer reappears
+ * in that margin, which is the trade — a parseable document beats a
+ * borderless one, and a recruiter's ATS never sees the chrome.
+ */
+const ATS_PRINT_CSS = `
+  @media print {
+    .resume-ats {
+      padding: 0 !important;
+      box-shadow: none !important;
+      border: 0 !important;
+    }
+  }
+`;
