@@ -81,7 +81,7 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
   const currentTheme = THEMES.find((th) => th.id === theme) ?? THEMES[0];
 
   return (
-    <nav className="no-print fixed top-0 left-0 right-0 z-50 h-12 bg-paper border-b border-rule flex items-center justify-between px-2 md:px-3 text-sm">
+    <nav className="no-print fixed top-0 left-0 right-0 z-50 h-12 bg-paper border-b border-rule grid grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-2 md:px-3 text-sm">
       {/* Left: menu/tool buttons + ribbon tabs */}
       <div className="flex items-center gap-1 min-w-0">
         <div className="relative" ref={menuRef}>
@@ -214,22 +214,26 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
         </div>
       </div>
 
-      {/* Center: document title (hidden on small screens) */}
-      <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-2 pointer-events-none">
+      {/* Center: document title. Sits in its own grid column so the tab
+          strip can never overlap it; it gives up the save state first, then
+          truncates, rather than pushing into the tabs. */}
+      <div className="hidden xl:flex items-center justify-center gap-2 min-w-0 pointer-events-none">
         <span
-          className="material-symbols-outlined icon-fill text-word-blue"
+          className="material-symbols-outlined icon-fill text-word-blue shrink-0"
           style={{ fontSize: 18 }}
         >
           description
         </span>
-        <span className="font-semibold text-ink text-[14px] tracking-tight">
+        <span className="font-semibold text-ink text-[14px] tracking-tight truncate">
           Portfolio.docx
         </span>
-        <span className="text-ink-subtle text-[11px]">— Saved to OneDrive</span>
+        <span className="hidden 2xl:inline text-ink-subtle text-[11px] whitespace-nowrap">
+          — Saved to OneDrive
+        </span>
       </div>
 
       {/* Right: search, comment, share, theme picker, avatar */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 justify-self-end">
         <button
           aria-label="Search this document"
           title="Search this document (Ctrl+K)"
