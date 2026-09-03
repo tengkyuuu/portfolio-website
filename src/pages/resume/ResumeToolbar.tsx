@@ -141,6 +141,27 @@ export function ResumeToolbar({
             onChange={(id) => onRoleChange(id as ResumeRole)}
           />
         </div>
+
+        {/* The print dialog's "Margins: None" zeroes @page, and the page
+            margin is the only thing that can cushion the SECOND page of a
+            two-page résumé — padding cushions the first and last page of a
+            box, never the ones between. Nothing in CSS can override the
+            setting, so say so where the person is about to hit print. */}
+        <p className="mt-3 flex items-start gap-1.5 font-ui text-[11px] text-ink-subtle leading-snug">
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined shrink-0"
+            style={{ fontSize: 14 }}
+          >
+            info
+          </span>
+          <span>
+            In the print dialog, leave <b className="font-semibold">Margins</b>{" "}
+            on <b className="font-semibold">Default</b>. Setting it to “None”
+            removes this document's own page margins, and the second page
+            prints against the paper edge.
+          </span>
+        </p>
       </div>
     </div>
   );

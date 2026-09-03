@@ -190,27 +190,37 @@ const MODERN_PRINT_CSS = `
  */
 const ATS_PRINT_CSS = `
   @media print {
-    /* Explicit rather than inherited, so this route's margin is legible in
-       one place. Vertical margin has to come from @page: padding cushions
-       the top of page ONE only, and the ATS sheet has no repeating frame to
-       fake the rest with. */
-    @page { margin: 12mm; }
+    /* Margins sized like a standard résumé — 18mm top and bottom, 16mm
+       each side, which is roughly the 0.6in a recruiter expects.
+
+       Split between @page and the sheet's own padding on purpose:
+
+         • Vertical HAS to come from @page. Padding cushions only the first
+           and last page a box lands on, so on a two-page résumé the second
+           page would start hard against the paper edge. @page applies to
+           every page.
+         • Horizontal lives on the sheet, so it survives a print dialog set
+           to "Margins: None" — that setting zeroes @page outright, and
+           without this the text would print into the paper's edge.
+
+       Under the dialog's Default the two add up to the 16mm sides. */
+    @page { margin: 18mm 6mm; }
 
     .resume-ats {
-      /* Horizontal padding on top of the @page margin, deliberately. If the
-         print dialog's Margins is set to "None" it zeroes @page, and without
-         this the text prints hard against the left and right paper edges —
-         which is what "broken" looked like. 6mm is small enough that the
-         doubled-up 18mm under the default setting still reads as a normal
-         résumé margin. */
-      padding: 0 6mm !important;
+      padding: 0 10mm !important;
       box-shadow: none !important;
       border: 0 !important;
     }
 
-    /* Don't strand a section heading at the foot of a page, and don't let a
-       single line of a paragraph carry over to the next one. */
+    /* Don't strand a section heading at the foot of a page, don't split a
+       project or job entry across the break, and don't let a single line of
+       a paragraph carry over on its own. */
     .resume-ats h2 { break-after: avoid; page-break-after: avoid; }
+    .resume-ats section > div,
+    .resume-ats li {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
     .resume-ats p { orphans: 2; widows: 2; }
   }
 `;
