@@ -109,21 +109,36 @@ describe("ATSTemplate", () => {
 });
 
 describe("ResumePage", () => {
-  it("renders the ATS template outside the print-frame table", () => {
-    window.history.replaceState(null, "", "/resume?style=ats");
-    const { container } = render(<ResumePage />);
-    expect(container.querySelector(".resume-ats")).not.toBeNull();
-    // The frame is a <table>. It must not be in the tree for this template.
-    expect(container.querySelector(".resume-print-frame")).toBeNull();
-    expect(container.querySelector("table")).toBeNull();
+  it("wraps both templates in the print frame", () => {
+    // The frame's repeating thead/tfoot spacers are the only vertical
+    // margin that survives the print dialog's "Margins: None", which zeroes
+    // @page. Without it page two of the ATS résumé printed against the edge.
+    for (const [query, present, absent] of [
+      ["/resume?style=ats", ".resume-ats", null],
+      ["/resume", null, ".resume-ats"],
+    ] as const) {
+      window.history.replaceState(null, "", query);
+      const { container, unmount } = render(<ResumePage />);
+      expect(container.querySelector(".resume-print-frame")).not.toBeNull();
+      if (present) expect(container.querySelector(present)).not.toBeNull();
+      if (absent) expect(container.querySelector(absent)).toBeNull();
+      unmount();
+    }
   });
 
-  it("still wraps the Modern template in the print frame", () => {
-    window.history.replaceState(null, "", "/resume");
+  it("keeps the ATS document in a single frame column, in source order", () => {
+    // A table only misleads a parser when it puts content side by side.
+    // One column reads top-to-bottom exactly as the markup does.
+    window.history.replaceState(null, "", "/resume?style=ats");
     const { container } = render(<ResumePage />);
-    // The margin hack is fine for the template a human reads.
-    expect(container.querySelector(".resume-print-frame")).not.toBeNull();
-    expect(container.querySelector(".resume-ats")).toBeNull();
+
+    const rows = container.querySelectorAll(".resume-print-frame tr");
+    for (const row of rows) {
+      expect(row.querySelectorAll("td")).toHaveLength(1);
+    }
+    // The résumé itself sits in the body row, not in a spacer.
+    const body = container.querySelector(".resume-print-frame > tbody");
+    expect(body?.querySelector(".resume-ats")).not.toBeNull();
   });
 
   it("carries only the first five projects", () => {

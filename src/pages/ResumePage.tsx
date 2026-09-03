@@ -91,7 +91,7 @@ export function ResumePage() {
       {/* Route-scoped print overrides. Only /resume loads this component, so
           site-wide printing is unaffected — and the two templates get
           different treatment on purpose (see MODERN_PRINT_CSS). */}
-      <style>{template === "ats" ? ATS_PRINT_CSS : MODERN_PRINT_CSS}</style>
+      <style>{FRAME_CSS + (template === "ats" ? ATS_PRINT_CSS : MODERN_PRINT_CSS)}</style>
       <ResumeToolbar
         role={role}
         template={template}
@@ -100,58 +100,62 @@ export function ResumePage() {
         onDownload={download}
       />
 
-      {/* The ATS sheet is rendered bare. Wrapping it in the print-frame
-          table below would put a <table> around the entire résumé, which is
-          the one layout every ATS-parsing guide tells you to avoid: parsers
-          skip table contents or read them column-wise. It doesn't need the
-          frame anyway — with a real @page margin, every page gets its own
-          breathing room without a repeating spacer. */}
-      {template === "ats" ? (
-        <ATSTemplate content={filtered} />
-      ) : (
-        <table className="resume-print-frame">
-          <thead>
-            <tr>
-              <td>
-                <div className="resume-page-spacer" aria-hidden="true" />
-              </td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
+      {/* Both templates print inside the frame. Chromium re-renders a
+          table's <thead>/<tfoot> at the top and bottom of EVERY printed
+          page, so the empty spacer rows inside them are the only way to put
+          a margin on page two that survives the print dialog's
+          "Margins: None" — that setting zeroes @page outright, and @page is
+          otherwise the only thing that applies to every page.
+
+          The frame is a single column wrapping the whole document, so it
+          does not reorder anything: an ATS receives the PDF, where text is
+          extracted by position, not this markup. Verify with Ctrl-A /
+          Ctrl-C on the printed file. */}
+      <table className="resume-print-frame">
+        <thead>
+          <tr>
+            <td>
+              <div className="resume-page-spacer" aria-hidden="true" />
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              {template === "ats" ? (
+                <ATSTemplate content={filtered} />
+              ) : (
                 <ModernTemplate content={filtered} />
-              </td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              <td>
-                <div className="resume-page-spacer" aria-hidden="true" />
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      )}
+              )}
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>
+              <div className="resume-page-spacer" aria-hidden="true" />
+            </td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 }
 
 /**
- * Modern template print rules.
+ * The repeating print frame, shared by both templates.
  *
- * @page margin 0 removes the browser's own header/footer (date + title live
- * in that margin area). But that also means the sheet's padding only cushions
- * PAGE ONE — later pages would start at the paper's physical edge. So vertical
- * breathing room comes from a repeating table frame instead: Chromium
- * re-renders a table's <thead>/<tfoot> at the top/bottom of EVERY printed
- * page, and the empty spacer rows inside them are 12mm tall in print.
- * Horizontal padding stays on the sheet (it applies to every line anyway).
+ * A page margin can only come from two places: @page, which the print
+ * dialog's "Margins" control can zero, or something the browser repeats on
+ * every page. Padding is neither — it cushions the first and last page a
+ * box lands on and nothing in between, which is why a two-page résumé used
+ * to start page two hard against the paper edge.
  *
- * This is a layout hack traded for a cosmetic win, which is fine for the
- * template a human reads and wrong for the one a parser reads.
+ * Chromium re-renders a table's <thead> and <tfoot> at the top and bottom
+ * of every printed page. Empty spacer rows there give a real, repeating
+ * vertical margin that no dialog setting can take away.
  */
-const MODERN_PRINT_CSS = `
+const FRAME_CSS = `
   .resume-print-frame,
   .resume-print-frame > thead,
   .resume-print-frame > tbody,
@@ -164,50 +168,43 @@ const MODERN_PRINT_CSS = `
     padding: 0;
     margin: 0;
   }
+  /* On screen the frame is inert — no spacers, no table behaviour. */
   .resume-page-spacer { height: 0; }
 
   @media print {
-    @page { margin: 0; }
-    .resume-sheet { padding: 0 16mm !important; }
+    /* Zero, deliberately: the frame owns the vertical margin, so the result
+       is identical whether the dialog says Default or None. */
+    @page { size: A4; margin: 0; }
+
     .resume-print-frame { display: table !important; table-layout: fixed; }
     .resume-print-frame > thead { display: table-header-group !important; }
     .resume-print-frame > tbody { display: table-row-group !important; }
     .resume-print-frame > tfoot { display: table-footer-group !important; }
     .resume-print-frame tr { display: table-row !important; }
     .resume-print-frame td { display: table-cell !important; }
-    .resume-page-spacer { height: 12mm; }
+
+    .resume-page-spacer { height: 16mm; }
+  }
+`;
+
+/** Modern template: horizontal margin only — the frame handles the rest. */
+const MODERN_PRINT_CSS = `
+  @media print {
+    .resume-sheet { padding: 0 16mm !important; }
   }
 `;
 
 /**
  * ATS template print rules.
  *
- * Deliberately almost empty: no @page override, so the site-wide
- * `@page { size: A4; margin: 14mm }` in index.css applies and the printer
- * gives every page a real margin. The browser's own header/footer reappears
- * in that margin, which is the trade — a parseable document beats a
- * borderless one, and a recruiter's ATS never sees the chrome.
+ * Horizontal margin comes from the sheet, vertical from the shared frame,
+ * so every page gets 16mm on all four sides regardless of what the print
+ * dialog's Margins control is set to.
  */
 const ATS_PRINT_CSS = `
   @media print {
-    /* Margins sized like a standard résumé — 18mm top and bottom, 16mm
-       each side, which is roughly the 0.6in a recruiter expects.
-
-       Split between @page and the sheet's own padding on purpose:
-
-         • Vertical HAS to come from @page. Padding cushions only the first
-           and last page a box lands on, so on a two-page résumé the second
-           page would start hard against the paper edge. @page applies to
-           every page.
-         • Horizontal lives on the sheet, so it survives a print dialog set
-           to "Margins: None" — that setting zeroes @page outright, and
-           without this the text would print into the paper's edge.
-
-       Under the dialog's Default the two add up to the 16mm sides. */
-    @page { margin: 18mm 6mm; }
-
     .resume-ats {
-      padding: 0 10mm !important;
+      padding: 0 16mm !important;
       box-shadow: none !important;
       border: 0 !important;
     }
@@ -224,3 +221,4 @@ const ATS_PRINT_CSS = `
     .resume-ats p { orphans: 2; widows: 2; }
   }
 `;
+
