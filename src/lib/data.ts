@@ -697,7 +697,7 @@ export const defaultAbout: AboutContent = {
 
 export const defaultContact: ContactContent = {
     intro:
-      "Open to freelance, internships, and collaborations across embedded, frontend, and design. The fastest way to reach me is [email](mailto:jamesvincent.calunsag@example.com) — I read everything.",
+      "Open to freelance, internships, and collaborations across embedded, frontend, and design. The fastest way to reach me is [email](mailto:jamescalunsag13@gmail.com) — I read everything.",
     channels: [
       {
         label: "Email",
@@ -705,11 +705,16 @@ export const defaultContact: ContactContent = {
         href: "mailto:jamescalunsag13@gmail.com",
         icon: "mail",
       },
-      { label: "GitHub", value: "github.com/jvc", href: "https://github.com/tengkyuuu", icon: "code" },
+      {
+        label: "GitHub",
+        value: "github.com/tengkyuuu",
+        href: "https://github.com/tengkyuuu",
+        icon: "code",
+      },
       {
         label: "LinkedIn",
-        value: "linkedin.com/in/jvc",
-        href: "https://www.linkedin.com/in/james-vincent-calunsag-7616bb353?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+        value: "linkedin.com/in/james-vincent-calunsag",
+        href: "https://www.linkedin.com/in/james-vincent-calunsag/",
         icon: "link",
       },
       { label: "Location", value: "Dapitan City, PH", href: "#", icon: "location_on" },

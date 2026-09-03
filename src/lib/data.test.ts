@@ -3,6 +3,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   certs,
+  defaultContact,
   nowGroups,
   nowUpdated,
   processStages,
@@ -194,6 +195,53 @@ describe("source hygiene", () => {
     // files — 100 KB of base64 here lands in every visitor's JS bundle.
     const src = readFileSync(resolve(process.cwd(), "src/lib/data.ts"), "utf8");
     expect(src.includes("data:image/"), "inline data URL in data.ts").toBe(false);
+  });
+
+  it("ships no placeholder contact details", () => {
+    /* A stand-in handle is worse here than anywhere else on the site: the
+       résumé prints `value` verbatim, so `github.com/jvc` reaches a
+       recruiter as a dead link and the real profile is never found. Two
+       of these shipped — a /jvc handle on both socials, and a
+       @example.com mailto in the contact intro, sitting one line above
+       the correct address. */
+    const src = readFileSync(resolve(process.cwd(), "src/lib/data.ts"), "utf8");
+    for (const bad of ["example.com", "example.org", "github.com/jvc", "/in/jvc"]) {
+      expect(src.includes(bad), `placeholder "${bad}" in data.ts`).toBe(false);
+    }
+  });
+});
+
+describe("contact channels", () => {
+  it("gives every channel a label, a display value and a target", () => {
+    for (const c of defaultContact.channels) {
+      expect(c.label.trim().length, "channel with no label").toBeGreaterThan(0);
+      expect(c.value.trim().length, `${c.label}: no display value`).toBeGreaterThan(0);
+      expect((c.href ?? "").trim().length, `${c.label}: no href`).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps each display value consistent with where it actually links", () => {
+    /* The résumé prints `value` and the site links `href`. When they drift
+       the document lies — it shows one profile and points at another. */
+    for (const c of defaultContact.channels) {
+      const href = c.href ?? "";
+      if (!/^https?:/.test(href)) continue;
+      const shown = c.value.replace(/^https?:\/\//, "").replace(/\/$/, "");
+      const target = href.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+      expect(
+        target.startsWith(shown.replace(/^www\./, "")),
+        `${c.label}: shows "${c.value}" but links to "${href}"`
+      ).toBe(true);
+    }
+  });
+
+  it("carries no tracking parameters on a profile link", () => {
+    // The LinkedIn href arrived as a mobile share URL with utm_* attached.
+    for (const c of defaultContact.channels) {
+      expect(c.href ?? "", `${c.label}: tracking params in href`).not.toMatch(
+        /[?&]utm_/
+      );
+    }
   });
 });
 
