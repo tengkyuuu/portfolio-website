@@ -8,7 +8,6 @@ export type TabId =
   | "work"
   | "about"
   | "stack"
-  | "process"
   | "now"
   | "credentials"
   | "contact";
@@ -20,11 +19,23 @@ export const tabs: TabMeta[] = [
   { id: "work", key: "nav.projects" },
   { id: "about", key: "nav.about" },
   { id: "stack", key: "nav.skills" },
-  { id: "process", key: "nav.process" },
   { id: "now", key: "nav.now" },
   { id: "credentials", key: "nav.credentials" },
   { id: "contact", key: "nav.contact" },
 ];
+
+/** Tabs that no longer exist, pointed at wherever their content went.
+ *  "How I Work" folded into About; a shared #process link should land on
+ *  the section that now holds it rather than bounce to the homepage. */
+const RETIRED_TABS: Record<string, TabId> = { process: "about" };
+
+/** Resolve the URL hash to a tab. Lives here rather than in App because
+ *  it is only meaningful against the `tabs` table above. */
+export function hashToTab(): TabId {
+  const h = window.location.hash.replace(/^#/, "") as TabId;
+  if (tabs.some((t) => t.id === h)) return h;
+  return RETIRED_TABS[h] ?? "top";
+}
 
 type NavProps = {
   theme: Theme;

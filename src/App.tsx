@@ -10,14 +10,13 @@ import {
   type Theme,
 } from "./lib/theme";
 import { Assistant } from "./components/Assistant";
-import { Nav, type TabId, tabs } from "./components/Nav";
+import { hashToTab, Nav, tabs, type TabId } from "./components/Nav";
 import { PwaChips } from "./components/PwaChips";
 import { RequireAuth } from "./components/RequireAuth";
 import { SearchPalette } from "./components/SearchPalette";
 import { Hero } from "./components/Hero";
 import { About } from "./components/About";
 import { Skills } from "./components/Skills";
-import { Process } from "./components/Process";
 import { Now } from "./components/Now";
 import { Projects } from "./components/Projects";
 import { Certifications } from "./components/Certifications";
@@ -54,10 +53,6 @@ function useTheme(): [Theme, (next: Theme, origin?: { x: number; y: number }) =>
   return [theme, setTheme];
 }
 
-function hashToTab(): TabId {
-  const h = window.location.hash.replace(/^#/, "") as TabId;
-  return tabs.some((t) => t.id === h) ? h : "top";
-}
 
 const ZOOM_MIN = 50;
 const ZOOM_MAX = 200;
@@ -215,7 +210,6 @@ function PortfolioDoc() {
                 {active === "top" && <Hero />}
                 {active === "about" && <About />}
                 {active === "stack" && <Skills />}
-                {active === "process" && <Process />}
                 {active === "now" && <Now />}
                 {active === "credentials" && <Certifications />}
                 {active === "contact" && <Contact />}

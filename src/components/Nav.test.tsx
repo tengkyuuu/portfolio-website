@@ -56,7 +56,6 @@ function labelOf(id: string): string {
     work: "Projects",
     about: "About",
     stack: "Skills",
-    process: "How I Work",
     now: "Now",
     credentials: "Credentials",
     contact: "Contact",
