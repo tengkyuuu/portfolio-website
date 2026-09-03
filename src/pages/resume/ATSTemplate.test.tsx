@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ATSTemplate } from "./ATSTemplate";
-import { ResumePage } from "../ResumePage";
+import { RESUME_PROJECT_LIMIT, ResumePage } from "../ResumePage";
 import { DEFAULT_CONTENT } from "../../lib/content";
+import { projects } from "../../lib/data";
 
 /**
  * The ATS template's whole job is to survive machine parsing, and every way
@@ -123,5 +124,27 @@ describe("ResumePage", () => {
     // The margin hack is fine for the template a human reads.
     expect(container.querySelector(".resume-print-frame")).not.toBeNull();
     expect(container.querySelector(".resume-ats")).toBeNull();
+  });
+
+  it("carries only the first five projects", () => {
+    /* The site shows the whole catalogue; the résumé is a highlight reel.
+       data.ts keeps the older entries at the tail of the array specifically
+       so they fall outside this slice — if someone reorders it, the two
+       assertions below disagree and this fails. */
+    window.history.replaceState(null, "", "/resume?style=ats");
+    render(<ResumePage />);
+
+    for (const p of projects.slice(0, RESUME_PROJECT_LIMIT)) {
+      expect(
+        screen.getByRole("heading", { level: 3, name: p.title }),
+        `${p.title} should be on the résumé`
+      ).toBeInTheDocument();
+    }
+    for (const p of projects.slice(RESUME_PROJECT_LIMIT)) {
+      expect(
+        screen.queryByRole("heading", { level: 3, name: p.title }),
+        `${p.title} should NOT be on the résumé`
+      ).toBeNull();
+    }
   });
 });

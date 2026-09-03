@@ -52,136 +52,19 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    id: "physiopano-app",
-    index: "01",
-    title: "Physiopaño App",
-    blurb:
-      "Flutter companion app for the Physiopaño wearable — pairs over Bluetooth, streams physiological signals in real time, and turns them into a daily well-being score.",
-    tags: ["Flutter", "BLE", "Firebase"],
-    stack: [
-      "Flutter",
-      "Dart",
-      "BLE (flutter_blue_plus)",
-      "Firebase Auth",
-      "Cloud Firestore",
-      "Riverpod",
-    ],
-    kind: "mobile",
-    ref: "REF: JVC-2026-01",
-    year: "2026",
-    page: "02",
-    figCaption:
-      "FIG 1.1: Physiopaño companion app — live session view with the real-time well-being ring and sensor readouts.",
-    challenge:
-      "The Physiopaño wearable produces a continuous stream of physiological data — GSR, PPG, skin temperature, and motion — but raw signals mean nothing to the person wearing it. The companion app had to pair reliably over Bluetooth, stay legible for non-technical users, and keep working when the phone is offline in the field.",
-    solution:
-      "A Flutter app that pairs with the Physiopaño band over BLE, streams the four sensor channels in real time, and distils them into a single daily well-being score with trends and gentle nudges. Sessions are cached on-device and sync to Firebase when a connection returns, so a dropped signal never loses a reading.",
-    gallery: [
-      {
-        src: "/projects/physiopano-app.webp",
-        alt: "Physiopaño mobile app on a phone, showing a green well-being ring, live sensor readouts, and session controls on a dark UI.",
-      },
-    ],
-    links: [
-      { label: "Repo", href: "#" },
-      { label: "Case study", href: "#" },
-    ],
-  },
-  {
-    id: "physiopano-admin",
-    index: "02",
-    title: "Physiopaño Admin Web Portal",
-    blurb:
-      "React + TypeScript dashboard behind the Physiopaño wearable — enrol participants, monitor live sessions across devices, and export labelled data to retrain the on-device model.",
-    tags: ["React", "TypeScript", "Firebase"],
-    stack: [
-      "React",
-      "TypeScript",
-      "Tailwind CSS",
-      "Firebase",
-      "Cloud Functions",
-      "Recharts",
-    ],
-    kind: "web",
-    ref: "REF: JVC-2026-02",
-    year: "2026",
-    page: "03",
-    figCaption:
-      "FIG 2.1: Admin portal — marketing landing page and Firebase-backed research sign-in.",
-    challenge:
-      "Behind the wearable sits a research workflow: enrolling participants, watching sessions across many devices, and exporting clean, labelled data to retrain the on-device classifier. Doing that from a phone is hopeless — clinicians and researchers needed a real dashboard.",
-    solution:
-      "A React + TypeScript portal with role-based auth, a participant roster, and live session monitoring across every paired device. Researchers review and label sessions inline, then export the curated set as training data for the Random Forest model — closing the loop between the field and the firmware.",
-    gallery: [
-      {
-        src: "/projects/physiopano-admin-landing.webp",
-        alt: "Physiopaño admin portal landing page — 'Listen to what your body is telling you' hero with a live session dashboard preview.",
-      },
-      {
-        src: "/projects/physiopano-admin-login.webp",
-        alt: "Physiopaño admin portal sign-in page — 'Stress, made visible.' panel with a live PPG signal beside a Firebase-backed research login form.",
-      },
-    ],
-    links: [
-      { label: "Repo", href: "#" },
-      { label: "Live demo", href: "#" },
-    ],
-  },
-  {
-    id: "famecrm",
-    index: "03",
-    title: "FameCRM",
-    blurb:
-      "The agency operating system — a CRM that lets creator agencies track talent, discover trends, and manage their team across socials from one dashboard.",
-    tags: ["React", "TypeScript", "SaaS"],
-    stack: [
-      "React",
-      "TypeScript",
-      "Tailwind CSS",
-      "Firebase",
-      "Recharts",
-    ],
-    kind: "web",
-    ref: "REF: JVC-2026-03",
-    year: "2026",
-    page: "04",
-    figCaption:
-      "FIG 3.1: FameCRM — agency landing page, sign-in, and the per-creator analytics dashboard.",
-    challenge:
-      "Creator agencies juggle talent across Instagram, TikTok, X, and more, with performance data scattered across every platform. They needed one place to track creators, smart links, and engagement — without living in a dozen tabs.",
-    solution:
-      "A React + TypeScript CRM that pulls each creator's accounts into a single dashboard: seed/usage tracking, smart-link analytics, viral rankings, and click-through metrics, all rendered in a fast, dark, agency-grade UI.",
-    gallery: [
-      {
-        src: "/projects/famecrm-landing.webp",
-        alt: "FameCRM landing page — 'The smarter way to run your agency' hero on a dark UI.",
-      },
-      {
-        src: "/projects/famecrm-dashboard.webp",
-        alt: "FameCRM dashboard — per-creator analytics with seed usage, total creators/followers/views, and engagement metrics.",
-      },
-      {
-        src: "/projects/famecrm-login.webp",
-        alt: "FameCRM sign-in page — 'Your agency, supercharged' panel beside a login form.",
-      },
-    ],
-    demoUrl: "https://www.famecrm.com/",
-    links: [{ label: "Repo", href: "#" }],
-  },
-  {
     id: "shm",
-    index: "04",
+    index: "01",
     title: "SHM — Structural Health Monitoring",
     blurb:
       "An IoT structural-health monitor for bridges — sensor nodes stream acceleration, velocity, and deflection to a real-time dashboard that flags unsafe movement.",
     tags: ["ESP32", "IoT", "Real-time"],
     stack: ["ESP32", "C / C++", "React", "WebSockets", "Recharts"],
     kind: "embedded",
-    ref: "REF: JVC-2026-04",
+    ref: "REF: JVC-2026-01",
     year: "2026",
-    page: "05",
+    page: "02",
     figCaption:
-      "FIG 4.1: SHM — real-time monitoring landing page and the live per-node deflection dashboard.",
+      "FIG 1.1: SHM — real-time monitoring landing page and the live per-node deflection dashboard.",
     challenge:
       "Bridges flex constantly, but dangerous structural movement is hard to catch by eye. Continuous, remote monitoring meant cheap sensor nodes that could sample motion reliably and surface a clear safe/unsafe signal in real time.",
     solution:
@@ -201,7 +84,7 @@ export const projects: Project[] = [
   },
   {
     id: "stormfresh-erp",
-    index: "05",
+    index: "02",
     title: "Stormfresh — Poultry ERP",
     blurb:
       "Role-gated ERP for a Philippine poultry operation — tracks live-bird purchases through dressing output to invoices and staff commissions, with profit recomputed live from source records rather than stored.",
@@ -217,11 +100,11 @@ export const projects: Project[] = [
       "Vitest",
     ],
     kind: "web",
-    ref: "REF: JVC-2026-05",
+    ref: "REF: JVC-2026-02",
     year: "2026",
-    page: "06",
+    page: "03",
     figCaption:
-      "FIG 5.1: Stormfresh — management dashboard, marketing landing page, and the invitation-only workspace sign-in.",
+      "FIG 2.1: Stormfresh — management dashboard, marketing landing page, and the invitation-only workspace sign-in.",
     challenge:
       "A poultry business bought live birds, dressed them, and sold the output — but the money lived in spreadsheets. Flock grow-out, commission payroll, and monthly P&L each sat in a separate workbook, several carrying arithmetic defects nobody had caught. Profit was only knowable after month-end reconciliation, and approving a purchase order meant whoever happened to sign the paper.",
     solution:
@@ -245,7 +128,7 @@ export const projects: Project[] = [
   },
   {
     id: "flux",
-    index: "06",
+    index: "03",
     title: "Flux",
     blurb:
       "Pre-launch site for a Shariah-compliant Pakistani digital bank — a waitlist funnel and product story where accessible contrast, and honesty about what isn't live yet, are enforced by the test suite.",
@@ -260,11 +143,11 @@ export const projects: Project[] = [
       "Three.js",
     ],
     kind: "web",
-    ref: "REF: JVC-2026-06",
+    ref: "REF: JVC-2026-03",
     year: "2026",
-    page: "07",
+    page: "04",
     figCaption:
-      "FIG 6.1: Flux — the pre-launch hero and the digital-card section of the marketing site.",
+      "FIG 3.1: Flux — the pre-launch hero and the digital-card section of the marketing site.",
     challenge:
       "A bank that has not opened yet still has to collect real names, phone numbers, and emails from the public, and show an earned-wage product it cannot yet run — every screen risks implying a service already exists. The client also settled a four-colour brand mid-build whose primary teal is light enough that white text on it fails AA outright, so the palette could not simply be dropped in.",
     solution:
@@ -307,7 +190,7 @@ export const projects: Project[] = [
   },
   {
     id: "rallys-equities",
-    index: "07",
+    index: "04",
     title: "Rallys Equities",
     blurb:
       "Investor-facing website and admin CMS for a licensed PSX brokerage in Lahore — a single 4,400-line vanilla-JS SPA with live market data, eight financial calculators, and a click-to-edit content editor. No framework, no build step.",
@@ -323,11 +206,11 @@ export const projects: Project[] = [
       "Multer + Nodemailer",
     ],
     kind: "web",
-    ref: "REF: JVC-2026-07",
+    ref: "REF: JVC-2026-04",
     year: "2026",
-    page: "08",
+    page: "05",
     figCaption:
-      "FIG 7.1: Rallys Equities — homepage hero in light mode, with a live KSE-100 index card showing a price chart, sub-indices, and a five-stock ticker.",
+      "FIG 4.1: Rallys Equities — homepage hero in light mode, with a live KSE-100 index card showing a price chart, sub-indices, and a five-stock ticker.",
     challenge:
       "A SECP-licensed PSX brokerage needed a credible, content-heavy investor site — real market data, dozens of compliance and investor-relations pages, eight financial calculators — without an engineering team or a budget for a CMS platform. With the site a single static HTML file and no backend behind it, every future change — a new blog post, a swapped photo, a colour tweak, a contact form landing somewhere readable — meant reopening the codebase and redeploying.",
     solution:
@@ -346,7 +229,7 @@ export const projects: Project[] = [
   },
   {
     id: "myktech",
-    index: "08",
+    index: "05",
     title: "MYKTECH — Software Studio Website",
     blurb:
       "An immersive, awwwards-style marketing site for an IT studio — a WebGL hero, scroll-driven storytelling, and a real working contact pipeline.",
@@ -361,11 +244,11 @@ export const projects: Project[] = [
       "Lenis smooth scroll",
     ],
     kind: "web",
-    ref: "REF: JVC-2026-08",
+    ref: "REF: JVC-2026-05",
     year: "2026",
-    page: "09",
+    page: "06",
     figCaption:
-      "FIG 8.1: MYKTECH — the WebGL gradient hero with the outlined-and-gradient headline over a pale studio backdrop.",
+      "FIG 5.1: MYKTECH — the WebGL gradient hero with the outlined-and-gradient headline over a pale studio backdrop.",
     challenge:
       "MYKTECH needed a site that proved a small IT studio ships software with genuine craft — memorable and immersive, yet clean and editorial rather than the usual templated agency look. It also had to work end to end: a functioning lead pipeline, real SEO, and fast, accessible performance on desktop and mobile, all on one maintainable codebase.",
     solution:
@@ -380,6 +263,123 @@ export const projects: Project[] = [
     links: [
       { label: "Live site", href: "https://it-company-website-omega.vercel.app/" },
     ],
+  },
+  {
+    id: "physiopano-app",
+    index: "06",
+    title: "Physiopaño App",
+    blurb:
+      "Flutter companion app for the Physiopaño wearable — pairs over Bluetooth, streams physiological signals in real time, and turns them into a daily well-being score.",
+    tags: ["Flutter", "BLE", "Firebase"],
+    stack: [
+      "Flutter",
+      "Dart",
+      "BLE (flutter_blue_plus)",
+      "Firebase Auth",
+      "Cloud Firestore",
+      "Riverpod",
+    ],
+    kind: "mobile",
+    ref: "REF: JVC-2026-06",
+    year: "2026",
+    page: "07",
+    figCaption:
+      "FIG 6.1: Physiopaño companion app — live session view with the real-time well-being ring and sensor readouts.",
+    challenge:
+      "The Physiopaño wearable produces a continuous stream of physiological data — GSR, PPG, skin temperature, and motion — but raw signals mean nothing to the person wearing it. The companion app had to pair reliably over Bluetooth, stay legible for non-technical users, and keep working when the phone is offline in the field.",
+    solution:
+      "A Flutter app that pairs with the Physiopaño band over BLE, streams the four sensor channels in real time, and distils them into a single daily well-being score with trends and gentle nudges. Sessions are cached on-device and sync to Firebase when a connection returns, so a dropped signal never loses a reading.",
+    gallery: [
+      {
+        src: "/projects/physiopano-app.webp",
+        alt: "Physiopaño mobile app on a phone, showing a green well-being ring, live sensor readouts, and session controls on a dark UI.",
+      },
+    ],
+    links: [
+      { label: "Repo", href: "#" },
+      { label: "Case study", href: "#" },
+    ],
+  },
+  {
+    id: "physiopano-admin",
+    index: "07",
+    title: "Physiopaño Admin Web Portal",
+    blurb:
+      "React + TypeScript dashboard behind the Physiopaño wearable — enrol participants, monitor live sessions across devices, and export labelled data to retrain the on-device model.",
+    tags: ["React", "TypeScript", "Firebase"],
+    stack: [
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Firebase",
+      "Cloud Functions",
+      "Recharts",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-07",
+    year: "2026",
+    page: "08",
+    figCaption:
+      "FIG 7.1: Admin portal — marketing landing page and Firebase-backed research sign-in.",
+    challenge:
+      "Behind the wearable sits a research workflow: enrolling participants, watching sessions across many devices, and exporting clean, labelled data to retrain the on-device classifier. Doing that from a phone is hopeless — clinicians and researchers needed a real dashboard.",
+    solution:
+      "A React + TypeScript portal with role-based auth, a participant roster, and live session monitoring across every paired device. Researchers review and label sessions inline, then export the curated set as training data for the Random Forest model — closing the loop between the field and the firmware.",
+    gallery: [
+      {
+        src: "/projects/physiopano-admin-landing.webp",
+        alt: "Physiopaño admin portal landing page — 'Listen to what your body is telling you' hero with a live session dashboard preview.",
+      },
+      {
+        src: "/projects/physiopano-admin-login.webp",
+        alt: "Physiopaño admin portal sign-in page — 'Stress, made visible.' panel with a live PPG signal beside a Firebase-backed research login form.",
+      },
+    ],
+    links: [
+      { label: "Repo", href: "#" },
+      { label: "Live demo", href: "#" },
+    ],
+  },
+  {
+    id: "famecrm",
+    index: "08",
+    title: "FameCRM",
+    blurb:
+      "The agency operating system — a CRM that lets creator agencies track talent, discover trends, and manage their team across socials from one dashboard.",
+    tags: ["React", "TypeScript", "SaaS"],
+    stack: [
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Firebase",
+      "Recharts",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-08",
+    year: "2026",
+    page: "09",
+    figCaption:
+      "FIG 8.1: FameCRM — agency landing page, sign-in, and the per-creator analytics dashboard.",
+    challenge:
+      "Creator agencies juggle talent across Instagram, TikTok, X, and more, with performance data scattered across every platform. They needed one place to track creators, smart links, and engagement — without living in a dozen tabs.",
+    solution:
+      "A React + TypeScript CRM that pulls each creator's accounts into a single dashboard: seed/usage tracking, smart-link analytics, viral rankings, and click-through metrics, all rendered in a fast, dark, agency-grade UI.",
+    gallery: [
+      {
+        src: "/projects/famecrm-landing.webp",
+        alt: "FameCRM landing page — 'The smarter way to run your agency' hero on a dark UI.",
+      },
+      {
+        src: "/projects/famecrm-dashboard.webp",
+        alt: "FameCRM dashboard — per-creator analytics with seed usage, total creators/followers/views, and engagement metrics.",
+      },
+      {
+        src: "/projects/famecrm-login.webp",
+        alt: "FameCRM sign-in page — 'Your agency, supercharged' panel beside a login form.",
+      },
+    ],
+    demoUrl: "https://www.famecrm.com/",
+    links: [{ label: "Repo", href: "#" }],
   },
 ];
 

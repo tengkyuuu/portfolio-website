@@ -20,6 +20,9 @@ import { ResumeToolbar, type ResumeTemplateId } from "./resume/ResumeToolbar";
  *     with per-template stylesheets later without touching callers.
  */
 
+/** How many projects a résumé carries, regardless of template. */
+export const RESUME_PROJECT_LIMIT = 5;
+
 function isTemplate(v: unknown): v is ResumeTemplateId {
   return v === "modern" || v === "ats";
 }
@@ -64,10 +67,18 @@ export function ResumePage() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  const filtered = useMemo(
-    () => applyRoleFilter(content, role),
-    [content, role]
-  );
+  const filtered = useMemo(() => {
+    const byRole = applyRoleFilter(content, role);
+    // A résumé is a highlight reel, not the full catalogue. The site shows
+    // every project; this shows the strongest few, which is also what keeps
+    // the document near two pages instead of four.
+    //
+    // Applied after the role filter on purpose: for a specific role the
+    // top five are the five most relevant, and for "all" the order in
+    // data.ts decides — the older entries live at the tail of that array
+    // precisely so they fall outside this slice.
+    return { ...byRole, projects: byRole.projects.slice(0, RESUME_PROJECT_LIMIT) };
+  }, [content, role]);
 
   function download() {
     // Delegate to the browser's print dialog. Users pick "Save as PDF"
@@ -179,10 +190,27 @@ const MODERN_PRINT_CSS = `
  */
 const ATS_PRINT_CSS = `
   @media print {
+    /* Explicit rather than inherited, so this route's margin is legible in
+       one place. Vertical margin has to come from @page: padding cushions
+       the top of page ONE only, and the ATS sheet has no repeating frame to
+       fake the rest with. */
+    @page { margin: 12mm; }
+
     .resume-ats {
-      padding: 0 !important;
+      /* Horizontal padding on top of the @page margin, deliberately. If the
+         print dialog's Margins is set to "None" it zeroes @page, and without
+         this the text prints hard against the left and right paper edges —
+         which is what "broken" looked like. 6mm is small enough that the
+         doubled-up 18mm under the default setting still reads as a normal
+         résumé margin. */
+      padding: 0 6mm !important;
       box-shadow: none !important;
       border: 0 !important;
     }
+
+    /* Don't strand a section heading at the foot of a page, and don't let a
+       single line of a paragraph carry over to the next one. */
+    .resume-ats h2 { break-after: avoid; page-break-after: avoid; }
+    .resume-ats p { orphans: 2; widows: 2; }
   }
 `;
