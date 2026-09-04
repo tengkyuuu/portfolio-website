@@ -47,6 +47,21 @@ describe("Nav", () => {
     const title = screen.getByText("Portfolio.docx").parentElement as HTMLElement;
     expect(title.className).not.toMatch(/\babsolute\b/);
   });
+
+  it("centres the title by giving the columns either side of it equal width", () => {
+    // jsdom does no layout, so pin the mechanism instead of the pixels.
+    // Unequal outer columns (auto / 1fr / auto) centre the title in the
+    // space left over rather than on the page — and since the tab strip is
+    // far wider than the controls, that lands well right of centre.
+    renderNav();
+    const nav = screen.getByText("Portfolio.docx").closest("nav") as HTMLElement;
+    const template = /grid-cols-\[([^\]]+)\]/.exec(nav.className)?.[1];
+    expect(template, "nav should define an explicit grid template").toBeTruthy();
+
+    const columns = (template as string).split("_");
+    expect(columns).toHaveLength(3);
+    expect(columns[0]).toBe(columns[2]);
+  });
 });
 
 /** English labels, matching the default i18n dictionary. */

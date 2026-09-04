@@ -92,7 +92,7 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
   const currentTheme = THEMES.find((th) => th.id === theme) ?? THEMES[0];
 
   return (
-    <nav className="no-print fixed top-0 left-0 right-0 z-50 h-12 bg-paper border-b border-rule grid grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-2 md:px-3 text-sm">
+    <nav className="no-print fixed top-0 left-0 right-0 z-50 h-12 bg-paper border-b border-rule grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2 md:px-3 text-sm">
       {/* Left: menu/tool buttons + ribbon tabs */}
       <div className="flex items-center gap-1 min-w-0">
         <div className="relative" ref={menuRef}>
@@ -225,10 +225,15 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
         </div>
       </div>
 
-      {/* Center: document title. Sits in its own grid column so the tab
-          strip can never overlap it; it gives up the save state first, then
-          truncates, rather than pushing into the tabs. */}
-      <div className="hidden xl:flex items-center justify-center gap-2 min-w-0 pointer-events-none">
+      {/* Center: document title, in the middle column of three. The outer
+          two are equal fractions, so this one lands on the page's centre
+          line — and because it is a real column rather than an absolutely
+          positioned overlay, the tab strip cannot grow underneath it.
+
+          It appears only from 1400px up. Below that the tabs and controls
+          need the whole bar, and a title that pushed them into scrolling
+          would cost more than it gives. */}
+      <div className="hidden min-[1400px]:flex items-center justify-center gap-2 whitespace-nowrap pointer-events-none">
         <span
           className="material-symbols-outlined icon-fill text-word-blue shrink-0"
           style={{ fontSize: 18 }}
