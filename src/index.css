@@ -452,6 +452,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Tailwind's animation utilities are not covered by the named rules
+     below, and they are used in ten components — every skeleton loader,
+     the assistant's thinking state, the admin spinners. Left alone they
+     pulse and spin straight through a reduced-motion preference, which
+     is the one thing the project's own rule says must never happen.
+     A frozen skeleton still reads as a skeleton, so none is the right
+     resting state rather than a slowed-down loop. */
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-ping {
+    animation: none !important;
+  }
+
   .eq-bar { animation: none; transform: scaleY(0.7); }
 
   .meter-fill,

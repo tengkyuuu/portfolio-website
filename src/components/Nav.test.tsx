@@ -37,8 +37,8 @@ describe("Nav", () => {
   it("reports the tab that was clicked", async () => {
     const user = userEvent.setup();
     const { onChange } = renderNav();
-    await user.click(screen.getByRole("button", { name: /^Now$/ }));
-    expect(onChange).toHaveBeenCalledWith("now");
+    await user.click(screen.getByRole("button", { name: /^Skills$/ }));
+    expect(onChange).toHaveBeenCalledWith("stack");
   });
 
   it("keeps the document title out of the tab strip's column", () => {
@@ -71,7 +71,6 @@ function labelOf(id: string): string {
     work: "Projects",
     about: "About",
     stack: "Skills",
-    now: "Now",
     credentials: "Credentials",
     contact: "Contact",
   };

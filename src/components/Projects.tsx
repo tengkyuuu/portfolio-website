@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { getContent, type Project, type ProjectImage } from "../lib/content";
 import { useI18n } from "../lib/i18n";
 import { InteractiveFigure } from "./InteractiveFigure";
+import { PaperSheet } from "./PaperSheet";
 
 const kindLabel: Record<Project["kind"], string> = {
   embedded: "Embedded",
@@ -18,26 +19,6 @@ const kindAccent: Record<Project["kind"], string> = {
   desktop: "from-[#46556f] to-[#2a3a5a]",
   design: "from-[#6a4caf] to-[#3a2a78]",
 };
-
-/** A document page sized to match every other tab's bond paper
- *  (820 × 1056 px). Content taller than the page extends it rather than
- *  clipping, just like a Word document. */
-function PaperSheet({
-  pageNumber,
-  children,
-}: {
-  pageNumber: number;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="bg-paper paper-shadow w-full min-h-[1056px] px-6 md:px-14 py-10 md:py-16 flex flex-col text-ink relative overflow-hidden">
-      {children}
-      <div className="mt-auto pt-12 flex justify-center font-doc italic text-[12px] text-ink-subtle">
-        — {pageNumber} —
-      </div>
-    </section>
-  );
-}
 
 /** Normalise the two image fields into one ordered list. */
 function projectImages(project: Project): ProjectImage[] {

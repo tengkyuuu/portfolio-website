@@ -131,7 +131,7 @@ export function Hero() {
             {(
               [
                 ["I.", "work", t("nav.projects"), "Selected works across embedded, mobile, web, desktop, and design."],
-                ["II.", "about", t("nav.about"), "Background, philosophy, and the way I think about systems."],
+                ["II.", "about", t("nav.about"), "Background, how I work, and what has my attention right now."],
                 ["III.", "stack", t("nav.skills"), "Core competencies across four disciplines."],
                 ["IV.", "credentials", t("nav.credentials"), "Education, experience, and certifications."],
                 ["V.", "contact", t("nav.contact"), "How to reach me."],

@@ -39,7 +39,6 @@ const TAB_LABEL: Record<TabId, string> = {
   work: "Projects",
   about: "About",
   stack: "Skills",
-  now: "Now",
   credentials: "Credentials",
   contact: "Contact",
 };

@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  * /api/github
  *   GET public — a small, shaped snapshot of the GitHub profile behind
  *   this portfolio: contribution graph, top repositories, language mix,
- *   and recent commits (which the Now tab reuses as a changelog).
+ *   and recent commits (which the home page reuses as a changelog).
  *
  * Why proxy at all, when the GitHub API is public? Three reasons:
  *   • Rate limits. Unauthenticated GitHub allows 60 requests/hour per IP.

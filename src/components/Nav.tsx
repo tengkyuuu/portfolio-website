@@ -8,7 +8,6 @@ export type TabId =
   | "work"
   | "about"
   | "stack"
-  | "now"
   | "credentials"
   | "contact";
 
@@ -19,21 +18,22 @@ export const tabs: TabMeta[] = [
   { id: "work", key: "nav.projects" },
   { id: "about", key: "nav.about" },
   { id: "stack", key: "nav.skills" },
-  { id: "now", key: "nav.now" },
   { id: "credentials", key: "nav.credentials" },
   { id: "contact", key: "nav.contact" },
 ];
 
 /** Tabs that no longer exist, pointed at wherever their content went.
- *  "How I Work" folded into About; a shared #process link should land on
- *  the section that now holds it rather than bounce to the homepage. */
-const RETIRED_TABS: Record<string, TabId> = { process: "about" };
+ *  "How I Work" and "Now" both folded into About; a shared #process or
+ *  #now link should land on the section that holds them rather than
+ *  bounce to the homepage. */
+const RETIRED_TABS: Record<string, TabId> = { process: "about", now: "about" };
 
 /** Resolve the URL hash to a tab. Lives here rather than in App because
  *  it is only meaningful against the `tabs` table above. */
 export function hashToTab(): TabId {
-  const h = window.location.hash.replace(/^#/, "") as TabId;
-  if (tabs.some((t) => t.id === h)) return h;
+  const h = window.location.hash.replace(/^#/, "");
+  if (tabs.some((t) => t.id === h)) return h as TabId;
+  if (h.startsWith("proj-")) return "work";
   return RETIRED_TABS[h] ?? "top";
 }
 
@@ -74,45 +74,57 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
     };
   }, [menuOpen, themeOpen]);
 
-  async function shareLink() {
-    const url = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Portfolio.docx", url });
+  const shareLink = async () => {
+    const url = window.location.origin + window.location.pathname + "#" + active;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "James Vincent Calunsag — Portfolio.docx",
+          url,
+        });
         return;
-      } catch {
-        // user dismissed the share sheet — fall through to clipboard
       }
+    } catch {
+      // User cancelled or share failed; fall back to copy
     }
-    await navigator.clipboard.writeText(url);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 1500);
-  }
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Clipboard denied; no-op
+    }
+  };
 
-  const currentTheme = THEMES.find((th) => th.id === theme) ?? THEMES[0];
+  const currentTheme = THEMES.find((t) => t.id === theme) || THEMES[0];
 
   return (
-    <nav className="no-print fixed top-0 left-0 right-0 z-50 h-12 bg-paper border-b border-rule grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2 md:px-3 text-sm">
-      {/* Left: menu/tool buttons + ribbon tabs */}
-      <div className="flex items-center gap-1 min-w-0">
-        <div className="relative" ref={menuRef}>
+    <nav
+      className="no-print fixed top-0 left-0 right-0 h-10 z-40 bg-ribbon border-b border-rule font-ui text-[13px] select-none grid grid-cols-[1fr_auto_1fr] items-center px-2 md:px-3"
+      aria-label="Ribbon navigation"
+    >
+      {/* Left: file menu + quick access + tabs */}
+      <div className="flex items-center h-full min-w-0">
+        <div className="relative mr-1 md:mr-2 shrink-0" ref={menuRef}>
           <button
-            aria-label="Menu"
-            aria-expanded={menuOpen}
             onClick={() => setMenuOpen((o) => !o)}
-            className={
-              "p-2 rounded text-ink-muted transition-colors " +
-              (menuOpen ? "bg-ribbon-hover" : "hover:bg-ribbon-hover")
-            }
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            className="px-2.5 py-1 rounded bg-word-blue text-white font-medium hover:bg-word-blue/90 transition-colors flex items-center gap-1"
           >
-            <span className="material-symbols-outlined">menu</span>
+            <span>{t("nav.file")}</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              expand_more
+            </span>
           </button>
           {menuOpen && (
-            <div className="word-popover absolute top-full left-0 mt-1 w-56 py-1 font-ui text-[13px] text-ink">
+            <div
+              role="menu"
+              className="absolute left-0 top-full mt-1 w-52 bg-paper border border-rule rounded shadow-lg py-1 z-50 animate-in fade-in zoom-in-95 duration-100 font-ui text-[13px]"
+            >
               <MenuItem
                 icon="print"
-                label="Print / Save as PDF"
-                shortcut="Ctrl+P"
+                label={t("common.saveAsPdf")}
                 onClick={() => {
                   setMenuOpen(false);
                   window.print();
@@ -125,14 +137,15 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
                   void shareLink();
                 }}
               />
-              {/* Admin-only shortcuts — /resume and /status are gated, so
-                  don't advertise them to visitors who'd just hit a lock. */}
+              {/* Admin-only shortcuts — /resume, /status and /admin are
+                  gated, so don't advertise them to visitors who'd just
+                  hit a lock. */}
               {isAdminAuthed() && (
                 <>
                   <div className="my-1 h-px bg-rule" />
                   <MenuItem
                     icon="description"
-                    label="Résumé builder"
+                    label="Résumé (ATS / Modern)"
                     onClick={() => {
                       window.location.href = "/resume";
                     }}
@@ -144,16 +157,16 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
                       window.location.href = "/status";
                     }}
                   />
+                  <div className="my-1 h-px bg-rule" />
+                  <MenuItem
+                    icon="shield_person"
+                    label="Admin console"
+                    onClick={() => {
+                      window.location.href = "/admin";
+                    }}
+                  />
                 </>
               )}
-              <div className="my-1 h-px bg-rule" />
-              <MenuItem
-                icon="shield_person"
-                label="Admin console"
-                onClick={() => {
-                  window.location.href = "/admin";
-                }}
-              />
             </div>
           )}
         </div>

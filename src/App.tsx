@@ -14,10 +14,10 @@ import { hashToTab, Nav, tabs, type TabId } from "./components/Nav";
 import { PwaChips } from "./components/PwaChips";
 import { RequireAuth } from "./components/RequireAuth";
 import { SearchPalette } from "./components/SearchPalette";
-import { Hero } from "./components/Hero";
+import { Home } from "./components/Home";
 import { About } from "./components/About";
 import { Skills } from "./components/Skills";
-import { Now } from "./components/Now";
+import { PaperSheet } from "./components/PaperSheet";
 import { Projects } from "./components/Projects";
 import { Certifications } from "./components/Certifications";
 import { Contact } from "./components/Contact";
@@ -179,55 +179,50 @@ function PortfolioDoc() {
           (focusMode ? "pt-6 pb-6" : "pt-16 pb-12")
         }
       >
-        {active === "work" ? (
-          /* Projects render as a stack of A4 sheets (Word "Print Layout"),
-             so this wrapper is transparent — each project supplies its own
-             paper. It still carries id="paper-doc" for word count / read-aloud. */
-          <div
-            key={`${active}-v${contentVersion}`}
-            id="paper-doc"
-            style={{ zoom: zoom / 100 }}
-            className="paper-enter w-full max-w-[820px] my-2 mx-auto flex flex-col gap-6 md:gap-8 text-ink relative"
-          >
-            {ready ? (
-              <Projects />
-            ) : (
-              <section className="bg-paper paper-shadow w-full min-h-[1056px] px-6 md:px-14 py-10 md:py-16 flex flex-col">
-                <TabSkeleton tab="work" />
-              </section>
-            )}
-            <TabLoader visible={showLoader} label={activeLabel} />
-          </div>
-        ) : (
-          <article
-            key={`${active}-v${contentVersion}`}
-            id="paper-doc"
-            style={{ zoom: zoom / 100 }}
-            className="paper-enter bg-paper paper-shadow w-full max-w-[820px] min-h-[1056px] px-6 md:px-14 py-10 md:py-16 my-2 mx-auto flex flex-col text-ink relative overflow-hidden"
-          >
-            {ready ? (
-              <>
-                {active === "top" && <Hero />}
-                {active === "about" && <About />}
-                {active === "stack" && <Skills />}
-                {active === "now" && <Now />}
-                {active === "credentials" && <Certifications />}
-                {active === "contact" && <Contact />}
-              </>
-            ) : (
+        {/* Every tab renders as a stack of A4 sheets (Word "Print Layout"),
+            so this wrapper is transparent — each sheet supplies its own
+            paper, and a tab with more content than fits spills onto a
+            second sheet of the same size rather than stretching the first.
+            It still carries id="paper-doc" for word count / read-aloud. */}
+        <div
+          key={`${active}-v${contentVersion}`}
+          id="paper-doc"
+          style={{ zoom: zoom / 100 }}
+          className="paper-enter w-full max-w-[820px] my-2 mx-auto flex flex-col gap-6 md:gap-8 text-ink relative"
+        >
+          {ready ? (
+            <>
+              {/* Home and About each run to two sheets, so they number
+                  their own from the page they start on. */}
+              {active === "top" && <Home page={currentPage} />}
+              {active === "work" && <Projects />}
+              {active === "about" && <About page={currentPage} />}
+              {active === "stack" && (
+                <PaperSheet pageNumber={currentPage}>
+                  <Skills />
+                </PaperSheet>
+              )}
+              {active === "credentials" && (
+                <PaperSheet pageNumber={currentPage}>
+                  <Certifications />
+                </PaperSheet>
+              )}
+              {active === "contact" && (
+                <PaperSheet pageNumber={currentPage}>
+                  <Contact />
+                </PaperSheet>
+              )}
+            </>
+          ) : (
+            <PaperSheet pageNumber={currentPage}>
               <TabSkeleton tab={active} />
-            )}
+            </PaperSheet>
+          )}
 
-            {/* Page number (footer of the paper, Word-style) */}
-            <div className="mt-auto pt-12 flex justify-center font-doc italic text-[12px] text-ink-subtle">
-              — {currentPage} —
-            </div>
-
-            {/* "{Tab} loading…" overlay — only mounts after the threshold,
-                only while the tab is actually still loading */}
-            <TabLoader visible={showLoader} label={activeLabel} />
-          </article>
-        )}
+          {/* "{Tab} loading…" overlay — only mounts after the threshold,
+              only while the tab is actually still loading */}
+          <TabLoader visible={showLoader} label={activeLabel} />
+        </div>
       </main>
 
       {!focusMode && (
