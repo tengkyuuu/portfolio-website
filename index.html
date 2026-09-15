@@ -16,10 +16,13 @@
     />
 
     <!-- Open Graph / social preview.
-         og:image is relative; once you have a final domain, change it (and
-         twitter:image) to the absolute URL, e.g. https://your-domain/og.png,
-         so LinkedIn and Facebook render the card reliably. -->
+         og:image and twitter:image are root-relative here and are rewritten
+         to absolute URLs at build time by scripts/apply-seo.mjs, which also
+         injects canonical and og:url. LinkedIn and Facebook both refuse to
+         resolve a relative image, so the card stays blank until SITE_URL (or
+         Vercel's VERCEL_PROJECT_PRODUCTION_URL) is set. -->
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en" />
     <meta property="og:site_name" content="Portfolio.docx" />
     <meta property="og:title" content="James Vincent Calunsag — Computer Engineer" />
     <meta
@@ -41,6 +44,41 @@
       content="Computer Engineer working at the seam of embedded systems, frontend, and design."
     />
     <meta name="twitter:image" content="/og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="James Vincent Calunsag, Computer Engineer. Embedded, frontend, and design."
+    />
+
+    <meta name="author" content="James Vincent Calunsag" />
+    <!-- max-image-preview:large opts the og image into full-size thumbnails
+         in Google results; without it a personal site usually gets none. -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+
+    <!-- Person structured data. This is the highest-value markup on a
+         personal site: it is what makes the name a resolvable entity rather
+         than a string, and sameAs is how the profiles get associated with
+         it. Paths are root-relative and absolutised by apply-seo.mjs. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "James Vincent Calunsag",
+        "jobTitle": "Computer Engineer",
+        "description": "Computer Engineer working at the seam of embedded systems, frontend, and design.",
+        "url": "/",
+        "image": "/og.png",
+        "email": "mailto:jamescalunsag13@gmail.com",
+        "knowsAbout": [
+          "Embedded systems",
+          "Frontend development",
+          "Interface design"
+        ],
+        "sameAs": [
+          "https://github.com/tengkyuuu",
+          "https://linkedin.com/in/james-vincent-calunsag"
+        ]
+      }
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -52,7 +90,10 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block"
       rel="stylesheet"
     />
-    <title>Portfolio.docx — James Vincent Calunsag</title>
+    <!-- Name first: "Portfolio.docx" is the concept, but nobody searches
+         for it. The name is the query this page has to win, and Google
+         truncates around 60 characters, so the role sits inside that. -->
+    <title>James Vincent Calunsag — Computer Engineer · Portfolio.docx</title>
   </head>
   <body>
     <div id="root"></div>
