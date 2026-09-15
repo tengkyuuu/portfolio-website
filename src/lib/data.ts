@@ -381,6 +381,54 @@ export const projects: Project[] = [
     demoUrl: "https://www.famecrm.com/",
     links: [{ label: "Repo", href: "#" }],
   },
+  {
+    id: "aperture-journal",
+    index: "09",
+    title: "Aperture",
+    blurb:
+      "A private journaling companion where you think alongside Gemini — entries you seal are encrypted in the browser, so neither the server nor the model can read them, and every AI call is logged where you can audit it.",
+    tags: ["Next.js", "TypeScript", "Firebase", "Gemini API"],
+    stack: [
+      "Next.js (App Router)",
+      "TypeScript",
+      "Firebase Auth (httpOnly session cookies)",
+      "Cloud Firestore",
+      "Gemini (@google/genai)",
+      "Cloud Run + Secret Manager",
+      "WebCrypto (AES-GCM, PBKDF2)",
+      "Tailwind CSS",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-09",
+    year: "2026",
+    page: "10",
+    figCaption:
+      "FIG 9.1: Aperture — the sign-in gate's privacy pitch, and the home view's mode picker and running session list.",
+    challenge:
+      "Handing a journal to an AI means handing over the most private writing a person does, and most products ask for that trust without offering any way to check what left the device or who could read it. Journals compound it by being write-only: people stop because what they pour in never comes back, and a search box nobody opens is not an answer.",
+    solution:
+      "Tenancy is the Firestore path itself, so a cross-user leak needs a bug in the path rather than a forgotten filter, and rules deny client writes outright. Sealed entries are AES-GCM encrypted in the browser under a key never persisted. Echoes closes the write-only loop, surfacing an older entry mid-draft with the mood delta — gated by consent the server enforces, and logged so the feature reading unsent text is the most auditable one in the app.",
+    // These two are the sign-in gate and the home view — not the Echoes /
+    // Privacy Ledger / sealed-entry / Insights shots the intake notes
+    // originally suggested. Real screenshots take precedence; figCaption
+    // above describes what these two actually show rather than what was
+    // proposed. Swap in the remaining shots here if they're captured later.
+    gallery: [
+      {
+        src: "/projects/aperture-signin.png",
+        alt: "Aperture sign-in screen — dark UI with the pink Aperture wordmark, the headline 'A private place to think,' a Continue with Google button, and three bordered privacy callouts: Yours Alone, Sealed Means Sealed, and Nothing Hidden.",
+      },
+      {
+        src: "/projects/aperture-home.png",
+        alt: "Aperture home view — a sessions sidebar grouped by month on the left, and on the right 'Hello, James.' above four mode buttons (Reflect, Brainstorm, Untangle, Rubber Duck), a prompt composer, and a Still Open list of two follow-up questions.",
+      },
+    ],
+    demoUrl: "https://aperture-123144439483.asia-southeast1.run.app",
+    links: [
+      { label: "Repo", href: "https://github.com/tengkyuuu/aperture-journal" },
+      { label: "Live", href: "https://aperture-123144439483.asia-southeast1.run.app" },
+    ],
+  },
 ];
 
 export type SkillGroup = {
