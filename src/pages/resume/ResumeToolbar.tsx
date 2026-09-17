@@ -72,7 +72,7 @@ export function ResumeToolbar({
         </a>
         <button
           onClick={onDownload}
-          className="inline-flex items-center gap-1.5 bg-word-blue text-white font-ui text-[13px] font-medium px-3.5 py-2 rounded-sm hover:bg-word-blue-dark transition-colors"
+          className="inline-flex items-center gap-1.5 bg-word-blue text-paper font-ui text-[13px] font-medium px-3.5 py-2 rounded-sm hover:bg-word-blue-dark transition-colors"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
             download

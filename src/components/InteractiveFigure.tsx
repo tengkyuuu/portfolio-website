@@ -257,7 +257,7 @@ function LiveDemo({ url, title }: { url: string; title: string }) {
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-white font-ui text-[13px] font-semibold px-4 py-2 rounded-sm transition-colors"
+            className="mt-4 inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-paper font-ui text-[13px] font-semibold px-4 py-2 rounded-sm transition-colors"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
               open_in_new
@@ -294,7 +294,7 @@ function LiveDemo({ url, title }: { url: string; title: string }) {
               className={
                 "grid place-items-center w-7 h-7 rounded-sm transition-colors " +
                 (device === d
-                  ? "bg-word-blue text-white"
+                  ? "bg-word-blue text-paper"
                   : "text-ink-muted hover:bg-ribbon-hover")
               }
             >

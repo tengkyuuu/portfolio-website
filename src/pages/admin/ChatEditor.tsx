@@ -331,7 +331,7 @@ function Bubble({ message }: { message: ChatMessage }) {
           className={
             "rounded-sm rounded-tr-none px-3 py-2 font-ui text-[12px] leading-relaxed whitespace-pre-wrap " +
             (mine
-              ? "bg-word-blue text-white"
+              ? "bg-word-blue text-paper"
               : "bg-paper border border-rule text-ink-muted")
           }
         >

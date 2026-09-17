@@ -246,7 +246,7 @@ export function Assistant() {
               : "Open Blue"
           }
           title="Ask Blue"
-          className="no-print fixed bottom-10 right-4 z-40 grid place-items-center w-12 h-12 rounded-full bg-word-blue hover:bg-word-blue-dark text-white shadow-lg transition-transform hover:scale-105"
+          className="no-print fixed bottom-10 right-4 z-40 grid place-items-center w-12 h-12 rounded-full bg-word-blue hover:bg-word-blue-dark text-paper shadow-lg transition-transform hover:scale-105"
         >
           <span className="text-[22px] leading-none" aria-hidden="true">
             📎
@@ -272,7 +272,7 @@ export function Assistant() {
         >
           {/* Header */}
           <header className="flex items-center gap-2 border-b border-rule bg-ribbon px-3 py-2">
-            <span className="grid place-items-center w-7 h-7 rounded-full bg-word-blue text-white text-[14px]">
+            <span className="grid place-items-center w-7 h-7 rounded-full bg-word-blue text-paper text-[14px]">
               {mode === "human" ? "🧑" : "📎"}
             </span>
             <div className="flex-1 min-w-0 leading-tight">
@@ -408,7 +408,7 @@ export function Assistant() {
               type="submit"
               disabled={pending !== null || !input.trim()}
               aria-label="Send"
-              className="grid place-items-center w-8 h-8 rounded-sm bg-word-blue hover:bg-word-blue-dark text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="grid place-items-center w-8 h-8 rounded-sm bg-word-blue hover:bg-word-blue-dark text-paper disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                 send
@@ -461,7 +461,7 @@ function AssistantBubble({
 function VisitorBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[85%] bg-word-blue text-white rounded-sm rounded-tr-none px-3 py-2 font-ui text-[13px] leading-relaxed whitespace-pre-wrap">
+      <div className="max-w-[85%] bg-word-blue text-paper rounded-sm rounded-tr-none px-3 py-2 font-ui text-[13px] leading-relaxed whitespace-pre-wrap">
         {text}
       </div>
     </div>

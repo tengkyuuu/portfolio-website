@@ -170,7 +170,7 @@ export function ReplyComposer({
                   className={
                     "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm font-ui text-[12px] font-medium transition-colors " +
                     (isActive
-                      ? "bg-word-blue text-white"
+                      ? "bg-word-blue text-paper"
                       : "text-ink-muted border border-rule bg-paper hover:bg-ribbon-hover")
                   }
                 >
@@ -241,7 +241,7 @@ export function ReplyComposer({
             href={gmailHref}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-white font-ui text-[13px] font-semibold px-3.5 py-1.5 rounded-sm transition-colors"
+            className="inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-paper font-ui text-[13px] font-semibold px-3.5 py-1.5 rounded-sm transition-colors"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
               send

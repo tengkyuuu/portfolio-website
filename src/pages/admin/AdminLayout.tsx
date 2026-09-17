@@ -314,7 +314,7 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
                 className={
                   "shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-sm font-ui text-[12px] font-medium transition-colors " +
                   (active === s.id
-                    ? "bg-word-blue text-white"
+                    ? "bg-word-blue text-paper"
                     : "text-ink-muted hover:bg-ribbon-hover")
                 }
               >
@@ -328,7 +328,7 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
                       "inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm font-ui text-[10px] font-bold tabular-nums " +
                       (active === s.id
                         ? "bg-white/25 text-white"
-                        : "bg-word-blue text-white")
+                        : "bg-word-blue text-paper")
                     }
                   >
                     {badge}
@@ -597,8 +597,8 @@ function SidebarItem({
             className={
               "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-sm font-ui text-[10px] font-bold tabular-nums " +
               (active
-                ? "bg-word-blue text-white"
-                : "bg-word-blue text-white")
+                ? "bg-word-blue text-paper"
+                : "bg-word-blue text-paper")
             }
           >
             {badge > 99 ? "99+" : badge}

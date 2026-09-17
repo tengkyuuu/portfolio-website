@@ -178,7 +178,7 @@ function Gate({ onAuth }: Props) {
             <button
               type="submit"
               disabled={pending || !value}
-              className="w-full inline-flex items-center justify-center gap-2 bg-word-blue hover:bg-word-blue-dark active:scale-[0.99] text-white font-ui text-[14px] font-semibold py-2.5 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full inline-flex items-center justify-center gap-2 bg-word-blue hover:bg-word-blue-dark active:scale-[0.99] text-paper font-ui text-[14px] font-semibold py-2.5 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {pending ? (
                 <>
@@ -336,7 +336,7 @@ function SetupGuide() {
                       setCopied(true);
                       setTimeout(() => setCopied(false), 1200);
                     }}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-sm font-ui text-[11px] font-medium bg-word-blue text-white hover:bg-word-blue-dark transition-colors"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-sm font-ui text-[11px] font-medium bg-word-blue text-paper hover:bg-word-blue-dark transition-colors"
                   >
                     <span
                       className="material-symbols-outlined"

@@ -356,7 +356,7 @@ export function ContactForm() {
           <button
             type="submit"
             disabled={disabled}
-            className="inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark disabled:opacity-60 disabled:cursor-not-allowed text-white font-ui text-[13px] font-semibold px-4 py-2 rounded-sm transition-colors"
+            className="inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark disabled:opacity-60 disabled:cursor-not-allowed text-paper font-ui text-[13px] font-semibold px-4 py-2 rounded-sm transition-colors"
           >
             {disabled ? (
               <>

@@ -160,7 +160,7 @@ function BookingSection({ url }: { url: string }) {
           </p>
           <button
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-white font-ui text-[13px] font-semibold px-3.5 py-2 rounded-sm transition-colors"
+            className="inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-paper font-ui text-[13px] font-semibold px-3.5 py-2 rounded-sm transition-colors"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
               event_available

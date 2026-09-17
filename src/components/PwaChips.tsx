@@ -139,7 +139,7 @@ function Chip({
           className={
             "shrink-0 inline-flex items-center gap-1 rounded-sm px-2.5 py-1 font-ui text-[12px] font-semibold transition-colors " +
             (isPrimary
-              ? "bg-word-blue text-white hover:bg-word-blue-dark"
+              ? "bg-word-blue text-paper hover:bg-word-blue-dark"
               : "border border-rule text-ink hover:bg-ribbon-hover")
           }
         >

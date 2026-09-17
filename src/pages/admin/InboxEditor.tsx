@@ -196,7 +196,7 @@ export function InboxEditor() {
               className={
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm font-ui text-[12px] font-medium transition-colors " +
                 (isActive
-                  ? "bg-word-blue text-white"
+                  ? "bg-word-blue text-paper"
                   : "text-ink-muted border border-rule bg-paper hover:bg-ribbon-hover")
               }
             >
@@ -210,7 +210,7 @@ export function InboxEditor() {
                     "inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm font-ui text-[10px] font-bold tabular-nums " +
                     (isActive
                       ? "bg-white/25 text-white"
-                      : "bg-word-blue text-white")
+                      : "bg-word-blue text-paper")
                   }
                 >
                   {badge}

@@ -185,7 +185,7 @@ export function Button({
 }: ButtonProps) {
   const styles: Record<NonNullable<ButtonProps["variant"]>, string> = {
     primary:
-      "bg-word-blue text-white hover:bg-word-blue-dark active:scale-[0.98]",
+      "bg-word-blue text-paper hover:bg-word-blue-dark active:scale-[0.98]",
     secondary:
       "bg-paper text-ink border border-rule hover:bg-ribbon-hover active:scale-[0.98]",
     ghost:
