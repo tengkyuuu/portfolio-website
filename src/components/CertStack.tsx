@@ -15,9 +15,8 @@ import type { Cert } from "../lib/content";
  *   • Touch: swipe up/down changes cards (>= 40px threshold).
  *   • Reduced-motion honoured — transitions drop to instant.
  *   • Fullscreen "expand" button — pops a lightbox for close inspection.
- *
- * Falls back to a plain list of thumbnails when JS is disabled (the
- * <noscript> path).
+ *   • Collapsed behind a Word-style heading until asked for, so the deck
+ *     never renders (or fetches its images) unprompted.
  */
 
 const CARD_TRANSITION = 460; // ms
@@ -32,6 +31,13 @@ type Props = {
 export function CertStack({ certs, issuer }: Props) {
   const [idx, setIdx] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  /* Collapsed until asked for. Nine course certificates are supporting
+     evidence, not a headline: left open they push the awards list — the
+     things actually worth reading first — a full screen up the page, and
+     they cost nine image fetches nobody requested. Word collapses a
+     heading exactly this way, so the affordance is already in the world
+     we are imitating. */
+  const [open, setOpen] = useState(false);
   const deckRef = useRef<HTMLDivElement>(null);
   const accumRef = useRef(0);
   const lastWheelRef = useRef(0);
@@ -78,7 +84,7 @@ export function CertStack({ certs, issuer }: Props) {
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, count]);
+  }, [idx, count, open]);
 
   // Touch: swipe support.
   useEffect(() => {
@@ -101,7 +107,7 @@ export function CertStack({ certs, issuer }: Props) {
       el.removeEventListener("touchend", onEnd);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count]);
+  }, [count, open]);
 
   // Keyboard: focused-on-deck arrows navigate.
   const onDeckKeyDown = (e: React.KeyboardEvent) => {
@@ -128,19 +134,43 @@ export function CertStack({ certs, issuer }: Props) {
       className="mt-2"
       aria-labelledby="cert-stack-heading"
     >
+      {/* Word's collapsible heading: a triangle that turns, the heading
+          itself as the hit target, and the body hidden until asked for. */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="cert-stack-body"
+        className="group w-full flex items-baseline gap-1.5 text-left py-1 -mx-1 px-1 rounded-sm hover:bg-ribbon-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-word-blue transition-colors"
+      >
+        <span
+          aria-hidden="true"
+          className={
+            "material-symbols-outlined icon-fill text-word-blue shrink-0 self-center transition-transform duration-150 motion-reduce:transition-none " +
+            (open ? "rotate-90" : "")
+          }
+          style={{ fontSize: 18 }}
+        >
+          arrow_right
+        </span>
+        <span
+          id="cert-stack-heading"
+          className="font-ui text-[11px] font-semibold uppercase tracking-[0.14em] text-word-blue"
+        >
+          {count} Course Certificates · {issuer}
+        </span>
+        <span className="ml-auto font-ui text-[11px] text-ink-subtle shrink-0 self-center">
+          {open ? "Hide" : "Show"}
+        </span>
+      </button>
+
+      {open && (
+        <div id="cert-stack-body" className="mt-2">
       <div className="flex items-baseline justify-between gap-3 mb-2">
-        <div className="min-w-0">
-          <p
-            id="cert-stack-heading"
-            className="font-ui text-[11px] font-semibold uppercase tracking-[0.14em] text-word-blue"
-          >
-            {count} Course Certificates · {issuer}
-          </p>
-          <p className="font-ui text-[11px] text-ink-subtle italic">
-            Scroll on the deck or use ← → to flip through. Click a card to
-            enlarge.
-          </p>
-        </div>
+        <p className="font-ui text-[11px] text-ink-subtle italic min-w-0">
+          Scroll on the deck or use ← → to flip through. Click a card to
+          enlarge.
+        </p>
         <span className="font-ui text-[11px] font-semibold text-ink-subtle tabular-nums shrink-0">
           {idx + 1} / {count}
         </span>
@@ -270,8 +300,10 @@ export function CertStack({ certs, issuer }: Props) {
               }
             />
           ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {expanded && (
         <CertLightbox

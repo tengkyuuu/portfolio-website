@@ -506,6 +506,12 @@ export type Cert = {
 
 export const certs: Cert[] = [
   {
+    title: "Google Cloud Gen AI Academy APAC 2026 — Cohort 3",
+    issuer: "Google Cloud · Hack2skill",
+    date: "2026",
+    href: "/credentials/Hack2Skill.pdf",
+  },
+  {
     title: "Champion — Regional Programming Competition (C++)",
     issuer: "ICpEP.SE",
     date: "2023",
