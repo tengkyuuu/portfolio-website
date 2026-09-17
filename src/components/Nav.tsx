@@ -106,16 +106,17 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
       {/* Left: file menu + quick access + tabs */}
       <div className="flex items-center h-full min-w-0">
         <div className="relative mr-1 md:mr-2 shrink-0" ref={menuRef}>
+          {/* Word's File tab is a flat, full-height rectangle at the very
+              left of the ribbon — not a rounded pill, and it carries no
+              chevron. Squaring it off and letting it run the full height
+              of the bar is most of what makes the strip read as Word. */}
           <button
             onClick={() => setMenuOpen((o) => !o)}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            className="px-2.5 py-1 rounded bg-word-blue text-white font-medium hover:bg-word-blue/90 transition-colors flex items-center gap-1"
+            className="h-full px-3.5 rounded-none bg-word-blue text-paper font-medium tracking-[0.01em] hover:brightness-110 active:brightness-95 transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-paper/70"
           >
-            <span>{t("nav.file")}</span>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              expand_more
-            </span>
+            {t("nav.file")}
           </button>
           {menuOpen && (
             <div
@@ -125,6 +126,7 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
               <MenuItem
                 icon="print"
                 label={t("common.saveAsPdf")}
+                shortcut="Ctrl+P"
                 onClick={() => {
                   setMenuOpen(false);
                   window.print();
@@ -308,7 +310,7 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
           />
         </div>
 
-        <div className="ml-1 w-8 h-8 rounded-full bg-word-blue text-white grid place-items-center text-[11px] font-semibold tracking-wider">
+        <div className="ml-1 w-8 h-8 rounded-full bg-word-blue text-paper grid place-items-center text-[11px] font-semibold tracking-wider">
           JV
         </div>
       </div>

@@ -38,7 +38,8 @@ export const LANGUAGES: LanguageMeta[] = [
 type Dict = Record<string, string>;
 
 const en: Dict = {
-  // Nav tabs
+  // Nav tabs — File first, the way Word's ribbon orders them
+  "nav.file": "File",
   "nav.home": "Home",
   "nav.projects": "Projects",
   "nav.about": "About",
@@ -62,6 +63,7 @@ const en: Dict = {
   "common.downloadPdf": "Download PDF",
   "common.signIn": "Sign in",
   "common.signOut": "Sign out",
+  "common.saveAsPdf": "Print / Save as PDF",
   "common.share": "Share",
   "common.viewLive": "View live",
 
@@ -81,6 +83,7 @@ const en: Dict = {
 };
 
 const ceb: Dict = {
+  "nav.file": "File",
   "nav.home": "Panimalay",
   "nav.projects": "Mga Proyekto",
   "nav.about": "Bahin",
@@ -102,6 +105,7 @@ const ceb: Dict = {
   "common.downloadPdf": "I-download ang PDF",
   "common.signIn": "Mag-login",
   "common.signOut": "Mag-logout",
+  "common.saveAsPdf": "I-print / I-save nga PDF",
   "common.share": "Ipaambit",
   "common.viewLive": "Tan-awa",
 
@@ -119,6 +123,7 @@ const ceb: Dict = {
 };
 
 const tl: Dict = {
+  "nav.file": "File",
   "nav.home": "Tahanan",
   "nav.projects": "Mga Proyekto",
   "nav.about": "Tungkol",
@@ -140,6 +145,7 @@ const tl: Dict = {
   "common.downloadPdf": "I-download ang PDF",
   "common.signIn": "Mag-sign in",
   "common.signOut": "Mag-sign out",
+  "common.saveAsPdf": "I-print / I-save bilang PDF",
   "common.share": "Ibahagi",
   "common.viewLive": "Tingnan",
 
@@ -157,6 +163,7 @@ const tl: Dict = {
 };
 
 const cbk: Dict = {
+  "nav.file": "Archivo",
   "nav.home": "Casa",
   "nav.projects": "Mga Proyecto",
   "nav.about": "Acerca",
@@ -178,6 +185,7 @@ const cbk: Dict = {
   "common.downloadPdf": "Descargá el PDF",
   "common.signIn": "Entrá",
   "common.signOut": "Salí",
+  "common.saveAsPdf": "Imprimí / Guardá como PDF",
   "common.share": "Compartí",
   "common.viewLive": "Mirá",
 
