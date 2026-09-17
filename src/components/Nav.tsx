@@ -203,7 +203,10 @@ export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
           </button>
         </div>
 
-        <div className="hidden md:flex items-end h-full pt-1 overflow-x-auto">
+        {/* pb-1.5 lifts the whole strip off the nav's bottom rule. Without
+            it the active underline and the hover fill run into that rule
+            and the tabs read as if they are falling out of the bar. */}
+        <div className="hidden md:flex items-end h-full pt-1 pb-1.5 gap-0.5 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = active === tab.id;
             return (
