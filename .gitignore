@@ -21,3 +21,6 @@ server/data/
 # Test artefacts
 coverage
 test-results.json
+
+# Playwright screenshot output (scripts/shoot.mjs)
+.screenshots/
