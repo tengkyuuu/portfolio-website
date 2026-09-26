@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { getContent } from "../lib/content";
 import { useI18n } from "../lib/i18n";
 import { CertStack } from "./CertStack";
+import { Award } from "lucide-react";
+import { ChapterHeading } from "./ui/ChapterHeading";
 
 export function Certifications() {
   const { t } = useI18n();
@@ -12,19 +14,33 @@ export function Certifications() {
 
   return (
     <section className="space-y-10">
+      <ChapterHeading
+        number="05"
+        eyebrow="THE JOURNEY SO FAR"
+        title={
+          <>
+            Always a <em>student.</em>
+          </>
+        }
+        description="The experiences, milestones, and small steps that shape the way I build."
+      >
+        <Award />
+      </ChapterHeading>
       {/* Education + Experience */}
       <div>
         <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
           {t("section.educationExperience")}
         </h2>
-        <ul className="space-y-4 font-doc text-[15px]">
+        <ul className="credentials-timeline space-y-4 font-doc text-[15px]">
           {timeline.map((entry) => (
             <li
               key={entry.title}
               className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1"
             >
               <div className="flex-1">
-                <h3 className="font-bold text-ink leading-snug">{entry.title}</h3>
+                <h3 className="font-bold text-ink leading-snug">
+                  {entry.title}
+                </h3>
                 <p className="text-ink-muted text-[14px]">{entry.org}</p>
                 <p className="text-ink-muted text-[14px] mt-1 leading-relaxed">
                   {entry.blurb}
@@ -43,7 +59,7 @@ export function Certifications() {
         <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
           {t("section.certificationsAwards")}
         </h2>
-        <ul className="font-doc text-[15px] divide-y divide-rule">
+        <ul className="credentials-awards font-doc text-[15px] divide-y divide-rule">
           {awards.map((c) => {
             const isLink = Boolean(c.href && c.href !== "#");
             return (
@@ -65,7 +81,10 @@ export function Certifications() {
                   >
                     {c.title}
                   </a>
-                  <span className="text-ink-muted text-[14px]"> — {c.issuer}</span>
+                  <span className="text-ink-muted text-[14px]">
+                    {" "}
+                    — {c.issuer}
+                  </span>
                 </div>
                 {c.date && (
                   <span className="font-ui text-[12px] text-ink-subtle uppercase tracking-wider tabular-nums shrink-0">
@@ -75,7 +94,6 @@ export function Certifications() {
               </li>
             );
           })}
-
         </ul>
 
         {/* Sololearn course certs — inline scroll-to-view card deck */}

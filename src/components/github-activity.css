@@ -1,0 +1,655 @@
+.github-panel {
+  --gh-tone-0: var(--color-word-blue);
+  --gh-tone-1: #7f9bba;
+  --gh-tone-2: #8e82ad;
+  --gh-tone-3: #559b93;
+  --gh-tone-4: #bf9b61;
+  --gh-tone-5: #ac859c;
+}
+.gh-panel-heading,
+.gh-panel-heading > div,
+.gh-panel-heading > a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.gh-panel-heading {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-rule);
+  padding-bottom: 16px;
+}
+.gh-panel-heading h2 {
+  color: var(--color-word-blue);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.gh-panel-heading svg {
+  color: var(--color-word-blue);
+}
+.gh-panel-heading > a {
+  color: var(--color-ink-muted);
+  font-size: 11px;
+}
+.gh-panel-heading > a:hover {
+  color: var(--color-word-blue);
+}
+.gh-introduction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  margin: 27px 0;
+}
+.gh-introduction h3,
+.gh-detail-heading > h3 {
+  font-family: var(--font-doc);
+  font-size: 33px;
+  line-height: 1.15;
+  letter-spacing: -0.7px;
+}
+.gh-introduction h3 em,
+.gh-detail-heading em {
+  color: var(--color-word-blue);
+}
+.gh-introduction > p {
+  font-size: 11px;
+  color: var(--color-ink-muted);
+  line-height: 1.8;
+}
+.gh-stat-strip {
+  display: grid;
+  grid-template-columns: 1.9fr repeat(3, 1fr);
+  padding: 18px 0;
+  border-top: 1px solid var(--color-rule);
+  border-bottom: 1px solid var(--color-rule);
+  margin-bottom: 24px;
+}
+.gh-stat-featured {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-word-blue);
+}
+.gh-stat-featured > strong {
+  font-size: 35px;
+  letter-spacing: -1.8px;
+  font-weight: 600;
+  line-height: 1;
+}
+.gh-stat-featured span {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.gh-stat-featured small {
+  display: block;
+  margin-top: 4px;
+  font-size: 8px;
+  color: var(--color-ink-subtle);
+}
+.gh-small-stat {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  gap: 4px 9px;
+  border-left: 1px solid var(--color-rule);
+}
+.gh-small-stat svg {
+  color: var(--color-ink-subtle);
+  stroke-width: 1.5;
+}
+.gh-small-stat > strong {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+}
+.gh-small-stat > span {
+  grid-column: 1/-1;
+  text-align: center;
+  font-size: 9px;
+  color: var(--color-ink-muted);
+}
+.gh-insights {
+  display: grid;
+  grid-template-columns: minmax(0, 2.15fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.gh-calendar-panel,
+.gh-languages {
+  padding: 18px;
+  border: 1px solid var(--color-rule);
+  border-radius: 5px;
+  background: var(--color-row-alt);
+  min-width: 0;
+}
+.gh-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.gh-card-heading h3 {
+  font-size: 12px;
+  font-weight: 600;
+}
+.gh-card-heading > svg {
+  color: var(--color-word-blue);
+}
+.gh-range {
+  display: flex;
+  border: 1px solid var(--color-rule);
+  border-radius: 4px;
+  background: var(--color-paper);
+  padding: 2px;
+  gap: 2px;
+}
+.gh-range button {
+  font-size: 9px;
+  padding: 4px 7px;
+  border-radius: 2px;
+  cursor: pointer;
+  color: var(--color-ink-muted);
+}
+.gh-range button[aria-pressed="true"] {
+  background: var(--color-word-blue);
+  color: var(--color-paper);
+}
+.gh-calendar-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 18px 0 16px;
+  font-size: 10px;
+}
+.gh-calendar-summary strong {
+  font-weight: 500;
+}
+.gh-calendar-summary > span {
+  color: var(--color-ink-subtle);
+}
+.gh-calendar-scroll {
+  overflow-x: auto;
+  padding: 3px;
+  margin: -3px;
+}
+.gh-calendar-grid {
+  display: grid;
+  gap: 4px;
+}
+.gh-calendar-week,
+.gh-weekday-labels {
+  display: grid;
+  grid-template-rows: repeat(7, 23px);
+  gap: 4px;
+}
+.gh-calendar-year {
+  min-width: 650px;
+}
+.gh-calendar-year .gh-calendar-week,
+.gh-calendar-year .gh-weekday-labels {
+  grid-template-rows: repeat(7, 13px);
+}
+.gh-weekday-labels {
+  color: var(--color-ink-subtle);
+  font-size: 8px;
+  align-items: center;
+}
+.gh-day {
+  width: 100%;
+  min-width: 0;
+  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 4%, transparent);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.gh-day:hover {
+  transform: translateY(-2px);
+}
+.gh-day.is-selected {
+  outline: 2px solid var(--color-word-blue);
+  outline-offset: 1px;
+}
+.gh-level-0 {
+  background: color-mix(in srgb, var(--color-rule) 72%, var(--color-paper));
+}
+.gh-level-1 {
+  background: color-mix(
+    in srgb,
+    var(--color-word-blue) 27%,
+    var(--color-paper)
+  );
+}
+.gh-level-2 {
+  background: color-mix(
+    in srgb,
+    var(--color-word-blue) 49%,
+    var(--color-paper)
+  );
+}
+.gh-level-3 {
+  background: color-mix(
+    in srgb,
+    var(--color-word-blue) 74%,
+    var(--color-paper)
+  );
+}
+.gh-level-4 {
+  background: var(--color-word-blue);
+}
+.gh-calendar-axis,
+.gh-calendar-axis > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gh-calendar-axis {
+  justify-content: space-between;
+  margin-top: 12px;
+  color: var(--color-ink-subtle);
+  font-size: 8px;
+}
+.gh-calendar-axis i {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+}
+.gh-day-readout {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-top: 1px solid var(--color-rule);
+  margin-top: 15px;
+  padding-top: 12px;
+  font-size: 9px;
+  color: var(--color-ink-muted);
+}
+.gh-day-readout strong {
+  margin-left: auto;
+  color: var(--color-word-blue);
+  font-weight: 600;
+}
+.gh-calendar-panel figcaption {
+  font-size: 9px;
+  line-height: 1.7;
+  color: var(--color-ink-subtle);
+  margin-top: 12px;
+}
+.gh-languages > p {
+  margin-top: 7px;
+  font-size: 9px;
+  color: var(--color-ink-subtle);
+}
+.gh-language-spectrum {
+  display: flex;
+  overflow: hidden;
+  gap: 2px;
+  height: 8px;
+  border-radius: 3px;
+  margin: 18px 0;
+}
+.gh-language-0 {
+  background: var(--gh-tone-0);
+}
+.gh-language-1 {
+  background: var(--gh-tone-1);
+}
+.gh-language-2 {
+  background: var(--gh-tone-2);
+}
+.gh-language-3 {
+  background: var(--gh-tone-3);
+}
+.gh-language-4 {
+  background: var(--gh-tone-4);
+}
+.gh-language-5 {
+  background: var(--gh-tone-5);
+}
+.gh-languages li + li {
+  margin-top: 12px;
+}
+.gh-languages li > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+}
+.gh-languages li i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.gh-languages li strong {
+  font-weight: 500;
+}
+.gh-languages li > div:first-child > span {
+  margin-left: auto;
+  color: var(--color-ink-subtle);
+  font-size: 9px;
+}
+.gh-language-track {
+  margin-top: 5px;
+  height: 3px;
+  background: var(--color-rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.gh-language-track > span {
+  display: block;
+  height: 100%;
+}
+.gh-languages > small {
+  display: block;
+  font-size: 8px;
+  line-height: 1.7;
+  margin-top: 18px;
+  color: var(--color-ink-subtle);
+}
+.gh-source-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 8px;
+  color: var(--color-ink-subtle);
+  margin-top: 18px;
+}
+.gh-cache-note {
+  margin-left: auto;
+}
+.gh-snapshot-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--available);
+  border-radius: 50%;
+}
+.gh-detail-heading {
+  margin: 26px 0;
+}
+.gh-detail-heading > h3 {
+  font-size: 29px;
+}
+.gh-detail-heading > p {
+  font-size: 11px;
+  color: var(--color-ink-muted);
+  margin-top: 10px;
+}
+.gh-subheading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.gh-subheading svg {
+  color: var(--color-word-blue);
+}
+.gh-subheading > span {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--color-ink-subtle);
+}
+.gh-repositories > ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.gh-repositories li a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--color-rule);
+  border-radius: 4px;
+  padding: 16px;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.gh-repositories li a:hover {
+  border-color: var(--color-word-blue);
+  background: var(--color-word-blue-light);
+}
+.gh-repo-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-word-blue);
+}
+.gh-repo-title strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.gh-repo-title > svg {
+  flex-shrink: 0;
+}
+.gh-repo-title > svg:last-child {
+  margin-left: auto;
+}
+.gh-repositories li p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--color-ink-muted);
+  margin: 10px 0 14px;
+}
+.gh-repo-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--color-ink-subtle);
+  font-size: 9px;
+  padding-top: 12px;
+  margin-top: auto;
+}
+.gh-repo-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gh-repo-meta > span:last-child {
+  margin-left: auto;
+}
+.gh-commits {
+  margin-top: 28px;
+}
+.gh-commits ul {
+  border-top: 1px solid var(--color-rule);
+}
+.gh-commits a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--color-rule);
+}
+.gh-commits a:hover {
+  background: var(--color-row-alt);
+}
+.gh-commit-dot {
+  border: 2px solid var(--color-word-blue);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.gh-commits a > div {
+  min-width: 0;
+  flex: 1;
+}
+.gh-commits strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gh-commits a > div > span {
+  display: block;
+  margin-top: 5px;
+  font-size: 9px;
+  color: var(--color-ink-subtle);
+}
+.gh-commits code {
+  color: var(--color-word-blue);
+  font-size: 9px;
+}
+.gh-commits a > svg {
+  color: var(--color-ink-subtle);
+  flex-shrink: 0;
+}
+.gh-unavailable,
+.gh-calendar-empty {
+  border: 1px dashed var(--color-rule);
+  border-radius: 5px;
+  padding: 32px;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.gh-loading {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+.gh-loading > div {
+  height: 180px;
+  border-radius: 4px;
+  background: var(--color-row-alt);
+  animation: gh-loading 1.4s ease-in-out infinite alternate;
+}
+.gh-loading > div:first-of-type {
+  grid-column: 1/-1;
+  height: 65px;
+}
+@keyframes gh-loading {
+  to {
+    opacity: 0.4;
+  }
+}
+@media (max-width: 800px) {
+  .gh-insights {
+    grid-template-columns: 1fr;
+  }
+  .gh-languages ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 20px;
+  }
+  .gh-languages li + li {
+    margin-top: 0;
+  }
+  .gh-introduction > p {
+    max-width: 170px;
+  }
+  .gh-stat-featured > svg {
+    display: none;
+  }
+}
+@media (max-width: 500px) {
+  .gh-introduction {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    margin: 23px 0;
+  }
+  .gh-introduction h3 {
+    font-size: 30px;
+  }
+  .gh-introduction > p {
+    max-width: none;
+  }
+  .gh-stat-strip {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px 0;
+  }
+  .gh-stat-featured {
+    grid-column: 1/-1;
+  }
+  .gh-stat-featured > svg {
+    display: block;
+  }
+  .gh-small-stat:nth-child(2) {
+    border: 0;
+  }
+  .gh-calendar-panel,
+  .gh-languages {
+    padding: 13px;
+  }
+  .gh-card-heading h3 {
+    font-size: 11px;
+  }
+  .gh-calendar-summary {
+    font-size: 9px;
+  }
+  .gh-calendar-week,
+  .gh-weekday-labels {
+    grid-template-rows: repeat(7, 16px);
+    gap: 3px;
+  }
+  .gh-calendar-grid {
+    gap: 3px;
+  }
+  .gh-day-readout {
+    flex-wrap: wrap;
+    font-size: 8px;
+  }
+  .gh-calendar-axis > div {
+    gap: 2px;
+  }
+  .gh-calendar-axis i {
+    width: 6px;
+    height: 6px;
+  }
+  .gh-calendar-axis {
+    font-size: 7px;
+  }
+  .gh-cache-note {
+    margin-left: 0;
+    width: 100%;
+  }
+  .gh-repositories > ul {
+    grid-template-columns: 1fr;
+  }
+  .gh-commits code {
+    display: none;
+  }
+  .gh-panel-heading h2 {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .gh-panel-heading > a {
+    font-size: 9px;
+  }
+  .gh-panel-heading {
+    gap: 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .github-panel *,
+  .gh-loading > div {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@media print {
+  .gh-range {
+    display: none;
+  }
+  .gh-calendar-scroll {
+    overflow: visible;
+  }
+  .gh-calendar-year {
+    min-width: 0;
+  }
+}

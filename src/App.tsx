@@ -22,6 +22,7 @@ import { Projects } from "./components/Projects";
 import { Certifications } from "./components/Certifications";
 import { Contact } from "./components/Contact";
 import { Footer } from "./components/Footer";
+import { DocumentOutline } from "./components/DocumentOutline";
 import { TabLoader } from "./components/TabLoader";
 import { TabSkeleton } from "./components/TabSkeleton";
 import { useDelayedLoading, useTabReady } from "./lib/tab-ready";
@@ -34,7 +35,10 @@ import { StatusPage } from "./pages/StatusPage";
  * System). The setter's second argument is the click origin — passing it
  * triggers a circular reveal via the View Transitions API.
  */
-function useTheme(): [Theme, (next: Theme, origin?: { x: number; y: number }) => void] {
+function useTheme(): [
+  Theme,
+  (next: Theme, origin?: { x: number; y: number }) => void,
+] {
   const [theme, setThemeState] = useState<Theme>(() => getStoredTheme());
 
   // Apply on mount + whenever theme changes without an origin (e.g. programmatic).
@@ -52,7 +56,6 @@ function useTheme(): [Theme, (next: Theme, origin?: { x: number; y: number }) =>
 
   return [theme, setTheme];
 }
-
 
 const ZOOM_MIN = 50;
 const ZOOM_MAX = 200;
@@ -78,7 +81,7 @@ function useZoom(): [number, (z: number) => void] {
       setZoomRaw((z) => {
         const next = Math.min(
           ZOOM_MAX,
-          Math.max(ZOOM_MIN, z - Math.sign(e.deltaY) * ZOOM_STEP)
+          Math.max(ZOOM_MIN, z - Math.sign(e.deltaY) * ZOOM_STEP),
         );
         localStorage.setItem("jvc_zoom", String(next));
         return next;
@@ -95,8 +98,15 @@ function PortfolioDoc() {
   const [theme, setTheme] = useTheme();
   const [zoom, setZoom] = useZoom();
   const [focusMode, setFocusMode] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(
+    () => window.innerWidth >= 1100,
+  );
+  const [highlights, setHighlights] = useState(true);
+  const [readingStyle, setReadingStyle] = useState<"classic" | "modern">(
+    "classic",
+  );
   const [active, setActive] = useState<TabId>(() =>
-    typeof window !== "undefined" ? hashToTab() : "top"
+    typeof window !== "undefined" ? hashToTab() : "top",
   );
 
   // Components read content once on mount, so bump a version (part of the
@@ -128,16 +138,21 @@ function PortfolioDoc() {
     return () => window.removeEventListener("keydown", onKey);
   }, [focusMode]);
 
-  // Reflect tab changes in the URL hash (so deep links + back-button work)
-  useEffect(() => {
-    if (window.location.hash.replace(/^#/, "") !== active) {
-      window.history.replaceState(null, "", `#${active}`);
-    }
-  }, [active]);
+  const navigate = (tab: TabId) => {
+    if (window.location.hash !== `#${tab}`) window.location.hash = tab;
+    setActive(tab);
+    if (window.innerWidth < 1100) setOutlineOpen(false);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
 
   // Respond to hash navigation (e.g. user pastes a link)
   useEffect(() => {
-    const onHash = () => setActive(hashToTab());
+    const onHash = () => {
+      setActive(hashToTab());
+      if (window.innerWidth < 1100) setOutlineOpen(false);
+      if (!window.location.hash.startsWith("#proj-"))
+        window.scrollTo({ top: 0, behavior: "instant" });
+    };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
@@ -145,12 +160,12 @@ function PortfolioDoc() {
   const totalPages = tabs.length;
   const currentPage = useMemo(
     () => tabs.findIndex((t) => t.id === active) + 1,
-    [active]
+    [active],
   );
   const { t } = useI18n();
   const activeMeta = useMemo(
     () => tabs.find((tab) => tab.id === active),
-    [active]
+    [active],
   );
   const activeLabel = activeMeta ? t(activeMeta.key) : "Document";
 
@@ -159,62 +174,129 @@ function PortfolioDoc() {
   const ready = useTabReady(active);
   const showLoader = useDelayedLoading(!ready);
 
+  // A project deep link must survive loading and content synchronization.
+  useEffect(() => {
+    if (
+      !ready ||
+      active !== "work" ||
+      !window.location.hash.startsWith("#proj-")
+    )
+      return;
+    const frame = requestAnimationFrame(() =>
+      document
+        .getElementById(window.location.hash.slice(1))
+        ?.scrollIntoView({ block: "start" }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [ready, active, contentVersion]);
+
   return (
-    <div className="min-h-screen bg-workspace text-ink">
+    <div
+      className={
+        "portfolio-workspace min-h-screen bg-workspace text-ink " +
+        (outlineOpen && !focusMode ? "has-outline " : "") +
+        (focusMode ? "is-focused " : "") +
+        (highlights ? "show-highlights" : "")
+      }
+      data-reading-style={readingStyle}
+    >
+      <a
+        href="#document-main"
+        className="skip-link"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("document-main")?.focus();
+        }}
+      >
+        Skip to document
+      </a>
       {!focusMode && (
         <Nav
           theme={theme}
           onThemeChange={setTheme}
           active={active}
-          onChange={setActive}
+          onChange={navigate}
+          outlineOpen={outlineOpen}
+          onToggleOutline={() => setOutlineOpen((open) => !open)}
+          onFocus={() => setFocusMode(true)}
+          highlights={highlights}
+          onToggleHighlights={() => setHighlights((enabled) => !enabled)}
+          readingStyle={readingStyle}
+          onReadingStyle={setReadingStyle}
         />
+      )}
+
+      {!focusMode && outlineOpen && (
+        <>
+          <button
+            className="outline-scrim no-print"
+            aria-label="Dismiss navigation"
+            onClick={() => setOutlineOpen(false)}
+          />
+          <DocumentOutline
+            active={active}
+            onChange={navigate}
+            onClose={() => setOutlineOpen(false)}
+          />
+        </>
       )}
 
       {/* Workspace — gives the paper its breathing room, padded for the nav + status bar.
           Block + mx-auto (not flex centering) so a zoomed-in paper overflows into a
           horizontal scroll instead of getting clipped on the left. */}
-      <main
-        className={
-          "px-3 md:px-8 overflow-x-auto " +
-          (focusMode ? "pt-6 pb-6" : "pt-16 pb-12")
-        }
-      >
-        {/* Every tab renders as a stack of A4 sheets (Word "Print Layout"),
-            so this wrapper is transparent — each sheet supplies its own
-            paper, and a tab with more content than fits spills onto a
-            second sheet of the same size rather than stretching the first.
-            It still carries id="paper-doc" for word count / read-aloud. */}
+      <main id="document-main" tabIndex={-1} className="document-main">
+        {!focusMode && (
+          <div className="workspace-topline no-print">
+            <span>
+              Portfolio.docx <span>/</span> {activeLabel}
+            </span>
+            <span>
+              Made to be explored <span>↙</span>
+            </span>
+          </div>
+        )}
+        {!focusMode && (
+          <div className="document-ruler no-print" aria-hidden="true">
+            <span />
+            {Array.from({ length: 15 }, (_, i) => (
+              <i key={i}>{i === 0 ? "" : i}</i>
+            ))}
+            <span />
+          </div>
+        )}
+        {/* Each chapter owns its content-sized sheets. This wrapper is also
+            the source for word count and read-aloud. */}
         <div
           key={`${active}-v${contentVersion}`}
           id="paper-doc"
           style={{ zoom: zoom / 100 }}
-          className="paper-enter w-full max-w-[820px] my-2 mx-auto flex flex-col gap-6 md:gap-8 text-ink relative"
+          className="paper-enter document-pages flex flex-col gap-6 md:gap-8 text-ink relative"
         >
           {ready ? (
             <>
-              {/* Home and About each run to two sheets, so they number
-                  their own from the page they start on. */}
-              {active === "top" && <Home page={currentPage} />}
+              {/* Page numbers restart within each chapter; the status bar
+                  reports which chapter is currently open. */}
+              {active === "top" && <Home page={1} />}
               {active === "work" && <Projects />}
-              {active === "about" && <About page={currentPage} />}
+              {active === "about" && <About page={1} />}
               {active === "stack" && (
-                <PaperSheet pageNumber={currentPage}>
+                <PaperSheet pageNumber={1}>
                   <Skills />
                 </PaperSheet>
               )}
               {active === "credentials" && (
-                <PaperSheet pageNumber={currentPage}>
+                <PaperSheet pageNumber={1}>
                   <Certifications />
                 </PaperSheet>
               )}
               {active === "contact" && (
-                <PaperSheet pageNumber={currentPage}>
+                <PaperSheet pageNumber={1}>
                   <Contact />
                 </PaperSheet>
               )}
             </>
           ) : (
-            <PaperSheet pageNumber={currentPage}>
+            <PaperSheet pageNumber={1}>
               <TabSkeleton tab={active} />
             </PaperSheet>
           )}

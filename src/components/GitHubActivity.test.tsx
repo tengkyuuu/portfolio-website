@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {
   GitHubActivity,
   GitHubDetail,
@@ -7,6 +8,7 @@ import {
   hasGitHubDetail,
   useGitHubSnapshot,
   type GitHubState,
+  activityWindow,
 } from "./GitHubActivity";
 
 const SNAPSHOT = {
@@ -58,7 +60,7 @@ describe("GitHubActivity", () => {
     expect(screen.getByText("14")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /@tengkyuuu/ })).toHaveAttribute(
       "href",
-      SNAPSHOT.user.htmlUrl
+      SNAPSHOT.user.htmlUrl,
     );
   });
 
@@ -85,7 +87,7 @@ describe("GitHubActivity", () => {
     // The heading has to survive the failure — an unexplained empty panel
     // reads as a broken page.
     expect(
-      screen.getByRole("heading", { name: "GitHub Activity" })
+      screen.getByRole("heading", { name: "GitHub Activity" }),
     ).toBeInTheDocument();
   });
 
@@ -93,7 +95,7 @@ describe("GitHubActivity", () => {
     render(
       <GitHubActivity
         state={{ ...SNAPSHOT, languages: [], repos: [], commits: [], days: [] }}
-      />
+      />,
     );
     expect(screen.getByText("Public repos")).toBeInTheDocument();
   });
@@ -104,7 +106,9 @@ describe("GitHubDetail", () => {
     render(<GitHubDetail snapshot={SNAPSHOT} />);
     // The repo name shows on the card and again on the commit row, so
     // assert by destination rather than by accessible name.
-    const hrefs = screen.getAllByRole("link").map((a) => a.getAttribute("href"));
+    const hrefs = screen
+      .getAllByRole("link")
+      .map((a) => a.getAttribute("href"));
     expect(hrefs).toContain(SNAPSHOT.repos[0].url);
     expect(hrefs).toContain(SNAPSHOT.commits[0].url);
     expect(screen.getByText(SNAPSHOT.repos[0].description)).toBeInTheDocument();
@@ -113,7 +117,7 @@ describe("GitHubDetail", () => {
   it("marks itself as a continuation, the way a spilled page does", () => {
     render(<GitHubDetail snapshot={SNAPSHOT} />);
     expect(
-      screen.getByRole("heading", { name: "GitHub Activity (cont.)" })
+      screen.getByRole("heading", { name: "GitHub Activity (cont.)" }),
     ).toBeInTheDocument();
   });
 });
@@ -121,7 +125,9 @@ describe("GitHubDetail", () => {
 describe("hasGitHubDetail", () => {
   it("earns a continuation page only when there is something to put on it", () => {
     expect(hasGitHubDetail(SNAPSHOT)).toBe(true);
-    expect(hasGitHubDetail({ ...SNAPSHOT, repos: [], commits: [] })).toBe(false);
+    expect(hasGitHubDetail({ ...SNAPSHOT, repos: [], commits: [] })).toBe(
+      false,
+    );
     expect(hasGitHubDetail("loading")).toBe(false);
     expect(hasGitHubDetail({ ok: false, reason: "unavailable" })).toBe(false);
   });
@@ -131,7 +137,11 @@ describe("useGitHubSnapshot", () => {
   function Probe() {
     const state = useGitHubSnapshot();
     const snap = gitHubSnapshot(state);
-    return <span>{state === "loading" ? "loading" : snap ? snap.user.login : "none"}</span>;
+    return (
+      <span>
+        {state === "loading" ? "loading" : snap ? snap.user.login : "none"}
+      </span>
+    );
   }
 
   it("reads the snapshot once and hands it to whoever asks", async () => {
@@ -145,7 +155,7 @@ describe("useGitHubSnapshot", () => {
   it("reports a dead endpoint as unavailable rather than throwing", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response("boom", { status: 500 }))
+      vi.fn(async () => new Response("boom", { status: 500 })),
     );
     render(<Probe />);
     expect(await screen.findByText("none")).toBeInTheDocument();
@@ -170,7 +180,7 @@ describe("GitHubActivity accessibility", () => {
   it("names the calendar for what it is when a token produced it", () => {
     render(<GitHubActivity state={{ ...SNAPSHOT, source: "contributions" }} />);
     expect(
-      screen.getByRole("img", { name: /Contribution calendar/ })
+      screen.getByRole("img", { name: /Contribution calendar/ }),
     ).toBeInTheDocument();
   });
 
@@ -204,3 +214,35 @@ describe("GitHubActivity accessibility", () => {
 /** Type-level guard: the panel accepts every shape the hook can produce. */
 const STATES: GitHubState[] = ["loading", { ok: false, reason: "x" }, SNAPSHOT];
 void STATES;
+
+describe("activity exploration", () => {
+  it("filters by UTC calendar dates without mutating the snapshot", () => {
+    const days = [
+      { date: "2026-09-26", count: 2 },
+      { date: "2026-08-01", count: 8 },
+      { date: "2026-08-28", count: 1 },
+    ];
+    expect(activityWindow(days, 30)).toEqual([days[2], days[0]]);
+    expect(days[0].date).toBe("2026-09-26");
+  });
+  it("updates the chart when the date range changes", async () => {
+    const user = userEvent.setup();
+    const days = Array.from({ length: 90 }, (_, index) => ({
+      date: new Date(Date.UTC(2026, 5, 1 + index)).toISOString().slice(0, 10),
+      count: 1,
+    }));
+    render(<GitHubActivity state={{ ...SNAPSHOT, days }} />);
+    expect(screen.getByRole("img")).toHaveAccessibleName(/90 across 90 days/);
+    await user.click(screen.getByRole("button", { name: "30 days" }));
+    expect(screen.getByRole("img")).toHaveAccessibleName(/30 across 30 days/);
+  });
+  it("lets a keyboard user inspect individual days", async () => {
+    const user = userEvent.setup();
+    render(<GitHubActivity state={SNAPSHOT} />);
+    const day = screen.getByRole("button", { name: /4 events/ });
+    await user.click(day);
+    expect(day).toHaveAttribute("aria-pressed", "true");
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("button", { name: /2 events/ })).toHaveFocus();
+  });
+});

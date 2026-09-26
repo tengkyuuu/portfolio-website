@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { getContent, type Project, type ProjectImage } from "../lib/content";
-import { useI18n } from "../lib/i18n";
+import { ArrowLeft, ArrowUpRight, FolderOpen } from "lucide-react";
+import { ChapterHeading } from "./ui/ChapterHeading";
 import { InteractiveFigure } from "./InteractiveFigure";
 import { PaperSheet } from "./PaperSheet";
 
@@ -67,7 +68,13 @@ function FigurePlaceholder({ project }: { project: Project }) {
 }
 
 /** Single static screenshot. */
-function SingleImage({ project, image }: { project: Project; image: ProjectImage }) {
+function SingleImage({
+  project,
+  image,
+}: {
+  project: Project;
+  image: ProjectImage;
+}) {
   return (
     <div className="group relative w-full aspect-[16/9] overflow-hidden border border-rule rounded-sm bg-row-alt">
       <img
@@ -112,7 +119,9 @@ function ImageCarousel({
       <img
         key={current.src}
         src={current.src}
-        alt={current.alt || `${project.title} — screenshot ${idx + 1} of ${count}`}
+        alt={
+          current.alt || `${project.title} — screenshot ${idx + 1} of ${count}`
+        }
         loading="lazy"
         decoding="async"
         className="w-full h-full object-contain"
@@ -161,7 +170,9 @@ function ImageCarousel({
             onClick={() => go(i)}
             className={
               "h-1.5 rounded-full transition-all " +
-              (i === idx ? "w-4 bg-word-blue" : "w-1.5 bg-rule-strong hover:bg-ink-subtle")
+              (i === idx
+                ? "w-4 bg-word-blue"
+                : "w-1.5 bg-rule-strong hover:bg-ink-subtle")
             }
           />
         ))}
@@ -181,7 +192,8 @@ function ProjectFigure({ project }: { project: Project }) {
 function ProjectEntry({ project }: { project: Project }) {
   const ref = project.ref ?? `REF: JVC-${project.index}`;
   const figCaption =
-    project.figCaption ?? `FIG ${parseInt(project.index, 10)}.1: ${project.title}.`;
+    project.figCaption ??
+    `FIG ${parseInt(project.index, 10)}.1: ${project.title}.`;
   const hasCaseStudy = Boolean(project.challenge || project.solution);
 
   return (
@@ -228,7 +240,10 @@ function ProjectEntry({ project }: { project: Project }) {
             </thead>
             <tbody>
               {project.metrics.map((m) => (
-                <tr key={m.label} className="border-b border-rule last:border-0">
+                <tr
+                  key={m.label}
+                  className="border-b border-rule last:border-0"
+                >
                   <td className="py-2.5 pr-3">{m.label}</td>
                   <td className="py-2.5 px-3 tabular-nums">{m.pre}</td>
                   <td className="py-2.5 px-3 tabular-nums">{m.post}</td>
@@ -313,56 +328,99 @@ function ProjectEntry({ project }: { project: Project }) {
 }
 
 export function Projects() {
-  const { t } = useI18n();
   const { projects } = useMemo(() => getContent(), []);
+  const [filter, setFilter] = useState<Project["kind"] | "all">("all");
+  const kinds = [...new Set(projects.map((project) => project.kind))];
+  const visible = projects.filter(
+    (project) => filter === "all" || project.kind === filter,
+  );
 
   // Cover sheet is page 1; each project gets its own A4 sheet after it.
   const pageOf = (i: number) => i + 2;
 
   return (
     <>
-      {/* Cover page — title + table of contents */}
       <PaperSheet pageNumber={1}>
-        <header className="border-b-2 border-word-blue pb-3 mb-10">
-          <h1 className="font-doc text-[40px] md:text-[48px] font-bold text-word-blue leading-tight tracking-tight">
-            Projects Archive
-          </h1>
-          <p className="font-doc italic text-[13px] text-ink-subtle mt-1">
-            Working Portfolio — {new Date().getFullYear()} Executive Summary ·{" "}
-            {projects.length} {projects.length === 1 ? "entry" : "entries"}
-          </p>
-        </header>
-
-        <section>
-          <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
-            {t("section.contents")}
-          </h2>
-          <ul className="space-y-1 font-doc text-[15px] text-ink">
-            {projects.map((p, i) => (
-              <li key={p.id}>
-                <a
-                  href={`#proj-${p.id}`}
-                  className="group flex items-end gap-2 py-1 px-1 -mx-1 rounded-sm hover:bg-word-blue-light transition-colors"
-                  aria-label={`Jump to Project ${p.index}: ${p.title}, page ${String(pageOf(i)).padStart(2, "0")}`}
-                >
-                  <span className="font-semibold group-hover:text-word-blue transition-colors">
-                    Project {p.index}: {p.title}
-                  </span>
-                  <span className="toc-leader group-hover:opacity-100 opacity-70 transition-opacity" />
-                  <span className="font-ui text-[12px] font-semibold text-ink-subtle tabular-nums group-hover:text-word-blue transition-colors">
-                    {String(pageOf(i)).padStart(2, "0")}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <ChapterHeading
+          number="02"
+          eyebrow="SELECTED WORK"
+          title={
+            <>
+              Ideas, made <em>real.</em>
+            </>
+          }
+          description="From circuit boards to browser tabs. A collection of things I’ve designed, built, and learned from."
+        >
+          <FolderOpen />
+        </ChapterHeading>
+        <div className="project-filterbar" aria-label="Filter projects">
+          <button
+            aria-pressed={filter === "all"}
+            onClick={() => setFilter("all")}
+          >
+            All work <span>{projects.length}</span>
+          </button>
+          {kinds.map((kind) => (
+            <button
+              key={kind}
+              aria-pressed={filter === kind}
+              onClick={() => setFilter(kind)}
+            >
+              {kindLabel[kind]}
+              <span>
+                {projects.filter((project) => project.kind === kind).length}
+              </span>
+            </button>
+          ))}
+          <p role="status">{visible.length} projects</p>
+        </div>
+        <div className="project-gallery">
+          {visible.map((project) => (
+            <a
+              key={project.id}
+              href={`#proj-${project.id}`}
+              className="project-index-card"
+              aria-label={`Explore ${project.title}`}
+            >
+              <div className="project-index-figure">
+                {projectImages(project)[0] ? (
+                  <img
+                    src={projectImages(project)[0].src}
+                    alt={projectImages(project)[0].alt || project.title}
+                    loading="lazy"
+                  />
+                ) : (
+                  <span>{project.title}</span>
+                )}
+              </div>
+              <div className="project-index-meta">
+                <div>
+                  <small>
+                    {project.index} / {kindLabel[project.kind]}
+                    {project.year && ` / ${project.year}`}
+                  </small>
+                  <h2>{project.title}</h2>
+                </div>
+                <ArrowUpRight size={19} />
+              </div>
+              <p>{project.blurb}</p>
+              <div className="project-index-tags">
+                {project.tags.slice(0, 3).map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </div>
+            </a>
+          ))}
+        </div>
       </PaperSheet>
 
       {/* One A4 sheet per project */}
       {projects.map((p, i) => (
         <PaperSheet key={p.id} pageNumber={pageOf(i)}>
-          <div id={`proj-${p.id}`} className="scroll-mt-20">
+          <div id={`proj-${p.id}`} className="project-detail-anchor">
+            <a href="#work" className="project-back-link no-print">
+              <ArrowLeft size={13} /> Back to all projects
+            </a>
             <ProjectEntry project={p} />
           </div>
           {i === projects.length - 1 && (

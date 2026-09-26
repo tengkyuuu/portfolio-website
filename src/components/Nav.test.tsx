@@ -13,7 +13,12 @@ import { Nav, tabs } from "./Nav";
 function renderNav(active: (typeof tabs)[number]["id"] = "top") {
   const onChange = vi.fn();
   render(
-    <Nav theme="colorful" onThemeChange={vi.fn()} active={active} onChange={onChange} />
+    <Nav
+      theme="colorful"
+      onThemeChange={vi.fn()}
+      active={active}
+      onChange={onChange}
+    />,
   );
   return { onChange };
 }
@@ -23,7 +28,9 @@ describe("Nav", () => {
     renderNav();
     for (const tab of tabs) {
       expect(
-        screen.getByRole("button", { name: new RegExp(`^${labelOf(tab.id)}$`) })
+        screen.getByRole("button", {
+          name: new RegExp(`^${labelOf(tab.id)}$`),
+        }),
       ).toBeInTheDocument();
     }
   });
@@ -44,23 +51,61 @@ describe("Nav", () => {
   it("keeps the document title out of the tab strip's column", () => {
     renderNav();
     // A floating title can overlap; one in its own grid column cannot.
-    const title = screen.getByText("Portfolio.docx").parentElement as HTMLElement;
+    const title = screen.getByText("Portfolio.docx")
+      .parentElement as HTMLElement;
     expect(title.className).not.toMatch(/\babsolute\b/);
   });
 
-  it("centres the title by giving the columns either side of it equal width", () => {
-    // jsdom does no layout, so pin the mechanism instead of the pixels.
-    // Unequal outer columns (auto / 1fr / auto) centre the title in the
-    // space left over rather than on the page — and since the tab strip is
-    // far wider than the controls, that lands well right of centre.
-    renderNav();
-    const nav = screen.getByText("Portfolio.docx").closest("nav") as HTMLElement;
-    const template = /grid-cols-\[([^\]]+)\]/.exec(nav.className)?.[1];
-    expect(template, "nav should define an explicit grid template").toBeTruthy();
+  it("exposes the active section to assistive technology", () => {
+    renderNav("work");
+    expect(screen.getByRole("button", { name: "Projects" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("button", { name: "Home" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
 
-    const columns = (template as string).split("_");
-    expect(columns).toHaveLength(3);
-    expect(columns[0]).toBe(columns[2]);
+  it("closes the File menu with Escape", async () => {
+    const user = userEvent.setup();
+    renderNav();
+    await user.click(screen.getByRole("button", { name: "File" }));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
+  it("connects the ribbon tools to their workspace actions", async () => {
+    const user = userEvent.setup();
+    const onFocus = vi.fn();
+    const onToggleOutline = vi.fn();
+    const onToggleHighlights = vi.fn();
+    const onReadingStyle = vi.fn();
+    render(
+      <Nav
+        theme="colorful"
+        onThemeChange={vi.fn()}
+        active="top"
+        onChange={vi.fn()}
+        onFocus={onFocus}
+        onToggleOutline={onToggleOutline}
+        onToggleHighlights={onToggleHighlights}
+        onReadingStyle={onReadingStyle}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Focus mode" }));
+    await user.click(
+      screen.getByRole("button", { name: "Toggle navigation pane" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Highlights" }));
+    await user.click(
+      screen.getByRole("button", { name: "Modern reading style" }),
+    );
+    expect(onFocus).toHaveBeenCalledOnce();
+    expect(onToggleOutline).toHaveBeenCalledOnce();
+    expect(onToggleHighlights).toHaveBeenCalledOnce();
+    expect(onReadingStyle).toHaveBeenCalledWith("modern");
   });
 });
 

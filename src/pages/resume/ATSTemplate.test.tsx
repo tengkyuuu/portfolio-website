@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ATSTemplate } from "./ATSTemplate";
+import { ModernTemplate } from "./ModernTemplate";
 import { RESUME_PROJECT_LIMIT, ResumePage } from "../ResumePage";
 import { DEFAULT_CONTENT } from "../../lib/content";
 import { projects } from "../../lib/data";
@@ -19,6 +20,26 @@ import { projects } from "../../lib/data";
  */
 
 const content = DEFAULT_CONTENT;
+
+it.each([ATSTemplate, ModernTemplate])(
+  "preserves every paragraph in an edited summary (%#)",
+  (Template) => {
+    const { container } = render(
+      <Template
+        content={{
+          ...content,
+          about: {
+            ...content.about,
+            paragraphs: "First paragraph.\n\nSecond paragraph.",
+          },
+        }}
+      />,
+    );
+    expect(container.textContent).toContain(
+      "First paragraph.\n\nSecond paragraph.",
+    );
+  },
+);
 
 describe("ATSTemplate", () => {
   it("contains no table anywhere in the tree", () => {
@@ -51,7 +72,7 @@ describe("ATSTemplate", () => {
     // A date stranded in a right-hand column is a date the parser loses.
     for (const t of content.timeline) {
       expect(
-        screen.getByText(`${t.org} | ${t.range}`, { exact: false })
+        screen.getByText(`${t.org} | ${t.range}`, { exact: false }),
       ).toBeInTheDocument();
     }
   });
@@ -62,7 +83,7 @@ describe("ATSTemplate", () => {
     expect(container.querySelector("dl")).toBeNull();
     for (const g of content.skills) {
       expect(
-        screen.getByText(g.items.join(", "), { exact: false })
+        screen.getByText(g.items.join(", "), { exact: false }),
       ).toBeInTheDocument();
     }
   });
@@ -70,15 +91,21 @@ describe("ATSTemplate", () => {
   it("uses real headings for sections and entries", () => {
     render(<ATSTemplate content={content} />);
     expect(
-      screen.getByRole("heading", { level: 1, name: content.hero.name })
+      screen.getByRole("heading", { level: 1, name: content.hero.name }),
     ).toBeInTheDocument();
-    for (const title of ["SKILLS", "SELECTED PROJECTS", "EDUCATION & EXPERIENCE"]) {
-      expect(screen.getByRole("heading", { level: 2, name: title })).toBeInTheDocument();
+    for (const title of [
+      "SKILLS",
+      "SELECTED PROJECTS",
+      "EDUCATION & EXPERIENCE",
+    ]) {
+      expect(
+        screen.getByRole("heading", { level: 2, name: title }),
+      ).toBeInTheDocument();
     }
     // Every project is an entry heading, so hierarchy survives extraction.
     for (const p of content.projects) {
       expect(
-        screen.getByRole("heading", { level: 3, name: p.title })
+        screen.getByRole("heading", { level: 3, name: p.title }),
       ).toBeInTheDocument();
     }
   });
@@ -93,7 +120,7 @@ describe("ATSTemplate", () => {
     }
     // ...but the individual entries do ask to stay whole.
     const entries = container.querySelectorAll<HTMLElement>(
-      '[style*="page-break-inside: avoid"]'
+      '[style*="page-break-inside: avoid"]',
     );
     expect(entries.length).toBeGreaterThan(0);
   });
@@ -152,13 +179,13 @@ describe("ResumePage", () => {
     for (const p of projects.slice(0, RESUME_PROJECT_LIMIT)) {
       expect(
         screen.getByRole("heading", { level: 3, name: p.title }),
-        `${p.title} should be on the résumé`
+        `${p.title} should be on the résumé`,
       ).toBeInTheDocument();
     }
     for (const p of projects.slice(RESUME_PROJECT_LIMIT)) {
       expect(
         screen.queryByRole("heading", { level: 3, name: p.title }),
-        `${p.title} should NOT be on the résumé`
+        `${p.title} should NOT be on the résumé`,
       ).toBeNull();
     }
   });

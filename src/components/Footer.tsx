@@ -57,7 +57,7 @@ export function Footer({
     const rect = track.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     onZoomChange(
-      Math.round((ZOOM_MIN + ratio * (ZOOM_MAX - ZOOM_MIN)) / 10) * 10
+      Math.round((ZOOM_MIN + ratio * (ZOOM_MAX - ZOOM_MIN)) / 10) * 10,
     );
   };
 
@@ -71,16 +71,27 @@ export function Footer({
       setWordCount(words);
     };
     recount();
+    const observer = new MutationObserver(recount);
+    const main = document.getElementById("document-main");
+    if (main)
+      observer.observe(main, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
     // Wait a frame in case the new paper just mounted
     const raf = requestAnimationFrame(recount);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, [currentPage]);
 
   return (
     <footer className="no-print fixed bottom-0 left-0 right-0 h-6 z-50 bg-status-bar text-status-bar-fg text-[11px] flex items-center justify-between px-3 font-ui">
       <div className="flex items-center gap-3">
         <span className="tabular-nums">
-          {t("status.page")} {currentPage} {t("status.of")} {totalPages}
+          {t("status.section")} {currentPage} {t("status.of")} {totalPages}
         </span>
         <span className="border-l border-white/30 pl-3 tabular-nums">
           {wordCount.toLocaleString()} {t("status.words")}
@@ -116,7 +127,7 @@ export function Footer({
           </span>
         </button>
         <button
-          aria-label="Focus mode"
+          aria-label="Enter focus mode"
           title="Hide everything but the document (Esc to exit)"
           onClick={onEnterFocus}
           className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded hover:bg-white/15 transition-colors"
@@ -144,7 +155,10 @@ export function Footer({
             className="hover:bg-white/15 rounded p-0.5"
             aria-label="Zoom out"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 14 }}
+            >
               remove
             </span>
           </button>
@@ -155,6 +169,23 @@ export function Footer({
             aria-valuemin={ZOOM_MIN}
             aria-valuemax={ZOOM_MAX}
             aria-valuenow={zoom}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              const next =
+                e.key === "ArrowRight" || e.key === "ArrowUp"
+                  ? zoom + 10
+                  : e.key === "ArrowLeft" || e.key === "ArrowDown"
+                    ? zoom - 10
+                    : e.key === "Home"
+                      ? ZOOM_MIN
+                      : e.key === "End"
+                        ? ZOOM_MAX
+                        : null;
+              if (next !== null) {
+                e.preventDefault();
+                onZoomChange(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next)));
+              }
+            }}
             className="w-20 py-1.5 -my-1.5 cursor-pointer touch-none"
             onPointerDown={(e) => {
               e.currentTarget.setPointerCapture(e.pointerId);
@@ -178,7 +209,10 @@ export function Footer({
             className="hover:bg-white/15 rounded p-0.5"
             aria-label="Zoom in"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 14 }}
+            >
               add
             </span>
           </button>
@@ -237,7 +271,10 @@ function LanguagePicker() {
           language
         </span>
         {current.statusLabel}
-        <span className="material-symbols-outlined opacity-70" style={{ fontSize: 12 }}>
+        <span
+          className="material-symbols-outlined opacity-70"
+          style={{ fontSize: 12 }}
+        >
           arrow_drop_up
         </span>
       </button>

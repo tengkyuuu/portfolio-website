@@ -18,16 +18,17 @@ export function TabLoader({ visible, label = "Document" }: TabLoaderProps) {
   const [phase, setPhase] = useState<Phase>(visible ? "showing" : "hidden");
 
   useEffect(() => {
-    if (visible) {
-      setPhase("showing");
-      return;
-    }
-    if (phase === "showing") {
-      setPhase("fading");
+    setPhase((current) =>
+      visible ? "showing" : current === "hidden" ? "hidden" : "fading",
+    );
+  }, [visible]);
+
+  useEffect(() => {
+    if (phase === "fading") {
       const t = setTimeout(() => setPhase("hidden"), 360);
       return () => clearTimeout(t);
     }
-  }, [visible, phase]);
+  }, [phase]);
 
   if (phase === "hidden") return null;
 

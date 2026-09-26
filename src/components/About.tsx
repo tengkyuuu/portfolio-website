@@ -5,6 +5,8 @@ import { renderParagraphs } from "../lib/inline";
 import { Now } from "./Now";
 import { PaperSheet } from "./PaperSheet";
 import { Process } from "./Process";
+import { Fingerprint } from "lucide-react";
+import { ChapterHeading } from "./ui/ChapterHeading";
 
 /**
  * About — the executive summary, quick facts, how I work, and what has my
@@ -16,9 +18,7 @@ import { Process } from "./Process";
  * <section> so each keeps its own h2 — nesting them would have left
  * several h2s claiming the same level inside one section.
  *
- * About paginates itself rather than growing one very tall sheet: one
- * block per page, each exactly the size of every other tab's paper. That
- * is why `page` has to be passed in — a sheet has to know its own number.
+ * Each subject gets its own content-sized sheet with sequential numbering.
  */
 export function About({ page }: { page: number }) {
   const { t } = useI18n();
@@ -28,7 +28,20 @@ export function About({ page }: { page: number }) {
   return (
     <>
       <PaperSheet pageNumber={page}>
-        <section>
+        <ChapterHeading
+          number="03"
+          eyebrow="BEHIND THE WORK"
+          title={
+            <>
+              An engineer. <br />
+              And a <em>curious human.</em>
+            </>
+          }
+          description="A little about how I think, what I care about, and the connections I like to make."
+        >
+          <Fingerprint />
+        </ChapterHeading>
+        <section className="about-summary">
           <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
             {t("section.executiveSummary")}
           </h2>
@@ -84,6 +97,10 @@ export function About({ page }: { page: number }) {
             </div>
           )}
         </section>
+        <aside className="about-margin-note">
+          A note in the margin: good engineering should feel just as thoughtful
+          on the outside.
+        </aside>
       </PaperSheet>
 
       {/* How I Work — folded in from its own tab, onto its own page */}

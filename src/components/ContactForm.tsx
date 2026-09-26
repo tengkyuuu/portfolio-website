@@ -351,7 +351,7 @@ export function ContactForm() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
           <p className="font-ui text-[11px] text-ink-subtle italic">
-            Your email is used only to reply. Not stored or shared.
+            I’ll use your email to get back to you.
           </p>
           <button
             type="submit"

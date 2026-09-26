@@ -1,8 +1,22 @@
 # Portfolio v2 — JVC
 
-A portfolio themed as a **Microsoft Word document**: bond-paper layout on a
-workspace, ribbon-style nav, blue status bar, and one paper sheet per section.
+A portfolio themed as a **Microsoft Word workspace**: a full ribbon, document
+navigation pane, ruler, blue status bar, and content-sized paper sheets.
 Built with React, TypeScript, and Tailwind v4.
+
+The cover combines an interactive portrait with featured project screenshots.
+Projects have a filterable visual index and directly linkable case studies.
+The ribbon offers editorial/modern reading styles, highlights, five Office
+themes, focus mode, search, sharing, and PDF export of the current section.
+On mobile, a section picker and dismissible navigation pane keep the document
+accessible. Animations respect reduced-motion preferences.
+
+GitHub activity includes a responsive calendar with date filters, keyboard
+navigation, language graphics, and links to recent work. The private `/resume`
+workspace supports live headline and summary edits, role presets, section
+toggles, project selection and ordering, and local drafts. Choose Editorial or
+ATS-friendly, then use **Export PDF** to print on A4. Draft edits stay on the
+current device; preset links carry only the selected role and template.
 
 ## Run locally
 

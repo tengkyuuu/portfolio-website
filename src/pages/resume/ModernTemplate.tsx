@@ -3,18 +3,18 @@ import { partitionCerts, plain, resumeChannels } from "./shared";
 
 /**
  * The Modern template — the Word-document look that ships as the default.
- * Serif body, Word-blue accent, centred letterhead, print-optimised A4.
+ * Serif body, Word-blue accent, editorial letterhead, print-optimised A4.
  */
 export function ModernTemplate({ content }: { content: SiteContent }) {
   const { hero, about, skills, projects, timeline, certs, contact } = content;
 
-  const summary = plain(about.paragraphs.split(/\n\s*\n/)[0] ?? "");
+  const summary = plain(about.paragraphs);
   const highlights = about.highlights ?? [];
   const channels = resumeChannels(hero, contact.channels);
   const { award, course, courseIssuer } = partitionCerts(content);
 
   return (
-    <article className="resume-sheet bg-paper paper-shadow w-full max-w-[794px] min-h-[1123px] mx-auto px-10 md:px-14 py-12 text-ink">
+    <article className="resume-sheet resume-modern bg-paper paper-shadow w-full max-w-[794px] min-h-[1123px] mx-auto px-10 md:px-14 py-12 text-ink">
       <header className="text-center border-b-2 border-word-blue pb-4 mb-5">
         <h1 className="font-doc text-[34px] font-bold tracking-tight leading-none text-ink">
           {hero.name}
@@ -45,7 +45,7 @@ export function ModernTemplate({ content }: { content: SiteContent }) {
 
       {summary && (
         <Section title="Summary">
-          <p className="font-doc text-[13.5px] leading-[1.6] text-ink-muted">
+          <p className="font-doc text-[13.5px] leading-[1.6] text-ink-muted whitespace-pre-line">
             {summary}
           </p>
           {highlights.length > 0 && (
@@ -55,7 +55,9 @@ export function ModernTemplate({ content }: { content: SiteContent }) {
                   key={h}
                   className="font-ui text-[12px] text-ink-muted flex items-start gap-1.5"
                 >
-                  <span className="text-word-blue font-bold leading-none">›</span>
+                  <span className="text-word-blue font-bold leading-none">
+                    ›
+                  </span>
                   <span>{h}</span>
                 </li>
               ))}
@@ -82,8 +84,10 @@ export function ModernTemplate({ content }: { content: SiteContent }) {
           <ul className="space-y-3">
             {projects.map((p) => (
               <li key={p.id}>
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="font-doc text-[14px] font-bold text-ink">{p.title}</h3>
+                <div className="resume-project-heading flex items-baseline justify-between gap-3">
+                  <h3 className="font-doc text-[14px] font-bold text-ink">
+                    {p.title}
+                  </h3>
                   {p.stack && p.stack.length > 0 && (
                     <span className="font-ui text-[11px] text-ink-subtle text-right shrink-0">
                       {p.stack.join(" · ")}
@@ -108,7 +112,9 @@ export function ModernTemplate({ content }: { content: SiteContent }) {
                 className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5"
               >
                 <div className="flex-1">
-                  <h3 className="font-doc text-[13.5px] font-bold text-ink">{t.title}</h3>
+                  <h3 className="font-doc text-[13.5px] font-bold text-ink">
+                    {t.title}
+                  </h3>
                   <p className="font-ui text-[12px] text-ink-muted">{t.org}</p>
                 </div>
                 <span className="font-ui text-[11px] text-ink-subtle uppercase tracking-wider tabular-nums sm:text-right shrink-0 sm:ml-6">
@@ -133,7 +139,9 @@ export function ModernTemplate({ content }: { content: SiteContent }) {
                   <span className="text-ink-muted"> — {c.issuer}</span>
                 </span>
                 {c.date && (
-                  <span className="text-ink-subtle tabular-nums shrink-0">{c.date}</span>
+                  <span className="text-ink-subtle tabular-nums shrink-0">
+                    {c.date}
+                  </span>
                 )}
               </li>
             ))}
@@ -156,7 +164,13 @@ export function ModernTemplate({ content }: { content: SiteContent }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mb-5 break-inside-avoid">
       <h2 className="font-ui text-[11px] font-bold uppercase tracking-[0.16em] text-word-blue border-b border-rule pb-1 mb-2.5">

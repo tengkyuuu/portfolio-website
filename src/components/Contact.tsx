@@ -1,170 +1,170 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Check,
+  Copy,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Send,
+} from "lucide-react";
 import { getContent } from "../lib/content";
-import { useI18n } from "../lib/i18n";
 import { renderInline } from "../lib/inline";
 import { ContactForm } from "./ContactForm";
+import { ChapterHeading } from "./ui/ChapterHeading";
 
 export function Contact() {
-  const { t } = useI18n();
   const { contact, hero } = useMemo(() => getContent(), []);
-  const [copied, setCopied] = useState(false);
-
-  const email = hero.email;
-
-  function copyEmail() {
-    if (!email) return;
-    navigator.clipboard.writeText(email);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const [copyStatus, setCopyStatus] = useState("");
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(timer.current), []);
+  async function copyEmail() {
+    try {
+      await navigator.clipboard.writeText(hero.email);
+      setCopyStatus("Email copied");
+    } catch {
+      setCopyStatus("Couldn’t copy. Select the email above, or use Email me.");
+    }
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopyStatus(""), 4000);
   }
-
   return (
     <section>
-      <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
-        {t("section.getInTouch")}
-      </h2>
-
-      {contact.intro && (
-        <p className="font-doc text-[16px] leading-[1.7] text-ink mb-5 max-w-2xl">
-          {renderInline(contact.intro)}
-        </p>
-      )}
-
-      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-2 font-doc text-[15px]">
-        {contact.channels.map((c) => (
-          <li key={c.label} className="flex items-baseline gap-3">
-            <span
-              className="material-symbols-outlined text-ink-subtle"
-              style={{ fontSize: 16 }}
-            >
-              {c.icon}
-            </span>
-            <span className="font-ui text-[11px] font-semibold uppercase tracking-wider text-ink-subtle w-20 shrink-0">
-              {c.label}
-            </span>
-            <a
-              href={c.href}
-              target={c.href.startsWith("http") ? "_blank" : undefined}
-              rel="noreferrer"
-              className="text-ink hover:text-word-blue hover:underline underline-offset-2"
-            >
-              {c.value}
-            </a>
-          </li>
-        ))}
-      </ul>
-
-      {/* Closing note — document sign-off, not a landing-page CTA */}
-      <div className="mt-8 pt-5 border-t border-rule">
-        <p className="font-doc text-[15px] leading-relaxed text-ink-muted max-w-2xl">
-          {hero.available && hero.availableText && (
-            <>
-              <span className="inline-flex items-center gap-1.5 font-medium text-word-blue">
-                <span className="inline-block h-2 w-2 rounded-full bg-word-blue" />
+      <ChapterHeading
+        number="06"
+        eyebrow="THE NEXT CHAPTER"
+        title={
+          <>
+            Let’s make <br />
+            <em>something good.</em>
+          </>
+        }
+        description="An idea, an opportunity, or just a hello. There’s room for your comment in this document."
+      >
+        <Send />
+      </ChapterHeading>
+      <div className="contact-layout">
+        <div className="contact-info">
+          {contact.intro && <p>{renderInline(contact.intro)}</p>}
+          <ul className="contact-channels">
+            {contact.channels.map((channel) => (
+              <li key={channel.label}>
+                {channel.href && channel.href !== "#" ? (
+                  <a
+                    href={channel.href}
+                    target={
+                      channel.href.startsWith("http") ? "_blank" : undefined
+                    }
+                    rel={
+                      channel.href.startsWith("http") ? "noreferrer" : undefined
+                    }
+                  >
+                    <span
+                      className="material-symbols-outlined text-word-blue"
+                      style={{ fontSize: 19 }}
+                      aria-hidden="true"
+                    >
+                      {channel.icon}
+                    </span>
+                    <span>
+                      <small>{channel.label}</small>
+                      <strong>{channel.value}</strong>
+                    </span>
+                    <ArrowUpRight size={14} />
+                  </a>
+                ) : (
+                  <div className="contact-location">
+                    <MapPin size={18} />
+                    <span>
+                      <small>{channel.label}</small>
+                      <strong>{channel.value}</strong>
+                    </span>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+          {hero.email && (
+            <div className="mt-5 flex flex-wrap gap-3">
+              <a
+                href={`mailto:${hero.email}`}
+                className="doc-button doc-button-primary"
+              >
+                <Mail size={14} /> Email me
+              </a>
+              <button className="doc-button" onClick={() => void copyEmail()}>
+                {copyStatus === "Email copied" ? (
+                  <Check size={14} />
+                ) : (
+                  <Copy size={14} />
+                )}{" "}
+                Copy email
+              </button>
+            </div>
+          )}
+          {copyStatus && (
+            <p role="status" className="mt-3 text-sm text-word-blue">
+              {copyStatus}
+            </p>
+          )}
+          {hero.available && (
+            <div className="contact-note">
+              <strong>
+                <span className="availability-dot" />
                 {hero.availableText}
-              </span>
-              {" — "}
-            </>
+              </strong>
+              Open to freelance, internships, and collaborations. Let’s see what
+              we can build together.
+            </div>
           )}
-          open to freelance, internships, and collaborations. Drop a line — I
-          read everything.
-        </p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {email && (
-            <a
-              href={`mailto:${email}?subject=${encodeURIComponent(
-                "Let's work together"
-              )}`}
-              className={chipClass}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                mail
-              </span>
-              Email me
-            </a>
-          )}
-          {email && (
-            <button onClick={copyEmail} className={chipClass}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                {copied ? "check" : "content_copy"}
-              </span>
-              {copied ? "Copied" : "Copy email"}
-            </button>
-          )}
-          <a href="/resume" className={chipClass}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              description
-            </span>
-            Résumé
-          </a>
+          <p className="contact-signoff">{hero.name.split(" ")[0]}.</p>
+        </div>
+        <div className="contact-form-column">
+          <div className="contact-comment-intro">
+            <MessageSquare size={16} />
+            <span>Good things start with a conversation.</span>
+          </div>
+          <ContactForm />
         </div>
       </div>
-
-      {/* Book a meeting — shown only when a scheduling URL is configured */}
-      {contact.bookingUrl && (
-        <BookingSection url={contact.bookingUrl} />
-      )}
-
-      {/* New Comment (contact form) */}
-      <ContactForm />
+      {contact.bookingUrl && <BookingSection url={contact.bookingUrl} />}
     </section>
   );
 }
 
-/**
- * Inline scheduling embed (Cal.com / Calendly). Lazy: the iframe mounts
- * only after the visitor opts in — keeps the Contact tab light and avoids
- * loading a third-party widget for everyone who never books.
- */
 function BookingSection({ url }: { url: string }) {
   const [open, setOpen] = useState(false);
-
   return (
     <div className="mt-8 border border-rule rounded-sm overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-rule bg-ribbon px-4 py-2">
-        <span
-          className="material-symbols-outlined icon-fill text-word-blue"
-          style={{ fontSize: 16 }}
-        >
-          calendar_month
-        </span>
-        <h3 className="font-ui text-[12px] font-semibold uppercase tracking-[0.12em] text-word-blue">
-          Book a Meeting
-        </h3>
+      <div className="flex items-center gap-3 border-b border-rule bg-ribbon px-4 py-3">
+        <CalendarDays size={17} />
+        <h2 className="text-sm font-semibold">Prefer a conversation?</h2>
         <a
+          className="doc-text-link ml-auto"
           href={url}
           target="_blank"
           rel="noreferrer"
-          className="ml-auto inline-flex items-center gap-1 font-ui text-[11px] font-medium text-ink-muted hover:text-word-blue transition-colors"
         >
-          Open scheduler
-          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-            open_in_new
-          </span>
+          Open scheduler <ArrowUpRight size={13} />
         </a>
       </div>
-
       {open ? (
         <iframe
           src={url}
           title="Book a meeting"
           loading="lazy"
-          className="w-full bg-paper"
-          style={{ height: 620, border: 0 }}
+          className="w-full bg-paper h-[620px] border-0"
         />
       ) : (
-        <div className="p-5 flex flex-wrap items-center justify-between gap-3 bg-row-alt">
-          <p className="font-doc text-[14px] text-ink-muted">
-            Prefer a call? Pick a slot that works for you — no back-and-forth.
+        <div className="p-5 flex flex-wrap items-center justify-between gap-3">
+          <p className="font-doc text-sm text-ink-muted">
+            Find a time that works for you.
           </p>
           <button
+            className="doc-button doc-button-primary"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-1.5 bg-word-blue hover:bg-word-blue-dark text-paper font-ui text-[13px] font-semibold px-3.5 py-2 rounded-sm transition-colors"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
-              event_available
-            </span>
             Show available times
           </button>
         </div>
@@ -172,7 +172,3 @@ function BookingSection({ url }: { url: string }) {
     </div>
   );
 }
-
-/** Shared bordered link-chip — matches the project links + tech-stack chips. */
-const chipClass =
-  "inline-flex items-center gap-1.5 font-ui text-[12px] font-medium text-word-blue border border-rule rounded-sm px-2.5 py-1.5 hover:bg-word-blue-light transition-colors";

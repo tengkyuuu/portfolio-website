@@ -3,12 +3,9 @@ import { partitionCerts, plain, resumeChannels } from "./shared";
 
 /**
  * ATS-friendly template. Rules:
- *   • Single column, genuinely. No flex rows, no `justify-content:
- *     space-between`, no table anywhere in the tree — see ResumePage, which
- *     deliberately renders this template OUTSIDE the print-frame table the
- *     Modern one uses. A table wrapper is the classic ATS killer: parsers
- *     either skip its contents or read them column-wise, and PDF text
- *     extraction reorders side-by-side runs unpredictably.
+ *   • Single column. No flex rows, side-by-side fields, or tables inside
+ *     this template. ResumePage supplies a one-column print frame whose
+ *     repeating spacers preserve page margins without reordering content.
  *   • Every field label and value is on the same text line, in reading
  *     order, so extraction top-to-bottom equals the visual order.
  *   • System serif stack — no web fonts, no colours, no gradients, no
@@ -34,7 +31,7 @@ import { partitionCerts, plain, resumeChannels } from "./shared";
 export function ATSTemplate({ content }: { content: SiteContent }) {
   const { hero, about, skills, projects, timeline, certs, contact } = content;
 
-  const summary = plain(about.paragraphs.split(/\n\s*\n/)[0] ?? "");
+  const summary = plain(about.paragraphs);
   const highlights = about.highlights ?? [];
   const channels = resumeChannels(hero, contact.channels);
   const { award, course, courseIssuer } = partitionCerts(content);
@@ -84,7 +81,7 @@ export function ATSTemplate({ content }: { content: SiteContent }) {
 
       {summary && (
         <AtsSection title="SUMMARY">
-          <p style={bodyStyle}>{summary}</p>
+          <p style={{ ...bodyStyle, whiteSpace: "pre-line" }}>{summary}</p>
           {highlights.length > 0 && (
             <ul style={bulletListStyle}>
               {highlights.map((h) => (

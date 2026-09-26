@@ -69,6 +69,7 @@ const en: Dict = {
 
   // Status bar
   "status.page": "Page",
+  "status.section": "Section",
   "status.of": "of",
   "status.words": "words",
   "status.readAloud": "Read aloud",
@@ -110,6 +111,7 @@ const ceb: Dict = {
   "common.viewLive": "Tan-awa",
 
   "status.page": "Panid",
+  "status.section": "Seksyon",
   "status.of": "sa",
   "status.words": "mga pulong",
   "status.readAloud": "Basaha",
@@ -150,6 +152,7 @@ const tl: Dict = {
   "common.viewLive": "Tingnan",
 
   "status.page": "Pahina",
+  "status.section": "Seksyon",
   "status.of": "ng",
   "status.words": "mga salita",
   "status.readAloud": "Basahin",
@@ -190,6 +193,7 @@ const cbk: Dict = {
   "common.viewLive": "Mirá",
 
   "status.page": "Página",
+  "status.section": "Sección",
   "status.of": "de",
   "status.words": "palabra",
   "status.readAloud": "Leé",

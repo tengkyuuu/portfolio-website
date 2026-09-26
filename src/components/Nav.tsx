@@ -1,19 +1,26 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  ArrowDownToLine,
+  ArrowRight,
+  Check,
+  ChevronDown,
+  FileText,
+  Focus,
+  Highlighter,
+  LayoutPanelLeft,
+  Link,
+  MessageSquare,
+  Palette,
+  Search,
+  Share2,
+} from "lucide-react";
 import { isAdminAuthed } from "../lib/auth";
 import { useI18n } from "../lib/i18n";
 import { switchTheme, THEMES, type Theme } from "../lib/theme";
 
 export type TabId =
-  | "top"
-  | "work"
-  | "about"
-  | "stack"
-  | "credentials"
-  | "contact";
-
-type TabMeta = { id: TabId; key: string };
-
-export const tabs: TabMeta[] = [
+  "top" | "work" | "about" | "stack" | "credentials" | "contact";
+export const tabs: { id: TabId; key: string }[] = [
   { id: "top", key: "nav.home" },
   { id: "work", key: "nav.projects" },
   { id: "about", key: "nav.about" },
@@ -21,20 +28,12 @@ export const tabs: TabMeta[] = [
   { id: "credentials", key: "nav.credentials" },
   { id: "contact", key: "nav.contact" },
 ];
-
-/** Tabs that no longer exist, pointed at wherever their content went.
- *  "How I Work" and "Now" both folded into About; a shared #process or
- *  #now link should land on the section that holds them rather than
- *  bounce to the homepage. */
 const RETIRED_TABS: Record<string, TabId> = { process: "about", now: "about" };
-
-/** Resolve the URL hash to a tab. Lives here rather than in App because
- *  it is only meaningful against the `tabs` table above. */
 export function hashToTab(): TabId {
-  const h = window.location.hash.replace(/^#/, "");
-  if (tabs.some((t) => t.id === h)) return h as TabId;
-  if (h.startsWith("proj-")) return "work";
-  return RETIRED_TABS[h] ?? "top";
+  const hash = window.location.hash.replace(/^#/, "");
+  if (tabs.some((tab) => tab.id === hash)) return hash as TabId;
+  if (hash.startsWith("proj-")) return "work";
+  return RETIRED_TABS[hash] ?? "top";
 }
 
 type NavProps = {
@@ -42,402 +41,337 @@ type NavProps = {
   onThemeChange: (next: Theme, origin?: { x: number; y: number }) => void;
   active: TabId;
   onChange: (id: TabId) => void;
+  outlineOpen?: boolean;
+  onToggleOutline?: () => void;
+  onFocus?: () => void;
+  highlights?: boolean;
+  onToggleHighlights?: () => void;
+  readingStyle?: "classic" | "modern";
+  onReadingStyle?: (style: "classic" | "modern") => void;
 };
 
-export function Nav({ theme, onThemeChange, active, onChange }: NavProps) {
+export function Nav({
+  theme,
+  onThemeChange,
+  active,
+  onChange,
+  outlineOpen,
+  onToggleOutline,
+  onFocus,
+  highlights,
+  onToggleHighlights,
+  readingStyle = "classic",
+  onReadingStyle,
+}: NavProps) {
   const { t } = useI18n();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [themeOpen, setThemeOpen] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const themeRef = useRef<HTMLDivElement>(null);
+  const [menu, setMenu] = useState<"file" | "theme" | null>(null);
+  const [shareStatus, setShareStatus] = useState("");
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const next =
+    tabs[(tabs.findIndex((tab) => tab.id === active) + 1) % tabs.length];
 
-  // Close popovers on outside click / Esc
+  useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
-    if (!menuOpen && !themeOpen) return;
-    const onDown = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (menuOpen && !menuRef.current?.contains(target)) setMenuOpen(false);
-      if (themeOpen && !themeRef.current?.contains(target)) setThemeOpen(false);
+    if (!menu) return;
+    const close = (e: PointerEvent) => {
+      if (
+        !(e.target instanceof Element) ||
+        !e.target.closest("[data-ribbon-popover]")
+      )
+        setMenu(null);
     };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMenuOpen(false);
-        setThemeOpen(false);
-      }
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenu(null);
     };
-    window.addEventListener("pointerdown", onDown);
-    window.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
     return () => {
-      window.removeEventListener("pointerdown", onDown);
-      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", escape);
     };
-  }, [menuOpen, themeOpen]);
+  }, [menu]);
 
-  const shareLink = async () => {
-    const url = window.location.origin + window.location.pathname + "#" + active;
+  async function shareLink(useNativeShare = true) {
+    const url = window.location.href;
     try {
-      if (navigator.share) {
+      if (useNativeShare && navigator.share) {
         await navigator.share({
           title: "James Vincent Calunsag — Portfolio.docx",
           url,
         });
         return;
       }
-    } catch {
-      // User cancelled or share failed; fall back to copy
-    }
-    try {
       await navigator.clipboard.writeText(url);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    } catch {
-      // Clipboard denied; no-op
+      setShareStatus("Link copied!");
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      setShareStatus("Copy the link from your address bar.");
     }
-  };
-
-  const currentTheme = THEMES.find((t) => t.id === theme) || THEMES[0];
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setShareStatus(""), 3500);
+  }
 
   return (
-    <nav
-      className="no-print fixed top-0 left-0 right-0 h-10 z-40 bg-ribbon border-b border-rule font-ui text-[13px] select-none grid grid-cols-[1fr_auto_1fr] items-center px-2 md:px-3"
-      aria-label="Ribbon navigation"
-    >
-      {/* Left: file menu + quick access + tabs */}
-      <div className="flex items-center h-full min-w-0">
-        <div className="relative mr-1 md:mr-2 shrink-0" ref={menuRef}>
-          {/* Word's File tab is a flat, full-height rectangle at the very
-              left of the ribbon — not a rounded pill, and it carries no
-              chevron. Squaring it off and letting it run the full height
-              of the bar is most of what makes the strip read as Word. */}
+    <nav className="office-chrome no-print" aria-label="Ribbon navigation">
+      <div className="office-titlebar">
+        <a href="#top" className="word-brand" aria-label="Portfolio home">
+          W
+        </a>
+        <div className="office-filename">
+          <span>Portfolio.docx</span>
+          <span className="office-file-note">A work in progress, like me.</span>
+        </div>
+        <button
+          className="office-search"
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("jvc:open-search"))
+          }
+          aria-label="Search this document"
+        >
+          <Search size={15} />
+          <span>Find something in my world</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+        <span className="office-viewing">
+          <span />
+          Viewing
+        </span>
+        <a href="#about" className="office-avatar" aria-label="About James">
+          JV
+        </a>
+      </div>
+
+      <div className="office-tabs-row">
+        <div className="office-file-wrap" data-ribbon-popover>
           <button
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-expanded={menuOpen}
+            className={
+              "office-file-button " + (menu === "file" ? "is-open" : "")
+            }
+            aria-expanded={menu === "file"}
             aria-haspopup="menu"
-            className="h-full px-3.5 rounded-none bg-word-blue text-paper font-medium tracking-[0.01em] hover:brightness-110 active:brightness-95 transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-paper/70"
+            onClick={() => setMenu(menu === "file" ? null : "file")}
           >
             {t("nav.file")}
           </button>
-          {menuOpen && (
-            <div
-              role="menu"
-              className="absolute left-0 top-full mt-1 w-52 bg-paper border border-rule rounded shadow-lg py-1 z-50 animate-in fade-in zoom-in-95 duration-100 font-ui text-[13px]"
-            >
-              <MenuItem
-                icon="print"
-                label={t("common.saveAsPdf")}
-                shortcut="Ctrl+P"
+          {menu === "file" && (
+            <div className="office-menu" role="menu">
+              <div className="office-menu-heading">Make yourself at home.</div>
+              <button
+                role="menuitem"
                 onClick={() => {
-                  setMenuOpen(false);
+                  setMenu(null);
                   window.print();
                 }}
-              />
-              <MenuItem
-                icon="link"
-                label={linkCopied ? "Link copied!" : t("common.share")}
-                onClick={() => {
-                  void shareLink();
-                }}
-              />
-              {/* Admin-only shortcuts — /resume, /status and /admin are
-                  gated, so don't advertise them to visitors who'd just
-                  hit a lock. */}
+              >
+                <ArrowDownToLine size={16} />
+                {t("common.saveAsPdf")}
+                <kbd>Ctrl P</kbd>
+              </button>
+              <button role="menuitem" onClick={() => void shareLink(false)}>
+                <Link size={16} />
+                Copy document link
+              </button>
               {isAdminAuthed() && (
                 <>
-                  <div className="my-1 h-px bg-rule" />
-                  <MenuItem
-                    icon="description"
-                    label="Résumé (ATS / Modern)"
-                    onClick={() => {
-                      window.location.href = "/resume";
-                    }}
-                  />
-                  <MenuItem
-                    icon="monitoring"
-                    label="System info (/status)"
-                    onClick={() => {
-                      window.location.href = "/status";
-                    }}
-                  />
-                  <div className="my-1 h-px bg-rule" />
-                  <MenuItem
-                    icon="shield_person"
-                    label="Admin console"
-                    onClick={() => {
-                      window.location.href = "/admin";
-                    }}
-                  />
+                  <a role="menuitem" href="/resume">
+                    <FileText size={16} />
+                    Résumé builder
+                  </a>
+                  <a role="menuitem" href="/admin">
+                    Admin console
+                  </a>
+                  <a role="menuitem" href="/status">
+                    System status
+                  </a>
                 </>
               )}
             </div>
           )}
         </div>
-        <div className="hidden sm:flex items-center gap-0.5 border-r border-rule pr-2 mr-1">
+        <div className="office-tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              aria-current={active === tab.id ? "page" : undefined}
+              onClick={() => onChange(tab.id)}
+              className={active === tab.id ? "is-active" : ""}
+            >
+              {t(tab.key)}
+            </button>
+          ))}
+        </div>
+        <select
+          className="office-mobile-tabs"
+          aria-label="Switch tab"
+          value={active}
+          onChange={(e) => onChange(e.target.value as TabId)}
+        >
+          {tabs.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {t(tab.key)}
+            </option>
+          ))}
+        </select>
+        <div className="office-tab-actions">
           <button
-            aria-label="Save a copy"
-            title="Save a copy (print to PDF)"
-            onClick={() => window.print()}
-            className="p-1.5 rounded text-ink-muted hover:bg-ribbon-hover transition-colors"
+            onClick={() => onChange("contact")}
+            aria-label="Comments — get in touch"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              save
-            </span>
+            <MessageSquare size={14} />
+            <span>Let’s talk</span>
           </button>
           <button
-            aria-label="Undo"
-            disabled
-            className="p-1.5 rounded text-ink-subtle opacity-60 cursor-not-allowed"
+            className="office-share"
+            onClick={() => void shareLink()}
+            aria-label="Share"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              undo
-            </span>
-          </button>
-          <button
-            aria-label="Redo"
-            disabled
-            className="p-1.5 rounded text-ink-subtle opacity-60 cursor-not-allowed"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              redo
-            </span>
+            <Share2 size={14} />
+            <span>Share</span>
+            <ChevronDown size={11} />
           </button>
         </div>
+      </div>
 
-        {/* pb-1.5 lifts the whole strip off the nav's bottom rule. Without
-            it the active underline and the hover fill run into that rule
-            and the tabs read as if they are falling out of the bar. */}
-        <div className="hidden md:flex items-end h-full pt-1 pb-1.5 gap-0.5 overflow-x-auto">
-          {tabs.map((tab) => {
-            const isActive = active === tab.id;
-            return (
+      <div className="office-ribbon">
+        <div className="ribbon-group ribbon-document">
+          <div className="ribbon-controls">
+            <button
+              className="ribbon-tall"
+              onClick={() => window.print()}
+              aria-label="Save a copy"
+            >
+              <ArrowDownToLine size={23} />
+              <span>Save as PDF</span>
+            </button>
+            <button
+              className="ribbon-tall"
+              onClick={() => void shareLink(false)}
+            >
+              <Link size={22} />
+              <span>Copy link</span>
+            </button>
+          </div>
+          <span className="ribbon-group-label">Document</span>
+        </div>
+        <div className="ribbon-group ribbon-styles">
+          <div className="ribbon-controls">
+            {(["classic", "modern"] as const).map((style) => (
               <button
-                key={tab.id}
-                onClick={() => onChange(tab.id)}
+                key={style}
                 className={
-                  "px-3 pb-1.5 pt-1 text-[13px] font-medium transition-colors border-b-2 whitespace-nowrap " +
-                  (isActive
-                    ? "text-word-blue border-word-blue"
-                    : "text-ink-muted border-transparent hover:bg-ribbon-hover hover:text-ink")
+                  "ribbon-style " + (readingStyle === style ? "is-active" : "")
                 }
+                aria-pressed={readingStyle === style}
+                aria-label={
+                  style === "classic"
+                    ? "Editorial reading style"
+                    : "Modern reading style"
+                }
+                onClick={() => onReadingStyle?.(style)}
               >
-                {t(tab.key)}
+                <span className={style === "classic" ? "font-doc" : "font-ui"}>
+                  Aa
+                </span>
+                <small>{style === "classic" ? "Editorial" : "Modern"}</small>
               </button>
-            );
-          })}
-        </div>
-
-        {/* Mobile: current tab dropdown */}
-        <div className="md:hidden">
-          <select
-            aria-label="Switch tab"
-            value={active}
-            onChange={(e) => onChange(e.target.value as TabId)}
-            className="bg-paper border border-rule rounded text-ink text-[13px] font-medium px-2 py-1 focus:outline-none focus:ring-2 focus:ring-word-blue"
-          >
-            {tabs.map((tab) => (
-              <option key={tab.id} value={tab.id}>
-                {t(tab.key)}
-              </option>
             ))}
-          </select>
+          </div>
+          <span className="ribbon-group-label">Reading style</span>
         </div>
-      </div>
-
-      {/* Center: document title, in the middle column of three. The outer
-          two are equal fractions, so this one lands on the page's centre
-          line — and because it is a real column rather than an absolutely
-          positioned overlay, the tab strip cannot grow underneath it.
-
-          It appears only from 1400px up. Below that the tabs and controls
-          need the whole bar, and a title that pushed them into scrolling
-          would cost more than it gives. */}
-      <div className="hidden min-[1400px]:flex items-center justify-center gap-2 whitespace-nowrap pointer-events-none">
-        <span
-          className="material-symbols-outlined icon-fill text-word-blue shrink-0"
-          style={{ fontSize: 18 }}
-        >
-          description
-        </span>
-        <span className="font-semibold text-ink text-[14px] tracking-tight truncate">
-          Portfolio.docx
-        </span>
-        <span className="hidden 2xl:inline text-ink-subtle text-[11px] whitespace-nowrap">
-          — Saved to OneDrive
-        </span>
-      </div>
-
-      {/* Right: search, comment, share, theme picker, avatar */}
-      <div className="flex items-center gap-1 justify-self-end">
-        <button
-          aria-label="Search this document"
-          title="Search this document (Ctrl+K)"
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("jvc:open-search"))
-          }
-          className="p-2 rounded text-ink-muted hover:bg-ribbon-hover transition-colors"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            search
-          </span>
-        </button>
-        <button
-          aria-label="Comments — get in touch"
-          title="Leave a comment (opens Contact)"
-          onClick={() => onChange("contact")}
-          className="hidden sm:inline-flex p-2 rounded text-ink-muted hover:bg-ribbon-hover transition-colors"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            chat_bubble
-          </span>
-        </button>
-        <button
-          aria-label="Share"
-          title="Share a link to this document"
-          onClick={() => void shareLink()}
-          className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-rule text-ink-muted hover:bg-ribbon-hover transition-colors text-[12px] font-medium"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            {linkCopied ? "check" : "share"}
-          </span>
-          <span className="hidden md:inline">
-            {linkCopied ? "Copied" : t("common.share")}
-          </span>
-        </button>
-
-        <div className="relative" ref={themeRef}>
-          <ThemePicker
-            currentTheme={currentTheme.id}
-            onChange={onThemeChange}
-            open={themeOpen}
-            setOpen={setThemeOpen}
-          />
+        <div className="ribbon-group">
+          <div className="ribbon-controls">
+            <button
+              className={"ribbon-tall " + (outlineOpen ? "is-selected" : "")}
+              aria-label="Toggle navigation pane"
+              aria-pressed={outlineOpen}
+              onClick={onToggleOutline}
+            >
+              <LayoutPanelLeft size={22} />
+              <span>Navigation</span>
+            </button>
+            <button
+              className="ribbon-tall"
+              onClick={onFocus}
+              aria-label="Focus mode"
+            >
+              <Focus size={22} />
+              <span>Focus</span>
+            </button>
+          </div>
+          <span className="ribbon-group-label">Your workspace</span>
         </div>
-
-        <div className="ml-1 w-8 h-8 rounded-full bg-word-blue text-paper grid place-items-center text-[11px] font-semibold tracking-wider">
-          JV
+        <div className="ribbon-group">
+          <div className="ribbon-controls">
+            <button
+              className={"ribbon-tall " + (highlights ? "is-selected" : "")}
+              aria-pressed={highlights}
+              onClick={onToggleHighlights}
+            >
+              <Highlighter size={22} />
+              <span>Highlights</span>
+            </button>
+            <div className="relative" data-ribbon-popover>
+              <button
+                className="ribbon-tall"
+                aria-label="Office theme"
+                aria-expanded={menu === "theme"}
+                onClick={() => setMenu(menu === "theme" ? null : "theme")}
+              >
+                <Palette size={22} />
+                <span>
+                  Theme <ChevronDown size={10} />
+                </span>
+              </button>
+              {menu === "theme" && (
+                <div className="office-menu theme-menu">
+                  <div className="office-menu-heading">
+                    A different kind of paper.
+                  </div>
+                  {THEMES.map((item) => (
+                    <button
+                      key={item.id}
+                      aria-pressed={theme === item.id}
+                      onClick={(e) => {
+                        onThemeChange(item.id, { x: e.clientX, y: e.clientY });
+                        setMenu(null);
+                      }}
+                    >
+                      <span
+                        className="theme-swatch"
+                        style={{ background: item.chip }}
+                      />
+                      <span>{item.label}</span>
+                      {theme === item.id && <Check size={15} />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <span className="ribbon-group-label">Make it yours</span>
         </div>
+        <div className="ribbon-note">
+          <span className="ribbon-note-star">✳</span>
+          <div>
+            A familiar workspace.
+            <br />
+            <strong>A different kind of portfolio.</strong>
+          </div>
+        </div>
+        <button className="ribbon-next" onClick={() => onChange(next.id)}>
+          <span>
+            Keep exploring<small>{t(next.key)}</small>
+          </span>
+          <ArrowRight size={19} />
+        </button>
       </div>
+      {shareStatus && (
+        <div className="office-toast" role="status">
+          {shareStatus}
+        </div>
+      )}
     </nav>
   );
 }
 
-/* ─── theme picker popover ─── */
-
-function ThemePicker({
-  currentTheme,
-  onChange,
-  open,
-  setOpen,
-}: {
-  currentTheme: Theme;
-  onChange: (next: Theme, origin?: { x: number; y: number }) => void;
-  open: boolean;
-  setOpen: (o: boolean) => void;
-}) {
-  const { t } = useI18n();
-  return (
-    <>
-      <button
-        aria-label="Office theme"
-        aria-expanded={open}
-        title={t("theme.title")}
-        onClick={() => setOpen(!open)}
-        className={
-          "p-2 rounded text-ink-muted transition-colors " +
-          (open ? "bg-ribbon-hover" : "hover:bg-ribbon-hover")
-        }
-      >
-        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-          palette
-        </span>
-      </button>
-      {open && (
-        <div className="word-popover absolute top-full right-0 mt-1 w-72 py-2 z-50">
-          <div className="px-3 pb-1.5 border-b border-rule">
-            <div className="font-ui text-[13px] font-semibold text-ink">
-              {t("theme.title")}
-            </div>
-            <div className="font-ui text-[11px] text-ink-subtle">
-              {t("theme.hint")}
-            </div>
-          </div>
-          <div className="py-1">
-            {THEMES.map((th) => {
-              const isActive = th.id === currentTheme;
-              return (
-                <button
-                  key={th.id}
-                  onClick={(e) => {
-                    setOpen(false);
-                    onChange(th.id, { x: e.clientX, y: e.clientY });
-                  }}
-                  className={
-                    "w-full flex items-center gap-3 px-3 py-2 text-left transition-colors " +
-                    (isActive
-                      ? "bg-word-blue-light"
-                      : "hover:bg-ribbon-hover")
-                  }
-                >
-                  <span
-                    className="w-6 h-6 rounded-sm border border-rule shrink-0"
-                    style={{ background: th.chip }}
-                    aria-hidden="true"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-ui text-[13px] font-medium text-ink truncate">
-                      {th.label}
-                    </div>
-                    <div className="font-ui text-[11px] text-ink-subtle truncate">
-                      {th.hint}
-                    </div>
-                  </div>
-                  {isActive && (
-                    <span
-                      className="material-symbols-outlined text-word-blue icon-fill"
-                      style={{ fontSize: 18 }}
-                    >
-                      check_circle
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function MenuItem({
-  icon,
-  label,
-  shortcut,
-  onClick,
-}: {
-  icon: string;
-  label: string;
-  shortcut?: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-ribbon-hover transition-colors"
-    >
-      <span
-        className="material-symbols-outlined text-ink-muted"
-        style={{ fontSize: 16 }}
-      >
-        {icon}
-      </span>
-      <span className="flex-1">{label}</span>
-      {shortcut && (
-        <span className="text-[11px] text-ink-subtle">{shortcut}</span>
-      )}
-    </button>
-  );
-}
-
-/** Re-export for convenience: callers that need switchTheme's animation. */
 export { switchTheme };

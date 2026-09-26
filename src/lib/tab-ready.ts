@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import type { TabId } from "../components/Nav";
 
 /**
- * Real loading work that has to finish before a given tab can be shown:
+ * Assets to warm before revealing a tab, with a bounded wait:
  * - global fonts (Source Serif 4, Inter, Material Symbols) for every tab
- * - per-tab images (only the Home tab actually has images right now)
- *
- * If/when a tab grows real async data (fetch, IndexedDB, dynamic import),
- * wire it in here so the loader appears for that work too.
+ * - per-tab images
+ * Slow assets must never prevent the document from becoming usable.
  */
 
 function imageSrcsForTab(tab: TabId): string[] {
@@ -52,7 +50,7 @@ function getFontsReady(): Promise<void> {
 }
 
 /**
- * True once everything required for the current tab has finished loading.
+ * True once assets are ready, or the brief preload window has elapsed.
  * Resets to false when `active` changes, so each tab gets its own readiness check.
  */
 export function useTabReady(active: TabId): boolean {
@@ -61,18 +59,27 @@ export function useTabReady(active: TabId): boolean {
   useEffect(() => {
     setReady(false);
     let cancelled = false;
+    const reveal = () => {
+      if (!cancelled) setReady(true);
+    };
+    // Font requests can stay pending indefinitely on a weak connection.
+    // The document can already render with fallback fonts and image boxes.
+    const deadline = window.setTimeout(reveal, 1500);
 
     const work: Promise<unknown>[] = [getFontsReady()];
     for (const src of imageSrcsForTab(active)) {
       work.push(preloadImage(src));
     }
 
-    Promise.all(work).then(() => {
-      if (!cancelled) setReady(true);
-    });
+    const finish = () => {
+      window.clearTimeout(deadline);
+      reveal();
+    };
+    void Promise.all(work).then(finish, finish);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(deadline);
     };
   }, [active]);
 
