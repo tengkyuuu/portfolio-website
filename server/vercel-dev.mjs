@@ -18,6 +18,8 @@
  * the surface the handlers under api/ actually touch.
  */
 
+import { loadEnv } from "vite";
+
 /** The slice of VercelRequest the handlers read. */
 function toVercelRequest(req) {
   const url = new URL(req.url, "http://localhost");
@@ -88,6 +90,12 @@ export function vercelApi(routes) {
     name: "vercel-api-dev",
     apply: "serve",
     configureServer(server) {
+      // Server handlers read process.env, unlike the file-backed API mirror.
+      // Never pass these unprefixed secrets into Vite's client define config.
+      const local = loadEnv(server.config.mode, server.config.root, "");
+      for (const [key, value] of Object.entries(local)) {
+        if (process.env[key] === undefined) process.env[key] = value;
+      }
       server.middlewares.use(async (req, res, next) => {
         const pathname = new URL(req.url, "http://localhost").pathname;
         const modulePath = routes[pathname];

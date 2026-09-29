@@ -47,6 +47,7 @@ function notifyWaiting(count: number): void {
 
 export type SectionId =
   | "hero"
+  | "activity"
   | "about"
   | "skills"
   | "projects"
@@ -61,6 +62,7 @@ export type SectionId =
   | "tools";
 
 export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string }[] = [
+  { id: "activity", label: "My status", icon: "mood", tab: "Activity, Blue mood & Spotify" },
   { id: "hero", label: "Home", icon: "home", tab: "Home tab" },
   { id: "about", label: "About", icon: "person", tab: "About tab" },
   { id: "skills", label: "Skills", icon: "build", tab: "Skills tab" },

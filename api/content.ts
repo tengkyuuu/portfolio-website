@@ -202,6 +202,7 @@ const SECTION_KEYS = [
   "contact",
   "posts",
   "designs",
+  "activity",
 ] as const;
 
 const SNAPSHOT_COOLDOWN_MS = 5 * 60_000; // one snapshot per editing session

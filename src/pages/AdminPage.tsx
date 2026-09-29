@@ -4,6 +4,7 @@ import { getAuthMode, isAdminAuthed, setAdminUser } from "../lib/auth";
 import { syncFromServer } from "../lib/content";
 import { fetchMe } from "../lib/team-api";
 import { AboutEditor } from "./admin/AboutEditor";
+import { ActivityEditor } from "./admin/ActivityEditor";
 import {
   AdminLayout,
   hashToSection,
@@ -102,6 +103,7 @@ export function AdminPage() {
         </p>
       )}
       {loaded && section === "hero" && <HeroEditor />}
+      {loaded && section === "activity" && <ActivityEditor />}
       {loaded && section === "about" && <AboutEditor />}
       {loaded && section === "skills" && <SkillsEditor />}
       {loaded && section === "projects" && <ProjectsEditor />}

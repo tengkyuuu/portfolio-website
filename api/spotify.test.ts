@@ -9,7 +9,7 @@ import { fakeReq, fakeRes } from "../src/test/fake-supabase";
  * status-bar chip, which keeps working on the old scope.
  */
 
-const { default: handler, toRecent, toTop } = await import("./spotify");
+const { default: handler, toRecent, toTop, toArtists, listeningRange } = await import("./spotify");
 
 const track = (id: string, name: string, width = 64) => ({
   id,
@@ -92,5 +92,36 @@ describe("GET ?view=listening", () => {
     const res = fakeRes();
     await handler(fakeReq({ method: "GET", query: { view: "listening" } }) as unknown as VercelRequest, res as unknown as VercelResponse);
     expect(res.body).toEqual({ configured: false });
+  });
+});
+
+
+describe("listening room", () => {
+  it("accepts only known time periods", () => {
+    expect(listeningRange("medium_term")).toBe("medium_term");
+    expect(listeningRange("long_term")).toBe("long_term");
+    expect(listeningRange("long_term&limit=50")).toBe("short_term");
+    expect(listeningRange(undefined)).toBe("short_term");
+  });
+  it("shapes artists without relying on deprecated genres or popularity", () => {
+    expect(toArtists({ items: [null, {}, { name: "Artist", images: [{ url: "https://image.test/art" }], external_urls: { spotify: "https://open.spotify.com/artist/test" } }] })).toEqual([{ name: "Artist", image: "https://image.test/art", url: "https://open.spotify.com/artist/test" }]);
+  });
+  it("keeps cached favorites separate for each period", async () => {
+    vi.resetModules();
+    const { default: freshHandler } = await import("./spotify");
+    vi.stubEnv("SPOTIFY_CLIENT_ID", "id"); vi.stubEnv("SPOTIFY_CLIENT_SECRET", "secret"); vi.stubEnv("SPOTIFY_REFRESH_TOKEN", "refresh");
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("accounts.spotify.com")) return new Response(JSON.stringify({ access_token: "at", expires_in: 3600 }));
+      if (url.includes("currently-playing")) return new Response(null, { status: 204 });
+      const period = new URL(url).searchParams.get("time_range") || "short_term";
+      return new Response(JSON.stringify({ items: [track(period, period)] }));
+    }));
+    try {
+      for (const range of ["short_term", "medium_term", "short_term"]) {
+        const res = fakeRes();
+        await freshHandler(fakeReq({ method: "GET", query: { view: "listening", range } }) as unknown as VercelRequest, res as unknown as VercelResponse);
+        expect((res.body as { top: { title: string }[] }).top[0].title).toBe(range);
+      }
+    } finally { vi.unstubAllEnvs(); vi.unstubAllGlobals(); }
   });
 });

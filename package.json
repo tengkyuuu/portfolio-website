@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "spotify:connect": "node scripts/connect-spotify.mjs",
     "build": "tsc -b && vite build && npm run postbuild",
     "postbuild": "node scripts/apply-seo.mjs && node scripts/collect-metrics.mjs && node scripts/emit-content-defaults.mjs",
     "preview": "vite preview",

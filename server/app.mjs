@@ -458,7 +458,7 @@ apiApp.delete("/api/content", requireAuth, (req, res) => {
 
 const VERSIONS_FILE = path.join(DATA_DIR, "versions.json");
 const ACTIVITY_FILE = path.join(DATA_DIR, "activity.json");
-const SECTION_KEYS = ["hero", "about", "skills", "projects", "certs", "timeline", "contact", "posts", "designs"];
+const SECTION_KEYS = ["hero", "about", "skills", "projects", "certs", "timeline", "contact", "posts", "designs", "activity"];
 const SNAPSHOT_COOLDOWN_MS = 5 * 60_000;
 const KEEP_VERSIONS = 20;
 
@@ -789,6 +789,8 @@ apiApp.post("/api/chat", async (req, res) => {
     lines.push(`PROJECT ${p.title}${p.year ? ` (${p.year})` : ""}: ${strip(p.blurb)} ${strip(p.challenge ?? "")} ${strip(p.solution ?? "")}`);
   for (const t of content.timeline ?? []) lines.push(`EXPERIENCE: ${t.title} — ${t.org} (${t.range})`);
   for (const c of content.certs ?? []) lines.push(`CERT: ${c.title} — ${c.issuer}`);
+  if (content.activity?.status) lines.push(`ACTIVITY: ${strip(content.activity.status)}. ${strip(content.activity.note)} (updated ${strip(content.activity.updatedAt)})`);
+  lines.push("TIME ZONE: Philippines, Asia/Manila, UTC+8");
   const summary = lines.join("\n").slice(0, 9000);
 
   try {

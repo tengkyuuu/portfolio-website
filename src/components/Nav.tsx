@@ -21,6 +21,7 @@ import { publicDesigns } from "../lib/gallery";
 import { useI18n } from "../lib/i18n";
 import { switchTheme, THEMES, type Theme } from "../lib/theme";
 import { PresenceStack } from "./PresenceStack";
+import { ProfilePopover } from "./ProfilePopover";
 
 export type TabId =
   | "top"
@@ -177,9 +178,7 @@ export function Nav({
           <kbd>Ctrl K</kbd>
         </button>
         <PresenceStack active={active} />
-        <a href="#about" className="office-avatar" aria-label="About James">
-          JV
-        </a>
+        <ProfilePopover onOpen={() => { if (outlineOpen && window.innerWidth < 1100) onToggleOutline?.(); }} />
       </div>
 
       <div className="office-tabs-row">

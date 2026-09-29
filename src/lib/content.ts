@@ -119,6 +119,7 @@ export type Design = {
 };
 
 export type SiteContent = {
+  activity: ActivityContent;
   hero: HeroContent;
   about: AboutContent;
   skills: SkillGroup[];
@@ -130,12 +131,21 @@ export type SiteContent = {
   designs: Design[];
 };
 
+export type ActivityContent = {
+  status: string;
+  note: string;
+  meme: string;
+  memeAlt: string;
+  updatedAt: string;
+};
+
 /**
  * Posts and designs ship empty. Both are written from the admin; nothing
  * here should invent a post or a piece of work to fill the space. A tab
  * with nothing in it stays off the ribbon (see visibleTabs in Nav.tsx).
  */
 export const DEFAULT_CONTENT: SiteContent = {
+  activity: { status: "", note: "", meme: "coffee", memeAlt: "", updatedAt: "" },
   hero: defaultHero,
   about: defaultAbout,
   skills: defaultSkills,
@@ -155,6 +165,7 @@ function shallowMerge<T extends object>(defaults: T, override?: Partial<T>): T {
 /** Fill any missing sections of a partial payload with the defaults. */
 function normalizeContent(stored: Partial<SiteContent>): SiteContent {
   return {
+    activity: shallowMerge(DEFAULT_CONTENT.activity, stored.activity),
     hero: shallowMerge(DEFAULT_CONTENT.hero, stored.hero),
     about: {
       ...DEFAULT_CONTENT.about,

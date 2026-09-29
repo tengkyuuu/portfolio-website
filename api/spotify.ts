@@ -112,8 +112,8 @@ function toNowPlaying(raw: any): NowPlaying {
     return { configured: true, playing: false };
   }
   const images: { url?: string; width?: number }[] = item?.album?.images ?? [];
-  // Smallest image that still looks sharp at 14px on a 2x display.
-  const art = [...images].sort((a, b) => (a.width ?? 0) - (b.width ?? 0))[0]?.url;
+  // Sharp enough for the expanded player as well as the status-bar chip.
+  const art = [...images].sort((a, b) => (a.width ?? 0) - (b.width ?? 0)).find(i => (i.width ?? 0) >= 160)?.url ?? images[0]?.url;
   return {
     configured: true,
     playing: Boolean(raw?.is_playing),
@@ -131,7 +131,10 @@ function toNowPlaying(raw: any): NowPlaying {
 
 /* ---------------- listening (top + recent) ---------------- */
 
-const TOP_URL = "https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=5";
+export function listeningRange(value: unknown): string {
+  return value === "medium_term" || value === "long_term" ? value : "short_term";
+}
+const TOP_BASE = "https://api.spotify.com/v1/me/top/";
 const RECENT_URL = "https://api.spotify.com/v1/me/player/recently-played?limit=20";
 /** Top tracks move over weeks and recents over minutes; one TTL covers both. */
 const LISTENING_TTL_MS = 5 * 60_000;
@@ -154,9 +157,17 @@ type Listening = {
   /** Null when the token lacks the scope, or Spotify failed. */
   top: Track[] | null;
   recent: Track[] | null;
+  artists?: Artist[] | null;
 };
 
-let listeningCache: { at: number; top: Track[] | null; recent: Track[] | null } | null = null;
+type Artist = { name: string; image?: string; url?: string };
+const listeningCache = new Map<string, { at: number; top: Track[] | null; recent: Track[] | null; artists: Artist[] | null }>();
+export function toArtists(raw: { items?: unknown[] } | null): Artist[] {
+  return (Array.isArray(raw?.items) ? raw.items : []).flatMap((value) => {
+    const item = value as { name?: string; images?: { url?: string }[]; external_urls?: { spotify?: string } } | null;
+    return item && typeof item.name === "string" ? [{ name: item.name, image: item.images?.[0]?.url, url: item.external_urls?.spotify }] : [];
+  });
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function toTrack(item: any, playedAt?: string): Track | null {
@@ -209,17 +220,19 @@ async function getJson(url: string, token: string): Promise<{ status: number; bo
   return { status: r.status, body: r.ok && r.status !== 204 ? await r.json() : null };
 }
 
-async function listening(creds: { id: string; secret: string; refresh: string }): Promise<Listening> {
+async function listening(creds: { id: string; secret: string; refresh: string }, range: string): Promise<Listening> {
   const token = await accessToken(creds);
   if (!token) return { configured: true, nowPlaying: null, top: null, recent: null };
 
   const now = Date.now();
-  const cached = listeningCache && now - listeningCache.at < LISTENING_TTL_MS ? listeningCache : null;
+  const entry = listeningCache.get(range);
+  const cached = entry && now - entry.at < LISTENING_TTL_MS ? entry : null;
 
-  const [playing, top, recent] = await Promise.all([
+  const [playing, top, recent, artists] = await Promise.all([
     getJson(NOW_PLAYING_URL, token).catch(() => ({ status: 0, body: null })),
-    cached ? null : getJson(TOP_URL, token).catch(() => ({ status: 0, body: null })),
+    cached ? null : getJson(`${TOP_BASE}tracks?time_range=${range}&limit=5`, token).catch(() => ({ status: 0, body: null })),
     cached ? null : getJson(RECENT_URL, token).catch(() => ({ status: 0, body: null })),
+    cached ? null : getJson(`${TOP_BASE}artists?time_range=${range}&limit=5`, token).catch(() => ({ status: 0, body: null })),
   ]);
 
   // 403 is a missing scope — see the setup note above. Anything that
@@ -228,8 +241,9 @@ async function listening(creds: { id: string; secret: string; refresh: string })
     at: now,
     top: top && top.status === 200 ? toTop(top.body) : null,
     recent: recent && recent.status === 200 ? toRecent(recent.body) : null,
+    artists: artists && artists.status === 200 ? toArtists(artists.body as { items?: unknown[] }) : null,
   };
-  if (!cached) listeningCache = lists;
+  if (!cached) listeningCache.set(range, lists);
 
   const np = playing.status === 200 ? toNowPlaying(playing.body) : null;
   return {
@@ -237,6 +251,7 @@ async function listening(creds: { id: string; secret: string; refresh: string })
     nowPlaying: np?.playing ? np : null,
     top: lists.top,
     recent: lists.recent,
+    artists: lists.artists,
   };
 }
 
@@ -256,7 +271,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (view === "listening") {
     res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
     try {
-      return res.status(200).json(await listening(creds));
+      return res.status(200).json(await listening(creds, listeningRange(req.query.range)));
     } catch {
       return res
         .status(200)

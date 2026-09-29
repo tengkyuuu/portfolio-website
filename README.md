@@ -44,11 +44,11 @@ There are two ways to change what the site shows:
    [`src/lib/content.ts`](src/lib/content.ts) hold the projects, skills, certs,
    bio, and contact info. Edit these and redeploy; this is what every visitor
    sees on a static deploy.
-2. **Admin panel** — visit `/admin`. On the deployed (static) site, edits are
-   saved in **your browser only** (great for drafting + the Tools → Copy/Download
-   JSON backup), but they aren't published to other visitors. To make an edit
-   public, paste the exported JSON into `data.ts`/`content.ts` and redeploy, or
-   run the local dev server which has a writable file-backed API.
+2. **Admin panel** — visit `/admin`. With the deployed content API and Supabase
+   configured, edits publish to visitors and save by section. The admin shows
+   whether each change is saved to the server or only in this browser. Local-only
+   drafts can be exported through **Tools → Copy/Download JSON**. The local dev
+   server uses a file-backed API.
 
 ### Project images
 
@@ -110,3 +110,12 @@ and is not used by the static deploy.
 - **Tailwind CSS v4** (CSS-first config in `src/index.css` via `@theme`)
 - **Material Symbols** + **Source Serif 4 / Inter** from Google Fonts
 - **Express** (local dev content API only)
+
+## Profile, activity, Spotify, and Blue
+
+Open **Admin → My status** to set your current activity and meme. The JV button
+in the upper-right title bar opens your status, Philippine time, and Spotify.
+Blue uses the coffee avatar and Gemini-selected reactions inside chat.
+
+See [setup instructions](docs/spotify-setup.md) for the Spotify connection helper
+(`npm run spotify:connect`), deployment variables, and chat reaction migration.

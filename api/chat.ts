@@ -280,6 +280,8 @@ function summarizeContent(c: any): string {
   lines.push(`EMAIL: ${hero.email ?? ""}`);
   if (hero.availableText) lines.push(`AVAILABILITY: ${hero.availableText}`);
   if (hero.tagline) lines.push(`TAGLINE: ${plain(hero.tagline)}`);
+  if (c?.activity?.status) lines.push(`ACTIVITY (last manual update ${plain(c.activity.updatedAt)}): ${plain(c.activity.status)}. ${plain(c.activity.note)}`);
+  lines.push("TIME ZONE: Philippines, Asia/Manila, UTC+8");
 
   if (c?.about?.paragraphs) lines.push(`\nABOUT: ${plain(c.about.paragraphs)}`);
   if (Array.isArray(c?.about?.highlights) && c.about.highlights.length)

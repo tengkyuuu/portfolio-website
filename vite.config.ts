@@ -27,6 +27,6 @@ export default defineConfig({
     // app.mjs falls through on reaches the real handler. /api/github has no
     // mirror — its logic is identical in dev and production, so dev runs
     // the same file Vercel deploys rather than a copy of it.
-    vercelApi({ "/api/github": "/api/github.ts" }),
+    vercelApi({ "/api/github": "/api/github.ts", "/api/spotify": "/api/spotify.ts" }),
   ],
 });
