@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { getContent } from "../lib/content";
 import { useI18n } from "../lib/i18n";
 import { renderParagraphs } from "../lib/inline";
+import { Listening } from "./Listening";
 import { Now } from "./Now";
 import { PaperSheet } from "./PaperSheet";
 import { Process } from "./Process";
@@ -109,9 +110,11 @@ export function About({ page }: { page: number }) {
         <Process />
       </PaperSheet>
 
-      {/* Now — folded in from its own tab, onto its own page */}
+      {/* Now — folded in from its own tab, onto its own page. On Repeat
+          sits under it: what has my attention, and what it sounds like. */}
       <PaperSheet pageNumber={page + 2}>
         <Now />
+        <Listening />
       </PaperSheet>
     </>
   );

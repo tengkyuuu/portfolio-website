@@ -2,7 +2,9 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 /**
  * /api/spotify
- *   GET public — what the author is listening to right now.
+ *   GET                  public — what the author is listening to right now
+ *   GET ?view=listening  public — that, plus top tracks (last ~4 weeks) and
+ *                        recently played, for the "On Repeat" panel on About
  *
  * Returns `{ configured: false }` when the credentials aren't set, so an
  * unconfigured deployment renders nothing at all rather than an error —
@@ -15,8 +17,12 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  * Setup (one time):
  *   1. developer.spotify.com → Create app. Add a redirect URI (any URL
  *      you control; it only has to match during the one-time authorize).
- *   2. Authorize once with scope `user-read-currently-playing`, take the
- *      ?code= off the redirect, and exchange it for a refresh token.
+ *   2. Authorize once with the scopes
+ *        user-read-currently-playing user-read-recently-played user-top-read
+ *      take the ?code= off the redirect, and exchange it for a refresh token.
+ *      A token authorized with only the first scope keeps the status-bar
+ *      chip working; the two lists on About stay hidden until the token is
+ *      re-issued with all three (Spotify answers 403 without them).
  *   3. Set on Vercel: SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET,
  *      SPOTIFY_REFRESH_TOKEN.
  *
@@ -123,6 +129,117 @@ function toNowPlaying(raw: any): NowPlaying {
   };
 }
 
+/* ---------------- listening (top + recent) ---------------- */
+
+const TOP_URL = "https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=5";
+const RECENT_URL = "https://api.spotify.com/v1/me/player/recently-played?limit=20";
+/** Top tracks move over weeks and recents over minutes; one TTL covers both. */
+const LISTENING_TTL_MS = 5 * 60_000;
+const RECENT_SHOWN = 5;
+
+export type Track = {
+  title: string;
+  artist: string;
+  album?: string;
+  albumArt?: string;
+  url?: string;
+  /** Recently played only: when it finished. */
+  playedAt?: string;
+};
+
+type Listening = {
+  configured: true;
+  /** Null when nothing is playing (or it couldn't be read). */
+  nowPlaying: NowPlaying | null;
+  /** Null when the token lacks the scope, or Spotify failed. */
+  top: Track[] | null;
+  recent: Track[] | null;
+};
+
+let listeningCache: { at: number; top: Track[] | null; recent: Track[] | null } | null = null;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function toTrack(item: any, playedAt?: string): Track | null {
+  if (!item || typeof item.name !== "string") return null;
+  const images: { url?: string; width?: number }[] = item?.album?.images ?? [];
+  // The smallest image at least 64px wide: sharp at 40px on a 2x screen.
+  const art =
+    [...images]
+      .sort((a, b) => (a.width ?? 0) - (b.width ?? 0))
+      .find((i) => (i.width ?? 0) >= 64)?.url ?? images[0]?.url;
+  return {
+    title: item.name,
+    artist: Array.isArray(item.artists)
+      ? item.artists.map((a: { name?: string }) => a?.name).filter(Boolean).join(", ")
+      : "",
+    album: item?.album?.name,
+    albumArt: art,
+    url: item?.external_urls?.spotify,
+    ...(playedAt ? { playedAt } : {}),
+  };
+}
+
+/** Recently played, newest first, one entry per track: a song on loop is
+ *  one line, not five. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function toRecent(raw: any): Track[] {
+  const seen = new Set<string>();
+  const out: Track[] = [];
+  for (const entry of Array.isArray(raw?.items) ? raw.items : []) {
+    const id = entry?.track?.id ?? entry?.track?.name;
+    if (!id || seen.has(id)) continue;
+    const t = toTrack(entry.track, typeof entry.played_at === "string" ? entry.played_at : undefined);
+    if (!t) continue;
+    seen.add(id);
+    out.push(t);
+    if (out.length >= RECENT_SHOWN) break;
+  }
+  return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function toTop(raw: any): Track[] {
+  return (Array.isArray(raw?.items) ? raw.items : [])
+    .map((item: unknown) => toTrack(item))
+    .filter((t: Track | null): t is Track => t !== null);
+}
+
+async function getJson(url: string, token: string): Promise<{ status: number; body: unknown }> {
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return { status: r.status, body: r.ok && r.status !== 204 ? await r.json() : null };
+}
+
+async function listening(creds: { id: string; secret: string; refresh: string }): Promise<Listening> {
+  const token = await accessToken(creds);
+  if (!token) return { configured: true, nowPlaying: null, top: null, recent: null };
+
+  const now = Date.now();
+  const cached = listeningCache && now - listeningCache.at < LISTENING_TTL_MS ? listeningCache : null;
+
+  const [playing, top, recent] = await Promise.all([
+    getJson(NOW_PLAYING_URL, token).catch(() => ({ status: 0, body: null })),
+    cached ? null : getJson(TOP_URL, token).catch(() => ({ status: 0, body: null })),
+    cached ? null : getJson(RECENT_URL, token).catch(() => ({ status: 0, body: null })),
+  ]);
+
+  // 403 is a missing scope — see the setup note above. Anything that
+  // isn't a 200 leaves that list null, and the panel hides it.
+  const lists = cached ?? {
+    at: now,
+    top: top && top.status === 200 ? toTop(top.body) : null,
+    recent: recent && recent.status === 200 ? toRecent(recent.body) : null,
+  };
+  if (!cached) listeningCache = lists;
+
+  const np = playing.status === 200 ? toNowPlaying(playing.body) : null;
+  return {
+    configured: true,
+    nowPlaying: np?.playing ? np : null,
+    top: lists.top,
+    recent: lists.recent,
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -133,6 +250,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!creds) {
     res.setHeader("Cache-Control", "public, s-maxage=300");
     return res.status(200).json({ configured: false });
+  }
+
+  const view = Array.isArray(req.query.view) ? req.query.view[0] : req.query.view;
+  if (view === "listening") {
+    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    try {
+      return res.status(200).json(await listening(creds));
+    } catch {
+      return res
+        .status(200)
+        .json({ configured: true, nowPlaying: null, top: null, recent: null } satisfies Listening);
+    }
   }
 
   // Edge-cache so a hundred polling visitors cost one upstream call.
