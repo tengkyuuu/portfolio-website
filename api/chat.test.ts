@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractReply, validSessionId, type GeminiResponse } from "./chat";
+import { parseBlueReply, extractReply, validSessionId, type GeminiResponse } from "./chat";
 
 /**
  * Gemini's response shape is nothing like Anthropic's, and getting it wrong
@@ -103,5 +103,26 @@ describe("validSessionId", () => {
     expect(validSessionId(undefined)).toBeNull();
     expect(validSessionId(42)).toBeNull();
     expect(validSessionId({})).toBeNull();
+  });
+});
+
+
+describe("Blue reaction contract", () => {
+  it("reads Gemini's selected reaction", () => {
+    expect(parseBlueReply('{"reply":"He builds embedded projects.","reaction":"working"}')).toEqual({ reply: "He builds embedded projects.", reaction: "working" });
+  });
+  it("rejects paths and unknown reaction names", () => {
+    for (const reaction of ["/evil.jpg", "__proto__", "toString", "unknown"]) {
+      expect(parseBlueReply(JSON.stringify({ reply: "Hello", reaction })).reaction).toBe("coffee");
+    }
+  });
+  it("never displays truncated JSON to visitors", () => {
+    const result = parseBlueReply('{"reply":"Hello');
+    expect(result.reaction).toBe("searching");
+    expect(result.reply).not.toContain('{"reply"');
+  });
+  it("supports plain text from older models and rejects empty answers", () => {
+    expect(parseBlueReply("Hello")).toEqual({ reply: "Hello", reaction: "coffee" });
+    expect(parseBlueReply('{"reaction":"cry"}').reaction).toBe("searching");
   });
 });

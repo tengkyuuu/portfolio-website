@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BlueSticker } from "./BlueSticker";
+import { blueMood } from "../lib/blue";
 import {
   getChatSessionId,
   pollChatSession,
@@ -31,8 +33,9 @@ export function Assistant() {
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unseen, setUnseen] = useState(0);
+  const [reactions, setReactions] = useState<Record<string, string>>({});
   const [localOnly, setLocalOnly] = useState<
-    { role: "visitor" | "ai"; body: string }[]
+    { role: "visitor" | "ai"; body: string; reaction?: string }[]
   >([]);
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -88,13 +91,14 @@ export function Assistant() {
   );
 
   const sync = useCallback(
-    async (full = false): Promise<number> => {
+    async (full = false): Promise<Persisted[]> => {
       const result = await pollChatSession(
         sessionId,
         full ? null : cursorRef.current,
       );
-      if (!result.ok) return 0;
-      return merge(result.messages, result.mode);
+      if (!result.ok) return [];
+      merge(result.messages, result.mode);
+      return result.messages;
     },
     [sessionId, merge],
   );
@@ -127,12 +131,21 @@ export function Assistant() {
   useEffect(() => {
     listRef.current?.scrollTo({
       top: listRef.current.scrollHeight,
-      behavior: "smooth",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
-  }, [messages, localOnly, pending, thinking]);
+  }, [messages, localOnly, pending, thinking, open]);
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setOpen(false); window.setTimeout(() => document.querySelector<HTMLButtonElement>(".blue-launcher")?.focus(), 0); }
+    };
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
   }, [open]);
 
   async function send(text: string) {
@@ -162,6 +175,7 @@ export function Assistant() {
       });
       const data = (await res.json().catch(() => ({}))) as {
         reply?: string | null;
+        reaction?: string;
         mode?: ChatMode;
         error?: string;
       };
@@ -170,13 +184,14 @@ export function Assistant() {
         return;
       }
       if (data.mode === "human") setMode("human");
+      if (data.reply) setReactions(prev => ({ ...prev, [data.reply!]: blueMood(data.reaction) }));
       setThinking(false);
       const gained = await sync();
-      if (gained === 0) {
+      if (gained.length === 0 || (data.reply && !gained.some(m => m.role === "ai" && m.body === data.reply))) {
         setLocalOnly((prev) => [
           ...prev,
-          { role: "visitor", body: question },
-          ...(data.reply ? [{ role: "ai" as const, body: data.reply }] : []),
+          ...(gained.length === 0 ? [{ role: "visitor" as const, body: question }] : []),
+          ...(data.reply ? [{ role: "ai" as const, body: data.reply, reaction: blueMood(data.reaction) }] : []),
         ]);
       }
     } catch {
@@ -254,21 +269,21 @@ export function Assistant() {
             ref={listRef}
             className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5"
           >
-            <AssistantBubble text={GREETING} />
+            <AssistantBubble text={GREETING} reaction="coffee" />
 
             {messages.map((m) =>
               m.role === "visitor" ? (
                 <VisitorBubble key={m.id} text={m.body} />
               ) : (
-                <AssistantBubble key={m.id} text={m.body} />
+                <AssistantBubble key={m.id} text={m.body} human={m.role === "human"} reaction={m.role === "ai" ? m.reaction || reactions[m.body] : undefined} />
               ),
             )}
 
-            {localOnly.map((m, i) =>
+            {localOnly.filter(m => !messages.some(saved => saved.role === m.role && saved.body === m.body)).map((m, i) =>
               m.role === "visitor" ? (
                 <VisitorBubble key={`local-${i}`} text={m.body} />
               ) : (
-                <AssistantBubble key={`local-${i}`} text={m.body} />
+                <AssistantBubble key={`local-${i}`} text={m.body} reaction={m.reaction} />
               ),
             )}
 
@@ -287,6 +302,7 @@ export function Assistant() {
                   role="status"
                   aria-label="Blue is typing"
                 >
+                  <BlueSticker mood="searching" caption="Let me look into that…" />
                   <span className="inline-flex gap-1">
                     {[0, 150, 300].map((delay) => (
                       <span
@@ -344,6 +360,7 @@ export function Assistant() {
             <input
               ref={inputRef}
               type="text"
+              aria-label="Message Blue"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask Blue about James..."
@@ -375,17 +392,19 @@ export function Assistant() {
   );
 }
 
-function AssistantBubble({ text }: { text: string }) {
+function AssistantBubble({ text, reaction, human = false }: { text: string; reaction?: string; human?: boolean }) {
   return (
     <div className="flex items-start gap-2 max-w-[92%]">
       <span
         aria-hidden="true"
         className="grid place-items-center w-6 h-6 shrink-0 mt-0.5"
       >
-        <BlueLogo />
+        {human ? <span className="font-ui text-[10px] font-semibold">JV</span> : <BlueLogo />}
       </span>
       <div className="bg-row-alt border border-rule rounded-sm rounded-tl-none px-3 py-2 font-ui text-[13px] leading-relaxed text-ink whitespace-pre-wrap">
+        {human && <span className="block text-[10px] font-semibold text-word-blue">James</span>}
         {text}
+        {!human && reaction && <div className="mt-2"><BlueSticker mood={reaction} /></div>}
       </div>
     </div>
   );
@@ -404,10 +423,10 @@ function VisitorBubble({ text }: { text: string }) {
 function BlueLogo() {
   return (
     <img
-      src="/blue-logo.png"
+      src="/blue/coffee-blue.jpg"
       alt=""
       aria-hidden="true"
-      className="h-full w-full object-contain"
+      className="blue-logo h-full w-full"
       draggable={false}
     />
   );

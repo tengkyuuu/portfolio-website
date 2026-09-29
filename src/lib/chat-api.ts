@@ -19,6 +19,7 @@ export type ChatMessage = {
   role: ChatRole;
   body: string;
   created_at: string;
+  reaction?: string;
 };
 
 export type ChatSessionSummary = {

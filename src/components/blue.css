@@ -1,0 +1,20 @@
+.blue-sticker { display: inline-flex; flex-direction: column; align-items: center; gap: 5px; max-width: 132px; padding: 5px; cursor: pointer; color: var(--color-ink-muted); font: 10px var(--font-ui); }
+.blue-sticker-image { width: 106px; height: 100px; object-fit: contain; background: white; border: 2px solid var(--color-ink); border-radius: 20px 18px 23px 9px; box-shadow: 3px 3px 0 var(--color-word-blue-light); transform: rotate(-3deg); }
+.blue-sticker:focus-visible { outline: 2px solid var(--color-word-blue); outline-offset: 3px; border-radius: 10px; }
+.blue-sticker:hover .blue-sticker-image { transform: rotate(3deg) scale(1.04); }
+.blue-logo { border-radius: 50%; object-fit: cover; border: 2px solid var(--color-paper); background: white; }
+.profile-wrap { position: relative; flex-shrink: 0; }
+.profile-popover { position: absolute; top: calc(100% + 14px); right: 0; width: min(375px, calc(100vw - 26px)); background: var(--color-paper); color: var(--color-ink); border: 1px solid var(--color-rule); border-radius: 12px; box-shadow: 0 12px 36px #0003; padding: 18px; font: 12px/1.5 var(--font-ui); z-index: 80; }
+.profile-popover h2 { font: 600 23px/1.2 var(--font-doc); margin: 5px 0; }
+.profile-clock { color: var(--color-ink-muted); font-size: 11px; }
+.profile-status { display: flex; align-items: center; gap: 12px; margin: 16px 0; padding: 12px 0; border-block: 1px solid var(--color-rule); }
+.profile-status > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.profile-status p { margin-top: 4px; color: var(--color-ink-muted); }
+.profile-popover { max-height: calc(100svh - 80px); overflow-y: auto; }
+.profile-close { float: right; padding: 2px 7px; color: var(--color-ink-muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .blue-sticker-image { animation: blue-pop 450ms ease-out; transition: transform 180ms ease; }
+  .profile-popover { animation: blue-pop 200ms ease-out; transform-origin: top right; }
+  @keyframes blue-pop { 0% { transform: translateY(7px) scale(.88) rotate(-7deg); opacity: .3; } 65% { transform: translateY(-3px) scale(1.04) rotate(3deg); } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) { .blue-sticker:hover .blue-sticker-image { transform: none; } }

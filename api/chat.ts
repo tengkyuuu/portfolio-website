@@ -67,6 +67,32 @@ let thinkingConfigAccepted = true;
 const PER_IP_PER_10MIN = 15;
 const GLOBAL_PER_DAY = 300;
 
+// Keep this small contract identical in the local API mirror.
+const BLUE_REACTIONS = ["coffee", "working", "searching", "needmoney", "like", "cry", "corporate"];
+const BLUE_INSTRUCTION = `Return JSON with reply (your answer) and reaction (one of coffee, working, searching, needmoney, like, cry, corporate). Pick the Blue cartoon that suits the visitor's message and your reply: coffee holds a mug for casual greetings; working uses a laptop for projects and coding; searching reads a document for investigation or uncertainty; needmoney wears ragged clothes beside a bowl for lighthearted money talk; like gives a thumbs-up for thanks or encouragement; cry sheds tears for empathy; corporate wears a tie and carries a bag for professional or hiring questions. Be playful and warm without making fun of the visitor. Never invent rates or availability to match a meme.`;
+const BLUE_OUTPUT = {
+  responseMimeType: "application/json",
+  responseJsonSchema: {
+    type: "object", properties: {
+      reply: { type: "string" },
+      reaction: { type: "string", enum: BLUE_REACTIONS },
+    }, required: ["reply", "reaction"],
+  },
+};
+
+export function parseBlueReply(raw: string): { reply: string; reaction: string } {
+  const clean = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const fallback = { reply: "I'm having trouble finding that answer. Try again, or contact James through the Contact tab.", reaction: "searching" };
+  try {
+    const parsed = JSON.parse(clean);
+    if (!parsed || typeof parsed.reply !== "string" || !parsed.reply.trim()) return fallback;
+    return { reply: parsed.reply.trim().slice(0, 1500), reaction: BLUE_REACTIONS.includes(parsed.reaction) ? parsed.reaction : "coffee" };
+  } catch {
+    // Old model/plain-text responses remain readable; broken JSON does not.
+    return clean && !/^[{[]/.test(clean) ? { reply: clean.slice(0, 1500), reaction: "coffee" } : fallback;
+  }
+}
+
 function isStoreConfigured(): boolean {
   return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
@@ -315,6 +341,7 @@ function systemPrompt(summary: string): string {
 Answer visitor questions about James: his projects, skills, experience, credentials, availability, and how to reach him.
 
 Rules:
+${BLUE_INSTRUCTION}
 - Your name is Blue. If asked who or what you are, say you're Blue, the assistant on James's portfolio.
 - You are NOT James. Never write as him or in his voice. James can join this conversation himself, and when he does his messages are labelled as his — yours are labelled as Blue's. Refer to him in the third person.
 - Ground every claim ONLY in the site content below. If it isn't there, say you don't know and point the visitor to the contact form on the Contact tab.
@@ -522,6 +549,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               parts: [{ text: m.content }],
             })),
             generationConfig: {
+              ...BLUE_OUTPUT,
               temperature: 0.3,
               maxOutputTokens: MAX_TOKENS,
               ...(suppressThinking ? THINKING_OFF : {}),
@@ -550,17 +578,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const reply =
-      extractReply((await upstream.json()) as GeminiResponse) ||
-      "…I'm not sure how to answer that one.";
+    const { reply, reaction } = parseBlueReply(extractReply((await upstream.json()) as GeminiResponse));
 
     // Keep the AI's turn in the transcript so James sees what the visitor
     // was already told before he takes over.
     if (sessionId) {
       try {
-        await supabase
+        const { error } = await supabase
           .from("chat_messages")
-          .insert({ session_id: sessionId, role: "ai", body: reply.slice(0, MAX_REPLY_CHARS) });
+          .insert({ session_id: sessionId, role: "ai", body: reply.slice(0, MAX_REPLY_CHARS), reaction });
+        // Deploys can precede migration 008. Preserve replies on old schemas.
+        if (error && (error.code === "42703" || error.code === "PGRST204")) {
+          await supabase.from("chat_messages").insert({ session_id: sessionId, role: "ai", body: reply.slice(0, MAX_REPLY_CHARS) });
+        }
       } catch {
         /* the visitor still gets the answer below */
       }
@@ -575,7 +605,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       /* best-effort */
     }
 
-    return res.status(200).json({ reply, mode: "ai" });
+    return res.status(200).json({ reply, reaction, mode: "ai" });
   } catch (e) {
     return res.status(500).json({
       error: e instanceof Error ? e.message : "Server error",
@@ -660,7 +690,7 @@ async function readTranscript(
 
     let q = supabase
       .from("chat_messages")
-      .select("id, session_id, role, body, created_at")
+      .select("*")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true })
       .limit(TRANSCRIPT_LIMIT);
