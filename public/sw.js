@@ -2,7 +2,7 @@
  *
  * Small, hand-rolled, no Workbox. Three caches:
  *
- *   1) SHELL  — precached at install: /, /index.html, /manifest, /icon.svg.
+ *   1) SHELL  — precached at install: /, /index.html, /manifest, /favicon-32.png.
  *               Kept forever until this SW is replaced.
  *   2) API    — network-first with a bounded stale fallback for
  *               /api/content and /api/health. Any admin-write path is
@@ -26,7 +26,7 @@
  * shipped defaults once the cached copy passes API_MAX_STALE_MS.
  */
 
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 const SHELL_CACHE = `pd-shell-${CACHE_VERSION}`;
 const API_CACHE = `pd-api-${CACHE_VERSION}`;
 const ASSET_CACHE = `pd-asset-${CACHE_VERSION}`;
@@ -34,7 +34,11 @@ const ASSET_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 /** How long a cached API response may stand in for an unreachable server. */
 const API_MAX_STALE_MS = 24 * 60 * 60 * 1000; // 1 day
 
-const SHELL_URLS = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg"];
+// The 32px favicon, not the 192px app icon: the shell only needs the
+// tab to look right offline. The big icons are for the install prompt,
+// which the browser fetches and caches off the manifest itself — and
+// precaching one would put 63 KB on every visitor's first load.
+const SHELL_URLS = ["/", "/index.html", "/manifest.webmanifest", "/favicon-32.png"];
 
 /* ---------------- install: precache the shell ---------------- */
 self.addEventListener("install", (event) => {

@@ -2,17 +2,34 @@
 <html lang="en" class="light">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/icon.svg" />
+    <!-- Portrait favicon, cut from public/no-shades.jpg by
+         scripts/gen-favicon.mjs. Three sizes rather than one: a browser
+         downscaling a single 48px icon to 16px resamples it into mush,
+         and 16px is the size a tab actually renders. No SVG icon is
+         offered, because browsers prefer SVG whenever one is listed and
+         it would win over every PNG here. -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#2b579a" />
+    <!-- Two theme-colors: the browser chrome should match the paper behind
+         it, and the paper is near-black in dark mode. One value leaves a
+         bright blue bar over a dark document on Android. -->
+    <meta name="theme-color" content="#2b579a" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="application-name" content="Portfolio.docx" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Portfolio.docx" />
+    <!-- Locality is in the description on purpose. "James Calunsag" is not
+         a unique string on the open web; "Computer Engineer in Dapitan City"
+         is the pair of facts that tells a search engine which one this is. -->
     <meta
       name="description"
-      content="James Vincent Calunsag — Computer Engineer working at the seam of embedded systems, frontend, and design."
+      content="James Vincent Calunsag — Computer Engineer in Dapitan City, Philippines, working at the seam of embedded systems, frontend engineering, and design."
     />
 
     <!-- Open Graph / social preview.
@@ -22,14 +39,17 @@
          resolve a relative image, so the card stays blank until SITE_URL (or
          Vercel's VERCEL_PROJECT_PRODUCTION_URL) is set. -->
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en" />
+    <!-- language_TERRITORY, not a bare language tag. Facebook and LinkedIn
+         drop a malformed og:locale silently rather than reporting it. -->
+    <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Portfolio.docx" />
     <meta property="og:title" content="James Vincent Calunsag — Computer Engineer" />
     <meta
       property="og:description"
-      content="Portfolio of James Vincent Calunsag — Computer Engineer working at the seam of embedded systems, frontend, and design."
+      content="Portfolio of James Vincent Calunsag — Computer Engineer in Dapitan City, Philippines, working at the seam of embedded systems, frontend engineering, and design."
     />
     <meta property="og:image" content="/og.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
@@ -41,7 +61,7 @@
     <meta name="twitter:title" content="James Vincent Calunsag — Computer Engineer" />
     <meta
       name="twitter:description"
-      content="Computer Engineer working at the seam of embedded systems, frontend, and design."
+      content="Computer Engineer in Dapitan City, Philippines, working at the seam of embedded systems, frontend engineering, and design."
     />
     <meta name="twitter:image" content="/og.png" />
     <meta
@@ -54,28 +74,116 @@
          in Google results; without it a personal site usually gets none. -->
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 
-    <!-- Person structured data. This is the highest-value markup on a
-         personal site: it is what makes the name a resolvable entity rather
-         than a string, and sameAs is how the profiles get associated with
-         it. Paths are root-relative and absolutised by apply-seo.mjs. -->
+    <!-- rel="me" is the machine-readable claim that these accounts are the
+         same person as this page. It is what Mastodon verifies against and
+         what identity crawlers follow; sameAs below states it for search
+         engines, this states it for everyone else. -->
+    <link rel="me" href="https://github.com/tengkyuuu" />
+    <link rel="me" href="https://www.linkedin.com/in/james-vincent-calunsag/" />
+    <link rel="me" href="mailto:jamescalunsag13@gmail.com" />
+
+    <!-- Structured data. This is the highest-value markup on a personal
+         site: it is what makes the name a resolvable entity rather than a
+         string, and sameAs is how the profiles get associated with it.
+         Root-relative URLs and @ids are absolutised by apply-seo.mjs.
+
+         The name is three parts and people only ever search two of them.
+         givenName/additionalName/familyName say which part is which, and
+         alternateName covers the forms that appear on a CV, a commit, or
+         in somebody's memory. Without these, "James Calunsag" and "Vincent
+         Calunsag" are unrelated strings to a crawler. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Person",
-        "name": "James Vincent Calunsag",
-        "jobTitle": "Computer Engineer",
-        "description": "Computer Engineer working at the seam of embedded systems, frontend, and design.",
-        "url": "/",
-        "image": "/og.png",
-        "email": "mailto:jamescalunsag13@gmail.com",
-        "knowsAbout": [
-          "Embedded systems",
-          "Frontend development",
-          "Interface design"
-        ],
-        "sameAs": [
-          "https://github.com/tengkyuuu",
-          "https://linkedin.com/in/james-vincent-calunsag"
+        "@graph": [
+          {
+            "@type": "Person",
+            "@id": "/#person",
+            "name": "James Vincent Calunsag",
+            "givenName": "James",
+            "additionalName": "Vincent",
+            "familyName": "Calunsag",
+            "alternateName": [
+              "James Calunsag",
+              "Vincent Calunsag",
+              "J. V. Calunsag",
+              "JV Calunsag",
+              "Engr. James Calunsag"
+            ],
+            "jobTitle": "Computer Engineer",
+            "description": "Computer Engineer working at the seam of embedded systems, frontend, and design.",
+            "url": "/",
+            "mainEntityOfPage": { "@id": "/#webpage" },
+            "image": { "@id": "/#primaryimage" },
+            "email": "mailto:jamescalunsag13@gmail.com",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Dapitan City",
+              "addressCountry": "PH"
+            },
+            "affiliation": {
+              "@type": "CollegeOrUniversity",
+              "name": "Jose Rizal Memorial State University",
+              "alternateName": "JRMSU"
+            },
+            "hasOccupation": {
+              "@type": "Occupation",
+              "name": "Computer Engineer",
+              "occupationLocation": {
+                "@type": "City",
+                "name": "Dapitan City"
+              }
+            },
+            "knowsAbout": [
+              "Embedded systems",
+              "Firmware development",
+              "ESP32",
+              "PCB design",
+              "Frontend development",
+              "React",
+              "TypeScript",
+              "Interface design",
+              "Brand and product design"
+            ],
+            "sameAs": [
+              "https://github.com/tengkyuuu",
+              "https://www.linkedin.com/in/james-vincent-calunsag/"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "/#website",
+            "url": "/",
+            "name": "Portfolio.docx — James Vincent Calunsag",
+            "alternateName": [
+              "James Vincent Calunsag",
+              "James Calunsag portfolio"
+            ],
+            "description": "The portfolio of James Vincent Calunsag, laid out as a Microsoft Word document.",
+            "inLanguage": "en",
+            "publisher": { "@id": "/#person" },
+            "author": { "@id": "/#person" },
+            "copyrightHolder": { "@id": "/#person" }
+          },
+          {
+            "@type": "ProfilePage",
+            "@id": "/#webpage",
+            "url": "/",
+            "name": "James Vincent Calunsag — Computer Engineer",
+            "isPartOf": { "@id": "/#website" },
+            "about": { "@id": "/#person" },
+            "primaryImageOfPage": { "@id": "/#primaryimage" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "ImageObject",
+            "@id": "/#primaryimage",
+            "url": "/og.png",
+            "contentUrl": "/og.png",
+            "width": 1200,
+            "height": 630,
+            "caption": "James Vincent Calunsag — Computer Engineer · Embedded · Frontend · Design"
+          }
         ]
       }
     </script>

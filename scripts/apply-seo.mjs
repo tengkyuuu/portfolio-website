@@ -12,6 +12,9 @@
  *   • og:image / twitter:image — these are relative in the source, and
  *     LinkedIn and Facebook both refuse to resolve a relative image. The
  *     card renders blank, which is the failure this fixes.
+ *   • the JSON-LD graph's @id values — an @id is the entity's identifier,
+ *     so a relative one names a different entity on every host that serves
+ *     the same build.
  *
  * The origin comes from SITE_URL, or from VERCEL_PROJECT_PRODUCTION_URL,
  * which Vercel injects automatically and which points at the production
@@ -71,15 +74,26 @@ if (origin) {
     (_m, head, rest, tail) => `${head}${origin}/${rest}${tail}`
   );
 
-  // The Person block's "url" and "image". Left root-relative these still
-  // resolve against the page, so an unset SITE_URL degrades rather than
-  // breaks; absolute is what search engines actually want.
-  html = html
-    .replace(/("url":\s*")\/(")/g, (_m, head, tail) => `${head}${origin}/${tail}`)
-    .replace(
-      /("image":\s*")\/([^"]*)(")/g,
-      (_m, head, rest, tail) => `${head}${origin}/${rest}${tail}`
-    );
+  // Every root-relative URL and node id inside the JSON-LD graph. Left
+  // relative these still resolve against the page, so an unset SITE_URL
+  // degrades rather than breaks; absolute is what search engines want,
+  // and an @id has to be globally unique to be an entity at all — a
+  // relative one identifies a different thing on every host that serves
+  // this build.
+  //
+  // Scoped to the script block rather than run across the whole document:
+  // "url" is a common enough key that a document-wide replace would be
+  // waiting to catch something it was never meant to.
+  html = html.replace(
+    /(<script type="application\/ld\+json">)([\s\S]*?)(<\/script>)/,
+    (_m, open, json, close) =>
+      open +
+      json.replace(
+        /("(?:@id|url|contentUrl|image|logo)":\s*")\/([^"]*)(")/g,
+        (_j, head, rest, tail) => `${head}${origin}/${rest}${tail}`
+      ) +
+      close
+  );
 
   // Canonical + og:url, injected once.
   if (!/rel="canonical"/.test(html)) {
