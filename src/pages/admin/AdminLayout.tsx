@@ -56,6 +56,7 @@ export type SectionId =
   | "credentials"
   | "contact"
   | "inbox"
+  | "invitations"
   | "chat"
   | "history"
   | "team"
@@ -72,6 +73,7 @@ export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string
   { id: "credentials", label: "Credentials", icon: "school", tab: "Credentials tab" },
   { id: "contact", label: "Contact", icon: "mail", tab: "Contact tab" },
   { id: "inbox", label: "Inbox", icon: "inbox", tab: "Messages from the contact form" },
+  { id: "invitations", label: "Invitations", icon: "outgoing_mail", tab: "Invite people by email" },
   { id: "chat", label: "Chat", icon: "forum", tab: "Live conversations — reply as yourself" },
   { id: "history", label: "History", icon: "history", tab: "Version history & track changes" },
   { id: "team", label: "Team", icon: "group", tab: "Who can edit, and your account" },

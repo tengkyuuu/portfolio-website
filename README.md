@@ -119,3 +119,10 @@ Blue uses the coffee avatar and Gemini-selected reactions inside chat.
 
 See [setup instructions](docs/spotify-setup.md) for the Spotify connection helper
 (`npm run spotify:connect`), deployment variables, and chat reaction migration.
+
+## Invite visitors
+
+**Admin → Invitations** offers an email preview, individual Gmail drafts, and
+Resend sending once a custom domain and API key are configured. See the
+[invitation setup guide](docs/invitations.md). Invitations link to the public
+portfolio; they do not grant admin access.

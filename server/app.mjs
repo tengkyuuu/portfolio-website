@@ -952,6 +952,16 @@ function hashIp(ip) {
     .slice(0, 32);
 }
 
+// Reuse the deployed invitation implementation, with the local session check.
+apiApp.all("/api/inquiries", (req, res, next) => {
+  if (req.query.op !== "invitations") return next();
+  requireAuth(req, res, async () => {
+    if (!apiApp.locals.invitationHandler) return res.status(503).json({ error: "Start npm run dev to use the invitation API locally." });
+    try { await apiApp.locals.invitationHandler(req, res, req.actor); }
+    catch { res.status(500).json({ error: "The invitation service is unavailable." }); }
+  });
+});
+
 apiApp.post("/api/inquiries", (req, res) => {
   const b = req.body ?? {};
   const errors = [];

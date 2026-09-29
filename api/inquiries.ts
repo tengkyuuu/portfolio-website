@@ -200,10 +200,89 @@ function validateBody(body: unknown): {
 
 /* ---------------- handler ---------------- */
 
+type Invitation = { recipients: string[]; subject: string; message: string; requestId: string };
+const INVITE_EMAIL = /^[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+$/;
+
+export function validateInvitation(body: unknown): Invitation | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as Record<string, unknown>;
+  if (!Array.isArray(b.recipients) || b.recipients.length < 1 || b.recipients.length > 10) return null;
+  if (b.recipients.some(email => typeof email !== "string" || email.length > 254 || !INVITE_EMAIL.test(email.trim()))) return null;
+  if (typeof b.subject !== "string" || !b.subject.trim() || b.subject.length > 150 || /[\r\n]/.test(b.subject)) return null;
+  if (typeof b.message !== "string" || !b.message.trim() || b.message.length > 3000) return null;
+  if (typeof b.requestId !== "string" || !UUID_RE.test(b.requestId)) return null;
+  return { recipients: [...new Set(b.recipients.map(email => (email as string).trim().toLowerCase()))], subject: b.subject.trim(), message: b.message.trim(), requestId: b.requestId };
+}
+
+function invitationConfig() {
+  const missing: string[] = [];
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM;
+  const replyTo = process.env.RESEND_REPLY_TO;
+  if (!apiKey) missing.push("RESEND_API_KEY");
+  if (!from || /[\r\n]/.test(from) || !INVITE_EMAIL.test(from.match(/<([^>]+)>$/)?.[1] ?? from)) missing.push("RESEND_FROM");
+  if (replyTo && !INVITE_EMAIL.test(replyTo)) missing.push("RESEND_REPLY_TO");
+  let siteUrl = "";
+  try {
+    const url = new URL(process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : ""));
+    if (url.protocol !== "https:" || url.username || url.password) throw new Error();
+    siteUrl = url.origin;
+  } catch { missing.push("SITE_URL"); }
+  return { apiKey, from, replyTo, siteUrl, missing };
+}
+
+function escapeEmail(value: string): string {
+  return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]!));
+}
+
+export function invitationEmail(invite: Invitation, siteUrl: string) {
+  const url = escapeEmail(siteUrl);
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#edf0f5;color:#283246;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:32px 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:auto;background:white;border:1px solid #dbe1eb"><tr><td style="background:#244b87;padding:18px 28px;color:white;font-size:13px;font-weight:bold">W &nbsp; Portfolio.docx</td></tr><tr><td style="padding:34px 28px"><p style="font-size:10px;letter-spacing:2px;color:#2d5592">YOU'RE INVITED</p><h1 style="font-family:Georgia,serif;font-size:32px;font-weight:normal;margin:18px 0 24px">Come have a look around.</h1><p style="font-size:15px;line-height:1.8;margin-bottom:28px">${escapeEmail(invite.message).replace(/\r?\n/g, "<br>")}</p><a href="${url}" style="display:inline-block;background:#2d5592;color:white;padding:13px 20px;text-decoration:none;border-radius:4px;font-size:13px;font-weight:bold">Explore the portfolio →</a><p style="font-size:11px;color:#6b7280;margin-top:30px">Projects, design, and the person behind the work.</p><p style="font-size:11px;overflow-wrap:anywhere"><a style="color:#2d5592" href="${url}">${url}</a></p></td></tr></table></td></tr></table></body></html>`;
+  return { html, text: `You're invited to Portfolio.docx\n\n${invite.message}\n\nExplore the portfolio: ${siteUrl}` };
+}
+
+/** Called only after the production or local admin session has been checked. */
+export async function handleInvitations(req: VercelRequest, res: VercelResponse, actor: Actor) {
+  res.setHeader("Cache-Control", "no-store");
+  const config = invitationConfig();
+  if (req.method === "GET") return res.status(200).json({ configured: config.missing.length === 0, missing: config.missing, from: config.from || "", siteUrl: config.siteUrl });
+  if (req.method !== "POST") { res.setHeader("Allow", "GET, POST"); return res.status(405).json({ error: "Method not allowed" }); }
+  const body = typeof req.body === "string" ? safeJson(req.body) : req.body;
+  const invite = validateInvitation(body);
+  if (!invite) return res.status(400).json({ error: "Enter 1–10 valid email addresses, a subject (up to 150 characters), and a message (up to 3,000 characters)." });
+  if (!config.siteUrl) return res.status(503).json({ error: "Set SITE_URL to your public HTTPS website address before previewing or sending invitations." });
+  const email = invitationEmail(invite, config.siteUrl);
+  if (body.preview === true) return res.status(200).json({ ...email, subject: invite.subject, recipients: invite.recipients, from: config.from || "Sender not configured", siteUrl: config.siteUrl });
+  if (config.missing.length) return res.status(503).json({ error: `Configure ${config.missing.join(", ")} on the server before sending.` });
+  try {
+    const upstream = await fetch("https://api.resend.com/emails/batch", {
+      method: "POST", signal: AbortSignal.timeout(15000),
+      headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json", "Idempotency-Key": `portfolio-invite/${actor.id}/${invite.requestId}` },
+      body: JSON.stringify(invite.recipients.map(to => ({ from: config.from, to: [to], subject: invite.subject, ...email, ...(config.replyTo ? { reply_to: config.replyTo } : {}) }))),
+    });
+    const result = await upstream.json().catch(() => null) as { data?: { id?: string }[] } | null;
+    if (!upstream.ok) {
+      const error = upstream.status === 429 ? "Resend is limiting requests. Wait a moment, then retry." : upstream.status === 409 ? "This invitation changed after a send attempt. Check Resend before creating another invitation." : upstream.status === 401 || upstream.status === 403 ? "Resend rejected the sender or API key. Check your verified domain and server settings." : "Resend could not accept the invitations. Check the Resend dashboard, then retry.";
+      return res.status(upstream.status === 429 ? 429 : 502).json({ error });
+    }
+    if (!result?.data || result.data.length !== invite.recipients.length || result.data.some(item => !item.id)) {
+      return res.status(502).json({ error: "Resend's response was incomplete. Check the dashboard or retry this same invitation." });
+    }
+    return res.status(200).json({ ok: true, accepted: result.data.map((item, index) => ({ email: invite.recipients[index], id: item.id })) });
+  } catch {
+    return res.status(502).json({ error: "Could not confirm Resend's response. Retry this same invitation to avoid duplicates, or check the Resend dashboard." });
+  }
+}
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  if (req.query.op === "invitations") {
+    const actor = await authorize(req);
+    if (!actor) return res.status(401).json({ error: "Unauthorized" });
+    return handleInvitations(req, res, actor);
+  }
   if (!isStoreConfigured()) {
     return res.status(503).json({
       error:

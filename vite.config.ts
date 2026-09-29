@@ -10,6 +10,10 @@ function contentApi(): Plugin {
   return {
     name: "content-api",
     configureServer(server) {
+      apiApp.locals.invitationHandler = async (req: unknown, res: unknown, actor: unknown) => {
+        const module = await server.ssrLoadModule("/api/inquiries.ts");
+        return module.handleInvitations(req, res, actor);
+      };
       server.middlewares.use(apiApp);
     },
     configurePreviewServer(server) {

@@ -18,6 +18,7 @@ import { GalleryEditor } from "./admin/GalleryEditor";
 import { HeroEditor } from "./admin/HeroEditor";
 import { HistoryPanel } from "./admin/HistoryPanel";
 import { InboxEditor } from "./admin/InboxEditor";
+import { InvitationsPanel } from "./admin/InvitationsPanel";
 import { PasswordGate } from "./admin/PasswordGate";
 import { ProjectsEditor } from "./admin/ProjectsEditor";
 import { SkillsEditor } from "./admin/SkillsEditor";
@@ -112,6 +113,7 @@ export function AdminPage() {
       {loaded && section === "credentials" && <CredentialsEditor />}
       {loaded && section === "contact" && <ContactEditor />}
       {loaded && section === "inbox" && <InboxEditor />}
+      {loaded && section === "invitations" && <InvitationsPanel />}
       {loaded && section === "chat" && <ChatEditor />}
       {loaded && section === "history" && <HistoryPanel />}
       {loaded && section === "team" && <TeamPanel />}
