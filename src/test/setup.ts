@@ -1,6 +1,23 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach } from "vitest";
+import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
+
+/**
+ * Never let a test open a real network connection. Vitest loads the same
+ * .env.local Vite does, so once VITE_SUPABASE_URL/ANON_KEY are configured
+ * for local dev, getSupabaseClient() starts returning a real client here
+ * too — and Nav.tsx's live-presence hook then opens a genuine WebSocket to
+ * Supabase mid-test. The test finishes and tears down jsdom before that
+ * connection resolves, and the late event fires into a torn-down realm:
+ * an uncaught exception that fails the whole run's exit code even though
+ * every named test passed (see api/limits.test.ts's sibling problem —
+ * a green run isn't proof of a healthy one). Tests must be hermetic
+ * regardless of what happens to be sitting in a local env file.
+ */
+vi.mock("../lib/supabase-client", () => ({
+  getSupabaseClient: () => null,
+  isRealtimeConfigured: () => false,
+}));
 
 /**
  * jsdom ships no matchMedia, and several components ask it about
