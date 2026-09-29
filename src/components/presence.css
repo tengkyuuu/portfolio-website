@@ -1,0 +1,246 @@
+/* Presence — who else is reading, as a stack of dogs in the title bar.
+   Word puts co-authors' faces here; these are anonymous ones. */
+
+/* ------------------------------ the dogs ------------------------------ */
+/* Illustration colours, local to the avatars — the same arrangement as
+   the GitHub panel's tones in github-activity.css. They sit on their own
+   background disc, so they read the same on every theme. */
+
+.dog-avatar {
+  --dog-eye: #2a2522;
+  --dog-glint: #ffffff;
+  --dog-nose: #2a2522;
+  --dog-tongue: #ef8a9a;
+  --dog-blush: #f4a3a8a0;
+  --dog-ear-inner: #f3b7a4;
+  --dog-spot: #2a2522;
+  --dog-eye-ring: transparent;
+  display: block;
+  flex: none;
+}
+.dog-corgi {
+  --dog-bg: #ffe2bf;
+  --dog-fur: #e58c38;
+  --dog-fur2: #fffaf2;
+  --dog-muzzle: #fffaf2;
+}
+.dog-shiba {
+  --dog-bg: #fbe4d2;
+  --dog-fur: #d8793a;
+  --dog-fur2: #fff1dd;
+  --dog-muzzle: #fff1dd;
+}
+.dog-husky {
+  --dog-bg: #d8e6f5;
+  --dog-fur: #68778a;
+  --dog-fur2: #fdfdfd;
+  --dog-muzzle: #fdfdfd;
+  --dog-eye: #3b8fd4;
+  --dog-ear-inner: #e8c8c0;
+}
+.dog-beagle {
+  --dog-bg: #f1e3cf;
+  --dog-fur: #c7843f;
+  --dog-fur2: #fffaf2;
+  --dog-muzzle: #fffaf2;
+  --dog-ear: #6f4124;
+}
+.dog-dachshund {
+  --dog-bg: #f6d9c6;
+  --dog-fur: #a4552c;
+  --dog-muzzle: #bd6d3d;
+  --dog-ear: #6e3316;
+  --dog-blush: transparent;
+}
+.dog-pug {
+  --dog-bg: #f4e9d8;
+  --dog-fur: #e2c194;
+  --dog-muzzle: #3b312b;
+  --dog-ear: #3b312b;
+  --dog-nose: #1b1512;
+  --dog-glint: #ffffff;
+}
+.dog-dalmatian {
+  --dog-bg: #d9e4ef;
+  --dog-fur: #fbfbfb;
+  --dog-muzzle: #f1f1f1;
+  --dog-ear: #3a3533;
+}
+.dog-golden {
+  --dog-bg: #fff0d2;
+  --dog-fur: #eeb150;
+  --dog-muzzle: #f7d38e;
+  --dog-ear: #d58f2e;
+}
+.dog-poodle {
+  --dog-bg: #fbe1e7;
+  --dog-fur: #f6d4b6;
+  --dog-muzzle: #fbe6d3;
+  --dog-ear: #ecbb91;
+}
+.dog-collie {
+  --dog-bg: #e2e7ee;
+  --dog-fur: #2f3036;
+  --dog-fur2: #fdfdfd;
+  --dog-muzzle: #fdfdfd;
+  --dog-ear-inner: #57545c;
+  --dog-blush: transparent;
+  /* A dark face needs a light ring for its eyes to show at all. */
+  --dog-eye-ring: #fdfdfd;
+}
+
+/* ---------------------------- title bar stack ---------------------------- */
+
+.presence {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+.presence-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px 3px 4px;
+  border-radius: 999px;
+  color: var(--office-white);
+  transition: background 0.2s;
+}
+.presence-trigger:hover,
+.presence-trigger[aria-expanded="true"] {
+  background: #ffffff1c;
+}
+.presence-trigger:focus-visible {
+  outline: 2px solid var(--office-white);
+  outline-offset: 2px;
+}
+.presence-faces {
+  display: flex;
+  align-items: center;
+}
+.presence-face,
+.presence-more {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  /* The title bar's own colour as a ring, so overlapping faces separate. */
+  box-shadow: 0 0 0 2px var(--office-blue);
+  overflow: hidden;
+}
+.presence-face + .presence-face,
+.presence-face + .presence-more {
+  margin-left: -7px;
+}
+.presence-more {
+  display: grid;
+  place-items: center;
+  background: #ffffff2e;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.presence-count {
+  font-size: 10.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0.92;
+}
+.presence-count b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.presence-live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7ee2a8;
+  box-shadow: 0 0 0 3px #7ee2a833;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .presence-face {
+    animation: presence-arrive 0.36s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  }
+  .presence-live {
+    animation: presence-pulse 2.4s ease-in-out infinite;
+  }
+}
+@keyframes presence-arrive {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+@keyframes presence-pulse {
+  50% {
+    box-shadow: 0 0 0 5px #7ee2a800;
+  }
+}
+
+/* ------------------------------- popover ------------------------------- */
+
+.presence-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 80;
+  width: 280px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule);
+  border-radius: 4px;
+  box-shadow: 0 12px 34px #0000002e;
+  padding: 12px 0 10px;
+}
+.presence-popover h2 {
+  padding: 0 14px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--color-ink-subtle);
+}
+.presence-popover ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.presence-popover li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+}
+.presence-popover li strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.presence-popover li span {
+  display: block;
+  font-size: 11px;
+  color: var(--color-ink-subtle);
+}
+.presence-popover li em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-word-blue);
+  margin-left: 4px;
+}
+.presence-popover p {
+  margin: 8px 14px 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-rule);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--color-ink-subtle);
+}
+
+@media (max-width: 800px) {
+  .presence-count {
+    display: none;
+  }
+}

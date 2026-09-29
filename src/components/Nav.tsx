@@ -20,6 +20,7 @@ import { getContent, type SiteContent } from "../lib/content";
 import { publicDesigns } from "../lib/gallery";
 import { useI18n } from "../lib/i18n";
 import { switchTheme, THEMES, type Theme } from "../lib/theme";
+import { PresenceStack } from "./PresenceStack";
 
 export type TabId =
   | "top"
@@ -175,10 +176,7 @@ export function Nav({
           <span>Find something in my world</span>
           <kbd>Ctrl K</kbd>
         </button>
-        <span className="office-viewing">
-          <span />
-          Viewing
-        </span>
+        <PresenceStack active={active} />
         <a href="#about" className="office-avatar" aria-label="About James">
           JV
         </a>
