@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -14,11 +14,11 @@ import { getContent } from "../lib/content";
 import { renderInline, renderParagraphs } from "../lib/inline";
 import { visibleTabs } from "./Nav";
 import { useI18n } from "../lib/i18n";
-import { PortraitPhoto } from "./PortraitPhoto";
 
 export function Hero() {
   const { t } = useI18n();
   const { hero, projects } = useMemo(() => getContent(), []);
+  const [playful, setPlayful] = useState(false);
   const names = hero.name.split(" ");
   const featured = projects
     .filter((project) => project.gallery?.length || project.image)
@@ -77,17 +77,37 @@ export function Hero() {
           <span className="portrait-annotation">
             the human behind the work <span>↴</span>
           </span>
-          <div className="portrait-object" aria-label={`${hero.name} portrait`}>
+          <button
+            className={"portrait-object " + (playful ? "is-playful" : "")}
+            onClick={() => setPlayful((value) => !value)}
+            aria-label="Toggle playful portrait"
+            aria-pressed={playful}
+          >
             <span className="selection-handle handle-tl" />
             <span className="selection-handle handle-tr" />
             <span className="selection-handle handle-bl" />
             <span className="selection-handle handle-br" />
-            <PortraitPhoto name={hero.name} />
+            <span className="portrait-photo">
+              <img
+                className="portrait-day"
+                src={playful ? "/james-shades.jpg" : "/james.jpg"}
+                alt={playful ? `${hero.name}, wearing sunglasses` : hero.name}
+              />
+              <img
+                className="portrait-night"
+                src={playful ? "/james-dark-peace.jpg" : "/james-dark.jpg"}
+                alt={playful ? `${hero.name}, making a peace sign` : hero.name}
+              />
+            </span>
             <span className="portrait-caption">
-              <span>Engineer. Designer. Curious human.</span>
+              <span>
+                {playful
+                  ? "A different perspective."
+                  : "Engineer. Designer. Curious human."}
+              </span>
               <Sparkles size={15} />
             </span>
-          </div>
+          </button>
           <div className="portrait-sticker" aria-hidden="true">
             <span>✳</span>
             <small>
@@ -97,7 +117,7 @@ export function Hero() {
             </small>
           </div>
           <span className="portrait-hint">
-            <MousePointer2 size={13} /> hover the photo
+            <MousePointer2 size={13} /> go on, click the photo
           </span>
         </div>
       </div>
