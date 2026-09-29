@@ -26,6 +26,12 @@ or nice-to-have · **T4** = big infra, only if the portfolio grows.
 - ✅ Vitest suite + /status Test Suite card (needs ADMIN_TOKEN_SECRET repo secret)
 - ✅ Spotify "Now Playing" in the status bar (needs SPOTIFY_* on Vercel)
 - ✅ Lighthouse CI (GitHub Action → /api/lighthouse → /status card, needs ADMIN_TOKEN_SECRET repo secret)
+- ✅ Live presence — anonymous dog avatars + count in the title bar (Supabase Realtime Presence, needs VITE_SUPABASE_*)
+- ✅ Spotify "On Repeat" — top tracks + recently played on About's Now page (needs the two extra scopes)
+- ✅ Blog — Markdown posts written in admin → Blog, drafts, covers, #blog/<slug> links, search
+- ✅ Graphic design gallery — admin → Gallery (multi-upload), matted grid, category filter, lightbox
+- ✅ Team admins (the "roles" item below, owner + admins) — admin → Team, needs migration 006
+- ✅ Image uploads to Supabase Storage (the "image optimization" path 2 below, without variants) — needs migration 007
 
 ---
 

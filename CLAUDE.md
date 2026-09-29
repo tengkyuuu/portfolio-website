@@ -29,6 +29,22 @@ in every visitor's JS bundle, and `data.test.ts` fails if one lands there.
 **Secrets stay server-side.** `VITE_`-prefixed env vars are compiled into
 the client bundle. API keys and tokens must only be read inside `api/`.
 
+**Admins are not all the owner.** Team admins (migration 006) can write
+content, so content is untrusted on the page: `renderInline` and
+`renderMarkdown` build React elements only, and every admin-authored URL
+goes through `safeHref`. Never add `dangerouslySetInnerHTML` for content —
+the owner's token lives on the same origin.
+
+**Every authed handler carries the admin-session block verbatim.** It
+re-checks team admins against `admin_users` on each call, which is what
+makes removing one take effect at once. `api/sessions.test.ts` holds the
+copies byte-identical; change one, change all.
+
+**Admin writes are section-scoped.** Autosave sends `?sections=<key>` and
+the server merges only that key, and the console loads published content
+before any editor renders. A whole-document autosave let one admin's stale
+copy erase another's work — don't bring it back.
+
 ## Content and data
 
 - Projects are numbered `01`, `02`, … in array order, and `ref`, `page`
@@ -40,6 +56,9 @@ the client bundle. API keys and tokens must only be read inside `api/`.
 - Do not invent metrics, dates, client names, or URLs. Absent beats
   fabricated. Project entries come from `docs/project-intake-prompt.md`,
   which requires an `uncertain` array — verify those before publishing.
+- Blog posts and gallery designs ship empty and are written in the admin.
+  Don't seed them in `data.ts`. Their ribbon tabs appear only when there is
+  a published post / a design with a title and alt text (`visibleTabs`).
 - Skill "cadence" is the `level` field in `skill-catalog.ts` rendered as a
   0–3 signal. It is not a self-assessed score, and nothing should present
   it as one.

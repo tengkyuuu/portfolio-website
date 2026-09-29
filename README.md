@@ -69,6 +69,24 @@ Generate the hash at `/admin` (the setup screen has a built-in generator) or wit
 `node -e "console.log(require('crypto').createHash('sha256').update('PW').digest('hex'))"`.
 See [`.env.example`](.env.example). Locally this goes in `.env.local`.
 
+### Team admins, blog and gallery
+
+These need two migrations in the Supabase SQL editor, once each:
+
+- [`006_admin_users.sql`](supabase/migrations/006_admin_users.sql) — team
+  accounts. You stay the owner (the password above, no username) and add
+  admins under **Admin → Team**. Admins sign in at `/admin` with a username;
+  they can edit everything except the team. Disabling, removing or resetting
+  one signs them out at once.
+- [`007_media_bucket.sql`](supabase/migrations/007_media_bucket.sql) — a
+  public `media` bucket for uploads (gallery designs, blog covers, project
+  screenshots). Without it uploads still work, but are saved inline in the
+  content JSON that every visitor downloads.
+
+**Admin → Blog** writes posts (Markdown, drafts, covers); **Admin → Gallery**
+takes several design files at once. Each tab appears on the ribbon only once it
+has a published post or a finished design (title + alt text).
+
 ## Deploy to Vercel
 
 This is configured as a **static SPA** ([`vercel.json`](vercel.json)): Vercel runs
