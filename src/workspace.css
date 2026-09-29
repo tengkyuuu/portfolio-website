@@ -1,8 +1,24 @@
 /* The document and the application around it share the existing theme tokens. */
 :root {
+  /* Word's titlebar is only ever this navy in the Colorful theme — every
+     other theme's real titlebar is a neutral gray/black/white with no blue
+     cast at all (verified against Word's own Account screen screenshots).
+     --office-blue therefore gets a per-theme override below; --office-blue-deep
+     does not, because the small branded "W" tile in the corner stays this
+     fixed navy in every theme — it's a logo, not chrome. */
   --office-blue: #244b87;
   --office-blue-deep: #183b70;
   --office-white: #fff;
+  /* Titlebar foreground + translucent overlays (search box, avatar, divider).
+     White text/overlays read fine on every theme's titlebar except White
+     itself, where the bar is light and these flip to dark down below. */
+  --titlebar-fg: #fff;
+  --titlebar-fg-soft: #ffffffc9;
+  --titlebar-divider: #ffffff35;
+  --titlebar-overlay-weak: #ffffff16;
+  --titlebar-overlay-weaker: #ffffff12;
+  --titlebar-overlay-strong: #ffffff26;
+  --titlebar-overlay-border: #ffffff45;
   --note-yellow: #fff0a8;
   --note-ink: #51441d;
   --available: #398268;
@@ -25,14 +41,23 @@
   --color-ink-muted: #5a6474;
   --color-ink-subtle: #747c8a;
 }
-[data-theme="dark-gray"],
+/* Dark Gray and Black keep distinct titlebar tones in real Word — a medium
+   charcoal versus near-pure black — rather than sharing one navy. */
+[data-theme="dark-gray"] {
+  --office-blue: #2c2c2c;
+}
 [data-theme="black"] {
-  --office-blue: #202936;
-  --office-blue-deep: #141b25;
+  --office-blue: #090909;
 }
 [data-theme="white"] {
-  --office-blue: #3f4a5a;
-  --office-blue-deep: #283140;
+  --office-blue: #e4e4e4;
+  --titlebar-fg: #1a1c1c;
+  --titlebar-fg-soft: #1a1c1cb3;
+  --titlebar-divider: #00000025;
+  --titlebar-overlay-weak: #00000012;
+  --titlebar-overlay-weaker: #0000000f;
+  --titlebar-overlay-strong: #0000001f;
+  --titlebar-overlay-border: #00000030;
 }
 button,
 a,
@@ -82,7 +107,7 @@ textarea {
   gap: 16px;
   padding: 0 22px;
   background: var(--office-blue);
-  color: var(--office-white);
+  color: var(--titlebar-fg);
 }
 .word-brand {
   display: grid;
@@ -106,7 +131,7 @@ textarea {
 }
 .office-file-note {
   padding-left: 12px;
-  border-left: 1px solid #ffffff35;
+  border-left: 1px solid var(--titlebar-divider);
   opacity: 0.64;
   font-size: 10px;
   font-weight: 400;
@@ -116,17 +141,17 @@ textarea {
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  background: #ffffff16;
-  border: 1px solid #ffffff12;
+  background: var(--titlebar-overlay-weak);
+  border: 1px solid var(--titlebar-overlay-weaker);
   border-radius: 5px;
   width: 350px;
   padding: 6px 12px;
-  color: #ffffffc9;
+  color: var(--titlebar-fg-soft);
   margin-right: auto;
   transition: background 0.2s;
 }
 .office-search:hover {
-  background: #ffffff26;
+  background: var(--titlebar-overlay-strong);
 }
 .office-search kbd {
   margin-left: auto;
@@ -153,8 +178,8 @@ textarea {
   height: 27px;
   display: grid;
   place-items: center;
-  background: #ffffff22;
-  border: 1px solid #ffffff45;
+  background: var(--titlebar-overlay-weak);
+  border: 1px solid var(--titlebar-overlay-border);
   border-radius: 50%;
   font-size: 10px;
 }

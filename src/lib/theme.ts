@@ -43,7 +43,7 @@ export const THEMES: ThemeMeta[] = [
     icon: "contrast",
     hint: "Muted dark grays, easy on the eyes.",
     palette: "dark",
-    chip: "#3a3d40",
+    chip: "#2c2c2c",
   },
   {
     id: "black",
@@ -51,7 +51,7 @@ export const THEMES: ThemeMeta[] = [
     icon: "circle",
     hint: "Full dark, high-contrast.",
     palette: "dark",
-    chip: "#0a0a0a",
+    chip: "#090909",
   },
   {
     id: "white",

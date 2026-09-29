@@ -79,25 +79,30 @@
   --color-word-blue-light: #e8f0fb;
 }
 
-/* Dark Gray — softer dark, muted blue accent */
+/* Dark Gray — verified against Word's own Account screen: the chrome runs
+   #2c2c2c while the content pane sits at #525252, a full stop lighter than
+   this file previously used (#363636). The accent is a periwinkle #82abf1,
+   not the paler #b8caff this used to be. */
 [data-theme="dark-gray"].dark {
-  --color-workspace: #2b2b2b;
-  --color-paper: #363636;
-  --color-paper-edge: #4a4a4a;
-  --color-ribbon: #3b3b3b;
-  --color-ribbon-hover: #4a4a4a;
-  --color-row-alt: #313131;
-  --color-rule: #4a4a4a;
-  --color-rule-strong: #5a5a5a;
-  --color-status-bar: #454545;
-  --color-word-blue: #b8caff;
-  --color-word-blue-dark: #d7e3ff;
-  --color-word-blue-light: #364a75;
+  --color-workspace: #2c2c2c;
+  --color-paper: #525252;
+  --color-paper-edge: #3d3d3d;
+  --color-ribbon: #363636;
+  --color-ribbon-hover: #454545;
+  --color-row-alt: #474747;
+  --color-rule: #666666;
+  --color-rule-strong: #787878;
+  --color-status-bar: #3a3a3a;
+  --color-word-blue: #82abf1;
+  --color-word-blue-dark: #b3cdfb;
+  --color-word-blue-light: #3c507a;
 }
 
-/* Black — deep, high-contrast dark */
+/* Black — verified: chrome #090909, content pane #141414 (this was already
+   exactly right). The accent is the same #82abf1 Word uses for Dark Gray,
+   not the near-white #cfe0ff this used to be. */
 [data-theme="black"].dark {
-  --color-workspace: #0a0a0a;
+  --color-workspace: #090909;
   --color-paper: #141414;
   --color-paper-edge: #262626;
   --color-ribbon: #171717;
@@ -106,25 +111,29 @@
   --color-rule: #262626;
   --color-rule-strong: #383838;
   --color-status-bar: #000000;
-  --color-word-blue: #cfe0ff;
-  --color-word-blue-dark: #ffffff;
-  --color-word-blue-light: #1e2b48;
+  --color-word-blue: #82abf1;
+  --color-word-blue-dark: #cfe0ff;
+  --color-word-blue-light: #20304f;
 }
 
-/* White — near-pure light, minimal chrome */
+/* White — verified: the chrome is a light #e4e4e4, not pure white (only the
+   content pane/page is #ffffff), and the accent is a real saturated blue,
+   #1651aa — this theme previously had no blue in it at all; the "accent"
+   was literally the ink color, which made links and active states read as
+   plain black instead of Word's actual blue. */
 [data-theme="white"].light {
   --color-workspace: #f5f5f5;
   --color-paper: #ffffff;
   --color-paper-edge: #e4e4e4;
-  --color-ribbon: #ffffff;
-  --color-ribbon-hover: #f0f0f0;
+  --color-ribbon: #e4e4e4;
+  --color-ribbon-hover: #d6d6d6;
   --color-row-alt: #fafafa;
-  --color-rule: #e4e4e4;
-  --color-rule-strong: #cccccc;
-  --color-status-bar: #1a1c1c;
-  --color-word-blue: #1a1c1c;
-  --color-word-blue-dark: #000000;
-  --color-word-blue-light: #f0f0f0;
+  --color-rule: #d5d5d5;
+  --color-rule-strong: #bcbcbc;
+  --color-status-bar: #1651aa;
+  --color-word-blue: #1651aa;
+  --color-word-blue-dark: #0d3a7a;
+  --color-word-blue-light: #dde8f7;
 }
 
 @layer base {
