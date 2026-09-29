@@ -972,8 +972,8 @@ textarea {
 .portrait-object:focus-visible .portrait-shades {
   opacity: 1;
 }
-.portrait-object:hover .portrait-base,
-.portrait-object:focus-visible .portrait-base {
+.portrait-object:hover .portrait-photo:not(.portrait-no-shades) .portrait-base,
+.portrait-object:focus-visible .portrait-photo:not(.portrait-no-shades) .portrait-base {
   opacity: 0;
 }
 .blue-launcher {

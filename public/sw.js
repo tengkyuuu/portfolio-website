@@ -26,7 +26,7 @@
  * shipped defaults once the cached copy passes API_MAX_STALE_MS.
  */
 
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const SHELL_CACHE = `pd-shell-${CACHE_VERSION}`;
 const API_CACHE = `pd-api-${CACHE_VERSION}`;
 const ASSET_CACHE = `pd-asset-${CACHE_VERSION}`;
@@ -86,6 +86,8 @@ self.addEventListener("fetch", (event) => {
 
   // Public API (content, health): network-first, bounded stale fallback
   if (url.pathname.startsWith("/api/")) {
+    // Transcripts, admin data and listening state must never replay from cache.
+    if (req.headers.has("Authorization") || !["/api/content", "/api/health"].includes(url.pathname)) return;
     event.respondWith(networkFirstAPI(req, API_CACHE, API_MAX_STALE_MS));
     return;
   }
