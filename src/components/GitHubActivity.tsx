@@ -81,9 +81,7 @@ export function gitHubSnapshot(state: GitHubState): Snapshot | null {
 }
 export function hasGitHubDetail(state: GitHubState): boolean {
   const snapshot = gitHubSnapshot(state);
-  return Boolean(
-    snapshot && (snapshot.repos.length || snapshot.commits.length),
-  );
+  return Boolean(snapshot && snapshot.repos.length);
 }
 
 /** The range is based on calendar dates, never a count of received records. */
@@ -130,7 +128,7 @@ export function GitHubActivity({ state }: { state: GitHubState }) {
         <>
           <div className="gh-stat-strip">
             <div className="gh-stat-featured">
-              <GitCommitHorizontal size={23} />
+              <CalendarDays size={23} />
               <strong>{snapshot.totals.contributions.toLocaleString()}</strong>
               <div>
                 <span>
@@ -456,9 +454,9 @@ export function GitHubDetail({ snapshot }: { snapshot: Snapshot }) {
       <PanelHead snapshot={snapshot}>GitHub Activity (cont.)</PanelHead>
       <div className="gh-detail-heading">
         <h3>
-          Open files. <em>Ongoing work.</em>
+          Open files. <em>Public work.</em>
         </h3>
-        <p>Explore the repositories and the latest changes.</p>
+        <p>Explore the repositories without exposing commit history.</p>
       </div>
       {snapshot.repos.length > 0 && (
         <div className="gh-repositories">
@@ -492,7 +490,7 @@ export function GitHubDetail({ snapshot }: { snapshot: Snapshot }) {
           </ul>
         </div>
       )}
-      {snapshot.commits.length > 0 && (
+      {false && snapshot.commits.length > 0 && (
         <div className="gh-commits">
           <h3 className="gh-subheading">
             <GitCommitHorizontal size={16} /> Recent commits

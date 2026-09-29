@@ -3,8 +3,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 /**
  * /api/github
  *   GET public — a small, shaped snapshot of the GitHub profile behind
- *   this portfolio: contribution graph, top repositories, language mix,
- *   and recent commits (which the home page reuses as a changelog).
+ *   this portfolio: contribution graph, top repositories, and language mix.
  *
  * Why proxy at all, when the GitHub API is public? Three reasons:
  *   • Rate limits. Unauthenticated GitHub allows 60 requests/hour per IP.
@@ -30,7 +29,6 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  */
 
 const API = "https://api.github.com";
-const SEARCH = "https://api.github.com/search/commits";
 const GRAPHQL = "https://api.github.com/graphql";
 const EVENT_WINDOW_DAYS = 90;
 const TOP_REPOS = 6;
@@ -69,7 +67,12 @@ export type Snapshot = {
     followers: number;
     createdAt: string | null;
   };
-  totals: { stars: number; repos: number; followers: number; contributions: number };
+  totals: {
+    stars: number;
+    repos: number;
+    followers: number;
+    contributions: number;
+  };
   days: Day[];
   languages: { name: string; repos: number; share: number }[];
   repos: {
@@ -82,7 +85,13 @@ export type Snapshot = {
     pushedAt: string | null;
     topics: string[];
   }[];
-  commits: { repo: string; message: string; sha: string; url: string; at: string }[];
+  commits: {
+    repo: string;
+    message: string;
+    sha: string;
+    url: string;
+    at: string;
+  }[];
   fetchedAt: string;
 };
 
@@ -97,9 +106,15 @@ export function dayKey(iso: string): string {
  * A dense, ascending run of days ending today, with zero-filled gaps.
  * The grid needs every day present or the columns misalign.
  */
-export function fillDays(counts: Map<string, number>, from: Date, to: Date): Day[] {
+export function fillDays(
+  counts: Map<string, number>,
+  from: Date,
+  to: Date,
+): Day[] {
   const out: Day[] = [];
-  const cursor = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()));
+  const cursor = new Date(
+    Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()),
+  );
   const end = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
   while (cursor.getTime() <= end) {
     const key = cursor.toISOString().slice(0, 10);
@@ -138,7 +153,10 @@ export function daysFromEvents(events: any[], now: Date): Day[] {
  * events can count activity but cannot list commits. Search returns the
  * subject, the repository and a permalink in a single request.
  */
-export function commitsFromSearch(json: any, limit = RECENT_COMMITS): Snapshot["commits"] {
+export function commitsFromSearch(
+  json: any,
+  limit = RECENT_COMMITS,
+): Snapshot["commits"] {
   const items = json?.items;
   if (!Array.isArray(items)) return [];
   const out: Snapshot["commits"] = [];
@@ -190,12 +208,13 @@ export function topRepos(repos: any[], limit = TOP_REPOS): Snapshot["repos"] {
     .sort(
       (a, b) =>
         (b.stargazers_count ?? 0) - (a.stargazers_count ?? 0) ||
-        String(b.pushed_at ?? "").localeCompare(String(a.pushed_at ?? ""))
+        String(b.pushed_at ?? "").localeCompare(String(a.pushed_at ?? "")),
     )
     .slice(0, limit)
     .map((r) => ({
       name: r.name,
-      description: typeof r.description === "string" ? r.description.slice(0, 200) : null,
+      description:
+        typeof r.description === "string" ? r.description.slice(0, 200) : null,
       language: r.language ?? null,
       stars: r.stargazers_count ?? 0,
       forks: r.forks_count ?? 0,
@@ -208,12 +227,14 @@ export function topRepos(repos: any[], limit = TOP_REPOS): Snapshot["repos"] {
 export function starTotal(repos: any[]): number {
   return repos.reduce(
     (n, r) => n + (r && !r.fork ? Number(r.stargazers_count ?? 0) : 0),
-    0
+    0,
   );
 }
 
 /** Pull the calendar out of the GraphQL response, or null if it isn't there. */
-export function daysFromCalendar(json: any): { days: Day[]; total: number } | null {
+export function daysFromCalendar(
+  json: any,
+): { days: Day[]; total: number } | null {
   const cal = json?.data?.user?.contributionsCollection?.contributionCalendar;
   const weeks = cal?.weeks;
   if (!Array.isArray(weeks)) return null;
@@ -253,33 +274,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // One upstream refresh serves every visitor in the window.
-  res.setHeader("Cache-Control", "public, s-maxage=900, stale-while-revalidate=3600");
+  res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=900, stale-while-revalidate=3600",
+  );
 
   const now = Date.now();
-  if (cache && now - cache.at < CACHE_MS) return res.status(200).json(cache.body);
+  if (cache && now - cache.at < CACHE_MS)
+    return res.status(200).json(cache.body);
 
   const user = login();
 
   try {
-    const [profileRes, reposRes, eventsRes, commitsRes] = await Promise.all([
+    const [profileRes, reposRes, eventsRes] = await Promise.all([
       fetch(`${API}/users/${user}`, { headers: headers() }),
       fetch(`${API}/users/${user}/repos?per_page=100&sort=pushed&type=owner`, {
         headers: headers(),
       }),
-      fetch(`${API}/users/${user}/events/public?per_page=100`, { headers: headers() }),
-      // Search is rate-limited harder than the core API (10/min
-      // unauthenticated); the 15-minute cache keeps us well inside it.
-      fetch(
-        `${SEARCH}?q=author:${user}&sort=committer-date&order=desc&per_page=${RECENT_COMMITS}`,
-        { headers: headers() }
-      ).catch(() => null),
+      fetch(`${API}/users/${user}/events/public?per_page=100`, {
+        headers: headers(),
+      }),
     ]);
 
-    if ([profileRes, reposRes, eventsRes].some((r) => r.status === 403 || r.status === 429)) {
-      return res.status(200).json({ ok: false, reason: "rate_limited" } satisfies Failure);
+    if (
+      [profileRes, reposRes, eventsRes].some(
+        (r) => r.status === 403 || r.status === 429,
+      )
+    ) {
+      return res
+        .status(200)
+        .json({ ok: false, reason: "rate_limited" } satisfies Failure);
     }
     if (!profileRes.ok) {
-      return res.status(200).json({ ok: false, reason: "unavailable" } satisfies Failure);
+      return res
+        .status(200)
+        .json({ ok: false, reason: "unavailable" } satisfies Failure);
     }
 
     const profile = await profileRes.json();
@@ -296,7 +325,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const gql = await fetch(GRAPHQL, {
           method: "POST",
           headers: { ...headers(), "content-type": "application/json" },
-          body: JSON.stringify({ query: CALENDAR_QUERY, variables: { login: user } }),
+          body: JSON.stringify({
+            query: CALENDAR_QUERY,
+            variables: { login: user },
+          }),
         });
         if (gql.ok) {
           const parsed = daysFromCalendar(await gql.json());
@@ -335,13 +367,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       days,
       languages: languageMix(repoList),
       repos: topRepos(repoList),
-      commits: commitsRes?.ok ? commitsFromSearch(await commitsRes.json()) : [],
+      commits: [],
       fetchedAt: new Date().toISOString(),
     };
 
     cache = { at: now, body };
     return res.status(200).json(body);
   } catch {
-    return res.status(200).json({ ok: false, reason: "unavailable" } satisfies Failure);
+    return res
+      .status(200)
+      .json({ ok: false, reason: "unavailable" } satisfies Failure);
   }
 }

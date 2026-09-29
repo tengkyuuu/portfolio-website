@@ -102,15 +102,14 @@ describe("GitHubActivity", () => {
 });
 
 describe("GitHubDetail", () => {
-  it("lists repositories and recent commits", () => {
+  it("lists repositories without exposing recent commits", () => {
     render(<GitHubDetail snapshot={SNAPSHOT} />);
-    // The repo name shows on the card and again on the commit row, so
-    // assert by destination rather than by accessible name.
     const hrefs = screen
       .getAllByRole("link")
       .map((a) => a.getAttribute("href"));
     expect(hrefs).toContain(SNAPSHOT.repos[0].url);
-    expect(hrefs).toContain(SNAPSHOT.commits[0].url);
+    expect(hrefs).not.toContain(SNAPSHOT.commits[0].url);
+    expect(screen.queryByText("Recent commits")).not.toBeInTheDocument();
     expect(screen.getByText(SNAPSHOT.repos[0].description)).toBeInTheDocument();
   });
 
@@ -125,9 +124,7 @@ describe("GitHubDetail", () => {
 describe("hasGitHubDetail", () => {
   it("earns a continuation page only when there is something to put on it", () => {
     expect(hasGitHubDetail(SNAPSHOT)).toBe(true);
-    expect(hasGitHubDetail({ ...SNAPSHOT, repos: [], commits: [] })).toBe(
-      false,
-    );
+    expect(hasGitHubDetail({ ...SNAPSHOT, repos: [] })).toBe(false);
     expect(hasGitHubDetail("loading")).toBe(false);
     expect(hasGitHubDetail({ ok: false, reason: "unavailable" })).toBe(false);
   });
