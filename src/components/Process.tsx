@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { processStages } from "../lib/data";
+import { useLocalizedProcessStages } from "../lib/localized-content";
 
 /**
  * How I Work — the workflow behind everything else in this document.
@@ -17,6 +17,7 @@ import { processStages } from "../lib/data";
 const REPO = "https://github.com/tengkyuuu/portfolio-website/blob/main/";
 
 export function Process() {
+  const processStages = useLocalizedProcessStages();
   const [open, setOpen] = useState<string | null>(processStages[0]?.n ?? null);
 
   return (

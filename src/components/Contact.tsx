@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   CalendarDays,
@@ -9,14 +9,14 @@ import {
   MessageSquare,
   Send,
 } from "lucide-react";
-import { getContent } from "../lib/content";
+import { useLocalizedContent } from "../lib/localized-content";
 import { renderInline } from "../lib/inline";
 import { ContactForm } from "./ContactForm";
 import { ChapterHeading } from "./ui/ChapterHeading";
 import { chapterNumber } from "./Nav";
 
 export function Contact() {
-  const { contact, hero } = useMemo(() => getContent(), []);
+  const { contact, hero } = useLocalizedContent();
   const [copyStatus, setCopyStatus] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timer.current), []);

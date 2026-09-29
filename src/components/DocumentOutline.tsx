@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowUpRight, FileText, PanelLeftClose, Search } from "lucide-react";
 import { visibleTabs, type TabId } from "./Nav";
 import { useI18n } from "../lib/i18n";
-import { getContent } from "../lib/content";
+import { useLocalizedContent } from "../lib/localized-content";
 
 const descriptions: Record<TabId, string> = {
   top: "A little introduction",
@@ -26,7 +26,7 @@ export function DocumentOutline({
 }) {
   const { t } = useI18n();
   const [view, setView] = useState<"headings" | "pages">("headings");
-  const { hero } = getContent();
+  const { hero } = useLocalizedContent();
   return (
     <aside
       className="document-outline no-print"

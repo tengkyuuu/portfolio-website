@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getContent } from "../lib/content";
+import { translateSkillGroupLabel, useLocalizedContent } from "../lib/localized-content";
 import { useI18n } from "../lib/i18n";
 import {
   getSkillMeta,
@@ -51,8 +51,8 @@ const groupIcon: Record<string, string> = {
 type LevelFilter = SkillLevel | "all";
 
 export function Skills() {
-  const { t } = useI18n();
-  const { skills, projects } = useMemo(() => getContent(), []);
+  const { t, language } = useI18n();
+  const { skills, projects } = useLocalizedContent();
   const model = useMemo(
     () => buildSkillModel(skills, projects),
     [skills, projects]
@@ -352,7 +352,7 @@ export function Skills() {
                     {groupIcon[group.label] ?? "category"}
                   </span>
                   <h3 className="font-doc text-[15px] font-bold text-ink leading-none">
-                    {group.label}
+                    {translateSkillGroupLabel(group.label, language)}
                   </h3>
                   <span className="ml-auto font-ui text-[10px] text-ink-subtle tabular-nums">
                     {filtering

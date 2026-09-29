@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { getContent } from "../lib/content";
+import { useLocalizedContent } from "../lib/localized-content";
 import { useI18n } from "../lib/i18n";
 import { CertStack } from "./CertStack";
 import { Award } from "lucide-react";
@@ -8,7 +7,7 @@ import { chapterNumber } from "./Nav";
 
 export function Certifications() {
   const { t } = useI18n();
-  const { certs, timeline } = useMemo(() => getContent(), []);
+  const { certs, timeline } = useLocalizedContent();
   const awards = certs.filter((c) => !c.image);
   const courseCerts = certs.filter((c) => c.image);
   const courseIssuer = courseCerts[0]?.issuer ?? "Online courses";

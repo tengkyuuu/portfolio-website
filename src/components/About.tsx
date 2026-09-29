@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { getContent } from "../lib/content";
+import { useLocalizedContent } from "../lib/localized-content";
 import { useI18n } from "../lib/i18n";
 import { renderParagraphs } from "../lib/inline";
 import { Listening } from "./Listening";
@@ -24,7 +23,7 @@ import { chapterNumber } from "./Nav";
  */
 export function About({ page }: { page: number }) {
   const { t } = useI18n();
-  const { about } = useMemo(() => getContent(), []);
+  const { about } = useLocalizedContent();
   const highlights = about.highlights ?? [];
 
   return (

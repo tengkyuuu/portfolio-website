@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { getContent, type Project, type ProjectImage } from "../lib/content";
+import { useState } from "react";
+import { type Project, type ProjectImage } from "../lib/content";
+import { useLocalizedContent } from "../lib/localized-content";
 import { ArrowLeft, ArrowUpRight, FolderOpen } from "lucide-react";
 import { ChapterHeading } from "./ui/ChapterHeading";
 import { chapterNumber } from "./Nav";
@@ -329,7 +330,7 @@ function ProjectEntry({ project }: { project: Project }) {
 }
 
 export function Projects() {
-  const { projects } = useMemo(() => getContent(), []);
+  const { projects } = useLocalizedContent();
   const [filter, setFilter] = useState<Project["kind"] | "all">("all");
   const kinds = [...new Set(projects.map((project) => project.kind))];
   const visible = projects.filter(

@@ -1,5 +1,6 @@
-import { nowGroups, nowUpdated } from "../lib/data";
+import { nowUpdated } from "../lib/data";
 import { useI18n } from "../lib/i18n";
+import { useLocalizedNowGroups } from "../lib/localized-content";
 
 /**
  * Now — a standing answer to "what are you working on?", dated so a reader
@@ -12,6 +13,7 @@ import { useI18n } from "../lib/i18n";
  */
 export function Now() {
   const { t } = useI18n();
+  const nowGroups = useLocalizedNowGroups();
 
   return (
     <section>

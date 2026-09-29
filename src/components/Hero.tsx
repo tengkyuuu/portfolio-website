@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -10,7 +9,7 @@ import {
   PenTool,
   Sparkles,
 } from "lucide-react";
-import { getContent } from "../lib/content";
+import { useLocalizedContent } from "../lib/localized-content";
 import { renderInline, renderParagraphs } from "../lib/inline";
 import { visibleTabs } from "./Nav";
 import { useI18n } from "../lib/i18n";
@@ -18,7 +17,7 @@ import { PortraitPhoto } from "./PortraitPhoto";
 
 export function Hero() {
   const { t } = useI18n();
-  const { hero, projects } = useMemo(() => getContent(), []);
+  const { hero, projects } = useLocalizedContent();
   const names = hero.name.split(" ");
   const featured = projects
     .filter((project) => project.gallery?.length || project.image)
