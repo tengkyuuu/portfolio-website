@@ -24,3 +24,6 @@ test-results.json
 
 # Playwright screenshot output (scripts/shoot.mjs)
 .screenshots/
+
+# Local tool cache/config (impeccable skill) — not project content
+.impeccable/

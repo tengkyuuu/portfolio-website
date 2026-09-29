@@ -8,6 +8,8 @@
   --available: #398268;
   --workspace-header: 176px;
   --outline-width: 232px;
+  --paper-width: 794px;
+  --paper-height: 1123px;
 }
 .dark {
   --note-yellow: #665629;
@@ -672,20 +674,38 @@ textarea {
     bottom / 100% 4px no-repeat;
 }
 .document-pages {
-  max-width: 1000px;
-  width: 100%;
+  width: min(100%, var(--paper-width));
+  min-width: 0;
   margin: 0 auto;
 }
 .document-sheet {
   padding: 37px 52px 22px;
-  min-height: 0;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--paper-height);
+  height: auto;
   border: 1px solid var(--color-paper-edge);
   box-shadow:
     0 2px 5px #1c35520c,
     0 12px 30px #1c355206;
+  overflow: visible;
+}
+.document-sheet-content {
+  display: flow-root;
+  flex: 1 0 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.document-sheet :is(button, input, textarea, select, summary) {
+  scroll-margin-block: calc(var(--workspace-header) + 16px) 48px;
+}
+.cert-deck > button {
+  /* Certificate cards use z-index 50; controls must sit above the deck. */
+  z-index: 60;
 }
 .document-page-footer {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -783,6 +803,16 @@ textarea {
 }
 .show-highlights .name-highlight::before {
   background: var(--note-yellow);
+}
+.show-highlights
+  :is(.cover-tagline em, .chapter-description em, .chapter-description strong) {
+  background: linear-gradient(
+    transparent 58%,
+    color-mix(in srgb, var(--note-yellow) 82%, transparent) 58%,
+    color-mix(in srgb, var(--note-yellow) 82%, transparent) 95%,
+    transparent 95%
+  );
+  color: var(--color-ink);
 }
 .cover-period {
   color: var(--color-word-blue);
@@ -903,31 +933,65 @@ textarea {
   background: var(--color-paper);
   border: 1px solid var(--color-word-blue);
   transform: rotate(3deg);
-  transition: transform 0.35s;
+  transition:
+    transform 0.35s,
+    box-shadow 0.35s,
+    border-color 0.35s;
 }
 .portrait-object:hover,
 .portrait-object:focus-visible {
   transform: rotate(0) translateY(-3px);
+  box-shadow:
+    0 10px 22px #13213b18,
+    0 0 0 5px color-mix(in srgb, var(--color-word-blue) 10%, transparent);
 }
 .portrait-photo {
   display: block;
   aspect-ratio: 1.07;
   background: var(--color-row-alt);
   overflow: hidden;
+  position: relative;
 }
-.portrait-photo img {
+.portrait-photo > img {
+  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center 37%;
   filter: saturate(0.75);
+  /* Both images are preloaded. Swap on the first hover frame, without a fade. */
+  transition: none;
 }
-.portrait-photo .portrait-night,
-.dark .portrait-photo .portrait-day {
-  display: none;
+.portrait-shades {
+  opacity: 0;
+  pointer-events: none;
 }
-.dark .portrait-photo .portrait-night {
-  display: block;
+.portrait-object:hover .portrait-shades,
+.portrait-object:focus-visible .portrait-shades {
+  opacity: 1;
+}
+.portrait-object:hover .portrait-base,
+.portrait-object:focus-visible .portrait-base {
+  opacity: 0;
+}
+.blue-launcher {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  filter: drop-shadow(0 3px 5px #0003);
+}
+.blue-launcher:focus-visible {
+  outline: 2px solid var(--color-word-blue);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .blue-launcher:hover {
+    rotate: 12deg;
+  }
 }
 .portrait-caption {
   display: flex;
@@ -1025,6 +1089,19 @@ textarea {
 .cover-disciplines a:hover {
   color: var(--color-word-blue);
 }
+.cover-disciplines a {
+  transition:
+    color 0.2s,
+    transform 0.2s;
+}
+.cover-disciplines a:hover,
+.cover-disciplines a:focus-visible {
+  transform: translateY(-2px);
+}
+.cover-disciplines a:hover svg,
+.cover-disciplines a:focus-visible svg {
+  animation: ribbon-icon-pop 0.45s ease both;
+}
 .cover-section-heading {
   display: flex;
   justify-content: space-between;
@@ -1049,6 +1126,11 @@ textarea {
 }
 .featured-project {
   min-width: 0;
+  transition: transform 0.25s;
+}
+.featured-project:hover,
+.featured-project:focus-visible {
+  transform: translateY(-4px);
 }
 .featured-image {
   aspect-ratio: 1.7;
@@ -1267,6 +1349,13 @@ textarea {
 .project-index-card {
   min-width: 0;
   display: block;
+  transition:
+    transform 0.25s,
+    color 0.2s;
+}
+.project-index-card:hover,
+.project-index-card:focus-visible {
+  transform: translateY(-4px);
 }
 .project-index-figure {
   aspect-ratio: 1.65;
@@ -1303,6 +1392,18 @@ textarea {
 }
 .project-index-card:hover .project-index-figure img {
   transform: scale(1.05);
+}
+.show-highlights .project-index-meta h2,
+.show-highlights .featured-project-caption h3,
+.show-highlights .contact-channels strong {
+  background: linear-gradient(
+    transparent 61%,
+    color-mix(in srgb, var(--note-yellow) 82%, transparent) 61%,
+    color-mix(in srgb, var(--note-yellow) 82%, transparent) 96%,
+    transparent 96%
+  );
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 .project-index-meta {
   display: flex;
@@ -1445,6 +1546,18 @@ textarea {
 .contact-channels a:hover {
   color: var(--color-word-blue);
 }
+.contact-channels > li {
+  transition:
+    transform 0.2s,
+    background 0.2s,
+    padding-inline 0.2s;
+}
+.contact-channels > li:has(a:hover),
+.contact-channels > li:has(a:focus-visible) {
+  transform: translateX(4px);
+  background: var(--color-word-blue-light);
+  padding-inline: 10px;
+}
 .contact-channels small {
   display: block;
   font-size: 8px;
@@ -1532,6 +1645,17 @@ textarea {
   }
   to {
     opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+@keyframes ribbon-icon-pop {
+  0% {
+    transform: translateY(0) rotate(0);
+  }
+  45% {
+    transform: translateY(-3px) rotate(-8deg);
+  }
+  100% {
     transform: translateY(0) rotate(0);
   }
 }
@@ -1764,6 +1888,9 @@ textarea {
   .document-main {
     padding: calc(var(--workspace-header) + 13px) 12px 45px;
   }
+  .document-sheet {
+    min-height: calc(min(var(--paper-width), calc(100vw - 24px)) * 1.414357);
+  }
   .workspace-topline {
     margin-bottom: 10px;
     font-size: 8px;
@@ -1968,14 +2095,34 @@ textarea {
     overflow: visible;
   }
   .portfolio-workspace .document-pages {
+    width: auto;
     max-width: none;
+    display: block;
     zoom: 1 !important;
   }
   .portfolio-workspace .document-sheet {
     box-shadow: none;
     border: none;
-    padding: 20px 15px;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    display: block;
+    overflow: visible;
+    /* The A4 @page rule supplies print margins; avoid a second paper width. */
+    padding: 0;
     break-after: page;
+  }
+  .portfolio-workspace .document-sheet-content {
+    display: block;
+  }
+  .portfolio-workspace .document-sheet:last-child {
+    break-after: auto;
+  }
+  .document-sheet :is(h1, h2, h3) {
+    break-after: avoid;
+  }
+  .document-sheet :is(figure, tr, .project-index-card, .document-page-footer) {
+    break-inside: avoid;
   }
   .portfolio-workspace .document-page-footer {
     margin-top: 25px;

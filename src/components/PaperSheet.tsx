@@ -1,7 +1,7 @@
 /**
- * A content-sized document sheet. Sections decide their own page breaks;
- * shared margins and footers keep the document consistent without forcing
- * shorter content to fill a screen of empty paper. Print adds page breaks.
+ * A document sheet with an A4 minimum height. Longer sections can grow so
+ * interactive content never overlaps the footer or disappears off the paper.
+ * Print lets the browser paginate the content at natural block boundaries.
  */
 export function PaperSheet({
   pageNumber,
@@ -12,7 +12,7 @@ export function PaperSheet({
 }) {
   return (
     <section className="document-sheet bg-paper paper-shadow w-full flex flex-col text-ink relative">
-      {children}
+      <div className="document-sheet-content">{children}</div>
       <div className="document-page-footer">
         <span>
           JVC <span className="page-footer-slash">/</span> PORTFOLIO
