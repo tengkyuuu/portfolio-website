@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LANGUAGES, useI18n, type LanguageId } from "../lib/i18n";
+import { recordVisitAndCount } from "../lib/visits";
 import { NowPlaying } from "./NowPlaying";
 
 type FooterProps = {
@@ -23,7 +24,18 @@ export function Footer({
   const { t } = useI18n();
   const [wordCount, setWordCount] = useState(0);
   const [speaking, setSpeaking] = useState(false);
+  const [visits, setVisits] = useState<number | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void recordVisitAndCount().then((count) => {
+      if (!cancelled) setVisits(count);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Read the current paper aloud with the browser's speech synthesis
   const toggleReadAloud = () => {
@@ -96,6 +108,11 @@ export function Footer({
         <span className="border-l border-white/30 pl-3 tabular-nums">
           {wordCount.toLocaleString()} {t("status.words")}
         </span>
+        {visits !== null && (
+          <span className="hidden sm:inline border-l border-white/30 pl-3 tabular-nums">
+            {visits.toLocaleString()} {t("status.uniqueVisits")}
+          </span>
+        )}
         <LanguagePicker />
         <span className="hidden md:inline border-l border-white/30 pl-3">
           <span

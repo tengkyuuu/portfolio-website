@@ -51,6 +51,11 @@ export default async function handler(
   // /api/chat answers 200 with an empty transcript for both.
   let chatSessionsProbe: TableProbe = { ok: false, error: "not attempted" };
   let chatMessagesProbe: TableProbe = { ok: false, error: "not attempted" };
+  // site_visits (migration 010) is written by the browser on the anon
+  // key, never by this handler — probed here anyway since a missing
+  // table or a broken RLS policy would otherwise just look like the
+  // footer's visit count silently never appearing.
+  let siteVisitsProbe: TableProbe = { ok: false, error: "not attempted" };
 
   if (storeConfigured) {
     try {
@@ -64,6 +69,7 @@ export default async function handler(
       inquiriesProbe = await probe(supabase, "inquiries");
       chatSessionsProbe = await probe(supabase, "chat_sessions");
       chatMessagesProbe = await probe(supabase, "chat_messages");
+      siteVisitsProbe = await probe(supabase, "site_visits");
     } catch (e) {
       supabaseModule = {
         error: e instanceof Error ? e.message : "Failed to import @supabase/supabase-js",
@@ -85,6 +91,7 @@ export default async function handler(
       inquiries: inquiriesProbe,
       chat_sessions: chatSessionsProbe,
       chat_messages: chatMessagesProbe,
+      site_visits: siteVisitsProbe,
     },
   });
 }
