@@ -13,6 +13,7 @@ import { getContent } from "../lib/content";
 import { renderInline } from "../lib/inline";
 import { ContactForm } from "./ContactForm";
 import { ChapterHeading } from "./ui/ChapterHeading";
+import { chapterNumber } from "./Nav";
 
 export function Contact() {
   const { contact, hero } = useMemo(() => getContent(), []);
@@ -32,7 +33,7 @@ export function Contact() {
   return (
     <section>
       <ChapterHeading
-        number="06"
+        number={chapterNumber("contact")}
         eyebrow="THE NEXT CHAPTER"
         title={
           <>

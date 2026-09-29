@@ -10,7 +10,7 @@ import {
   type Theme,
 } from "./lib/theme";
 import { Assistant } from "./components/Assistant";
-import { hashToTab, Nav, tabs, type TabId } from "./components/Nav";
+import { hashToTab, Nav, tabs, visibleTabs, type TabId } from "./components/Nav";
 import { PwaChips } from "./components/PwaChips";
 import { RequireAuth } from "./components/RequireAuth";
 import { SearchPalette } from "./components/SearchPalette";
@@ -21,6 +21,8 @@ import { PaperSheet } from "./components/PaperSheet";
 import { Projects } from "./components/Projects";
 import { Certifications } from "./components/Certifications";
 import { Contact } from "./components/Contact";
+import { Blog } from "./components/Blog";
+import { Gallery } from "./components/Gallery";
 import { Footer } from "./components/Footer";
 import { DocumentOutline } from "./components/DocumentOutline";
 import { TabLoader } from "./components/TabLoader";
@@ -157,10 +159,14 @@ function PortfolioDoc() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  const totalPages = tabs.length;
-  const currentPage = useMemo(
-    () => tabs.findIndex((t) => t.id === active) + 1,
-    [active],
+  // Chapters are counted over the tabs actually on the ribbon; Blog and
+  // Gallery only join once they have content. contentVersion is a dep so
+  // the count follows a first post or design arriving from the server.
+  const shownTabs = useMemo(() => visibleTabs(), [contentVersion]);
+  const totalPages = shownTabs.length;
+  const currentPage = Math.max(
+    1,
+    shownTabs.findIndex((t) => t.id === active) + 1,
   );
   const { t } = useI18n();
   const activeMeta = useMemo(
@@ -278,6 +284,7 @@ function PortfolioDoc() {
                   reports which chapter is currently open. */}
               {active === "top" && <Home page={1} />}
               {active === "work" && <Projects />}
+              {active === "gallery" && <Gallery />}
               {active === "about" && <About page={1} />}
               {active === "stack" && (
                 <PaperSheet pageNumber={1}>
@@ -289,6 +296,7 @@ function PortfolioDoc() {
                   <Certifications />
                 </PaperSheet>
               )}
+              {active === "blog" && <Blog />}
               {active === "contact" && (
                 <PaperSheet pageNumber={1}>
                   <Contact />

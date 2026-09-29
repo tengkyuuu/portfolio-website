@@ -7,6 +7,7 @@ import { PaperSheet } from "./PaperSheet";
 import { Process } from "./Process";
 import { Fingerprint } from "lucide-react";
 import { ChapterHeading } from "./ui/ChapterHeading";
+import { chapterNumber } from "./Nav";
 
 /**
  * About — the executive summary, quick facts, how I work, and what has my
@@ -29,7 +30,7 @@ export function About({ page }: { page: number }) {
     <>
       <PaperSheet pageNumber={page}>
         <ChapterHeading
-          number="03"
+          number={chapterNumber("about")}
           eyebrow="BEHIND THE WORK"
           title={
             <>

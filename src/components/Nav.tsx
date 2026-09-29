@@ -15,24 +15,66 @@ import {
   Share2,
 } from "lucide-react";
 import { isAdminAuthed } from "../lib/auth";
+import { publishedPosts } from "../lib/blog";
+import { getContent, type SiteContent } from "../lib/content";
+import { publicDesigns } from "../lib/gallery";
 import { useI18n } from "../lib/i18n";
 import { switchTheme, THEMES, type Theme } from "../lib/theme";
 
 export type TabId =
-  "top" | "work" | "about" | "stack" | "credentials" | "contact";
+  | "top"
+  | "work"
+  | "gallery"
+  | "about"
+  | "stack"
+  | "credentials"
+  | "blog"
+  | "contact";
 export const tabs: { id: TabId; key: string }[] = [
   { id: "top", key: "nav.home" },
   { id: "work", key: "nav.projects" },
+  { id: "gallery", key: "nav.gallery" },
   { id: "about", key: "nav.about" },
   { id: "stack", key: "nav.skills" },
   { id: "credentials", key: "nav.credentials" },
+  { id: "blog", key: "nav.blog" },
   { id: "contact", key: "nav.contact" },
 ];
+
+/**
+ * The tabs worth showing. Gallery and Blog are written from the admin and
+ * ship empty, and an empty chapter on the ribbon reads as unfinished work,
+ * so each appears only once it has something in it. A deep link to either
+ * still routes there (hashToTab doesn't filter) — the content can arrive
+ * from the server a moment after the page does.
+ */
+export function visibleTabs(content: SiteContent = getContent()) {
+  return tabs.filter((tab) => {
+    if (tab.id === "blog") return publishedPosts(content.posts).length > 0;
+    if (tab.id === "gallery") return publicDesigns(content.designs).length > 0;
+    return true;
+  });
+}
+
+/**
+ * "04" — a tab's chapter number as the ribbon currently counts it. Was a
+ * literal on each chapter heading, which went stale the moment Gallery or
+ * Blog joined the ribbon ahead of it.
+ */
+export function chapterNumber(id: TabId, content?: SiteContent): string {
+  const shown = visibleTabs(content);
+  const at = shown.findIndex((tab) => tab.id === id);
+  const index = at >= 0 ? at : tabs.findIndex((tab) => tab.id === id);
+  return String(index + 1).padStart(2, "0");
+}
+
 const RETIRED_TABS: Record<string, TabId> = { process: "about", now: "about" };
 export function hashToTab(): TabId {
   const hash = window.location.hash.replace(/^#/, "");
   if (tabs.some((tab) => tab.id === hash)) return hash as TabId;
   if (hash.startsWith("proj-")) return "work";
+  if (hash.startsWith("blog/")) return "blog";
+  if (hash.startsWith("gallery/")) return "gallery";
   return RETIRED_TABS[hash] ?? "top";
 }
 
@@ -67,8 +109,9 @@ export function Nav({
   const [menu, setMenu] = useState<"file" | "theme" | null>(null);
   const [shareStatus, setShareStatus] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout>>();
+  const shown = visibleTabs();
   const next =
-    tabs[(tabs.findIndex((tab) => tab.id === active) + 1) % tabs.length];
+    shown[(shown.findIndex((tab) => tab.id === active) + 1) % shown.length];
 
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
@@ -189,7 +232,7 @@ export function Nav({
           )}
         </div>
         <div className="office-tabs">
-          {tabs.map((tab) => (
+          {shown.map((tab) => (
             <button
               key={tab.id}
               aria-current={active === tab.id ? "page" : undefined}
@@ -206,7 +249,7 @@ export function Nav({
           value={active}
           onChange={(e) => onChange(e.target.value as TabId)}
         >
-          {tabs.map((tab) => (
+          {shown.map((tab) => (
             <option key={tab.id} value={tab.id}>
               {t(tab.key)}
             </option>

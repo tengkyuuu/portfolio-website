@@ -33,7 +33,7 @@ type InputProps = {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  type?: "text" | "url" | "email";
+  type?: "text" | "url" | "email" | "date";
   monospace?: boolean;
   disabled?: boolean;
   className?: string;

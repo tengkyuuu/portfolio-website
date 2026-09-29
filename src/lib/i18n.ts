@@ -47,6 +47,8 @@ const en: Dict = {
   "nav.now": "Now",
   "nav.credentials": "Credentials",
   "nav.contact": "Contact",
+  "nav.blog": "Blog",
+  "nav.gallery": "Gallery",
 
   // Section titles
   "section.executiveSummary": "Executive Summary",
@@ -92,6 +94,8 @@ const ceb: Dict = {
   "nav.now": "Karon",
   "nav.credentials": "Katibayan",
   "nav.contact": "Kontak",
+  "nav.blog": "Blog",
+  "nav.gallery": "Galeriya",
 
   "section.executiveSummary": "Ehekutibong Summary",
   "section.coreCompetencies": "Pangunang Kahanas",
@@ -133,6 +137,8 @@ const tl: Dict = {
   "nav.now": "Ngayon",
   "nav.credentials": "Katibayan",
   "nav.contact": "Kontak",
+  "nav.blog": "Blog",
+  "nav.gallery": "Galeriya",
 
   "section.executiveSummary": "Buod",
   "section.coreCompetencies": "Pangunahing Kasanayan",
@@ -174,6 +180,8 @@ const cbk: Dict = {
   "nav.now": "Ahora",
   "nav.credentials": "Credencial",
   "nav.contact": "Contacto",
+  "nav.blog": "Blog",
+  "nav.gallery": "Galería",
 
   "section.executiveSummary": "Resumen Ejecutivo",
   "section.coreCompetencies": "Habilidad Principal",

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { publishedPosts } from "../lib/blog";
 import { getContent } from "../lib/content";
+import { publicDesigns } from "../lib/gallery";
 import type { TabId } from "./Nav";
 
 /**
@@ -12,8 +14,8 @@ import type { TabId } from "./Nav";
  *
  * Index coverage: hero (name/role/tagline/abstract), about paragraphs +
  * highlights + specs, every skill, every project (title/blurb/challenge/
- * solution/tags/stack), every certification, every timeline entry, and
- * contact channels.
+ * solution/tags/stack), every certification, every timeline entry,
+ * contact channels, published blog posts, and gallery designs.
  *
  * Ranking: query is tokenized; every token must match somewhere (AND).
  * Title prefix > title substring > keywords > body. Matches highlighted
@@ -32,14 +34,18 @@ type Entry = {
   body: string;
   keywords: string;
   anchor?: string;
+  /** Where to go instead of the bare tab — a post or a design. */
+  hash?: string;
 };
 
 const TAB_LABEL: Record<TabId, string> = {
   top: "Home",
   work: "Projects",
+  gallery: "Gallery",
   about: "About",
   stack: "Skills",
   credentials: "Credentials",
+  blog: "Blog",
   contact: "Contact",
 };
 
@@ -132,6 +138,30 @@ function buildIndex(): Entry[] {
       title: ch.label,
       body: ch.value,
       keywords: "contact reach email social",
+    });
+  }
+
+  for (const post of publishedPosts(c.posts)) {
+    entries.push({
+      id: `post-${post.id}`,
+      tab: "blog",
+      tabLabel: TAB_LABEL.blog,
+      title: post.title,
+      body: stripInline(`${post.excerpt} ${post.body}`).slice(0, 2000),
+      keywords: `blog post ${post.tags.join(" ")} ${post.date}`,
+      hash: `blog/${encodeURIComponent(post.slug)}`,
+    });
+  }
+
+  for (const d of publicDesigns(c.designs)) {
+    entries.push({
+      id: `design-${d.id}`,
+      tab: "gallery",
+      tabLabel: TAB_LABEL.gallery,
+      title: d.title,
+      body: stripInline(d.caption ?? d.alt),
+      keywords: `design graphic ${d.category ?? ""} ${(d.tools ?? []).join(" ")} ${d.year ?? ""}`,
+      hash: `gallery/${encodeURIComponent(d.id)}`,
     });
   }
 
@@ -253,7 +283,7 @@ export function SearchPalette() {
 
   function select(entry: Entry) {
     setOpen(false);
-    window.location.hash = entry.tab;
+    window.location.hash = entry.hash ?? entry.tab;
     if (entry.anchor) scrollToAnchor(entry.anchor);
   }
 

@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Nav, tabs } from "./Nav";
+import { DEFAULT_CONTENT, saveContent, resetAll } from "../lib/content";
+import { Nav, tabs, visibleTabs } from "./Nav";
 
 /**
  * The ribbon has to show every tab. It briefly did not: the document title
@@ -23,10 +24,12 @@ function renderNav(active: (typeof tabs)[number]["id"] = "top") {
   return { onChange };
 }
 
+afterEach(() => resetAll());
+
 describe("Nav", () => {
-  it("renders a button for every tab", () => {
+  it("renders a button for every visible tab", () => {
     renderNav();
-    for (const tab of tabs) {
+    for (const tab of visibleTabs()) {
       expect(
         screen.getByRole("button", {
           name: new RegExp(`^${labelOf(tab.id)}$`),
@@ -38,7 +41,32 @@ describe("Nav", () => {
   it("offers every tab on mobile too", () => {
     renderNav();
     const select = screen.getByLabelText("Switch tab");
-    expect(select.querySelectorAll("option")).toHaveLength(tabs.length);
+    expect(select.querySelectorAll("option")).toHaveLength(visibleTabs().length);
+  });
+
+  it("keeps Blog and Gallery off the ribbon until they have something in them", () => {
+    renderNav();
+    expect(screen.queryByRole("button", { name: /^Blog$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Gallery$/ })).not.toBeInTheDocument();
+  });
+
+  it("adds them once there is a published post and a finished design", () => {
+    saveContent({
+      ...DEFAULT_CONTENT,
+      posts: [
+        { id: "p", slug: "hello", title: "Hello", date: "2026-09-29", excerpt: "", body: "Hi.", tags: [], draft: false },
+        { id: "d", slug: "wip", title: "WIP", date: "2026-09-29", excerpt: "", body: "…", tags: [], draft: true },
+      ],
+      designs: [
+        { id: "a", title: "Poster", image: "/x.webp", alt: "A red poster with a white sun" },
+        { id: "b", title: "", image: "/y.webp", alt: "" },
+      ],
+    });
+    renderNav();
+    expect(screen.getByRole("button", { name: /^Blog$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Gallery$/ })).toBeInTheDocument();
+    // Order follows the ribbon: the gallery sits beside Projects.
+    expect(visibleTabs().map((t) => t.id)).toEqual(tabs.map((t) => t.id));
   });
 
   it("reports the tab that was clicked", async () => {
@@ -118,6 +146,8 @@ function labelOf(id: string): string {
     stack: "Skills",
     credentials: "Credentials",
     contact: "Contact",
+    blog: "Blog",
+    gallery: "Gallery",
   };
   return map[id] ?? id;
 }

@@ -9,9 +9,11 @@ import {
   hashToSection,
   type SectionId,
 } from "./admin/AdminLayout";
+import { BlogEditor } from "./admin/BlogEditor";
 import { ChatEditor } from "./admin/ChatEditor";
 import { ContactEditor } from "./admin/ContactEditor";
 import { CredentialsEditor } from "./admin/CredentialsEditor";
+import { GalleryEditor } from "./admin/GalleryEditor";
 import { HeroEditor } from "./admin/HeroEditor";
 import { HistoryPanel } from "./admin/HistoryPanel";
 import { InboxEditor } from "./admin/InboxEditor";
@@ -103,6 +105,8 @@ export function AdminPage() {
       {loaded && section === "about" && <AboutEditor />}
       {loaded && section === "skills" && <SkillsEditor />}
       {loaded && section === "projects" && <ProjectsEditor />}
+      {loaded && section === "gallery" && <GalleryEditor />}
+      {loaded && section === "blog" && <BlogEditor />}
       {loaded && section === "credentials" && <CredentialsEditor />}
       {loaded && section === "contact" && <ContactEditor />}
       {loaded && section === "inbox" && <InboxEditor />}

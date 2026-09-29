@@ -4,6 +4,7 @@ import { useI18n } from "../lib/i18n";
 import { CertStack } from "./CertStack";
 import { Award } from "lucide-react";
 import { ChapterHeading } from "./ui/ChapterHeading";
+import { chapterNumber } from "./Nav";
 
 export function Certifications() {
   const { t } = useI18n();
@@ -15,7 +16,7 @@ export function Certifications() {
   return (
     <section className="space-y-10">
       <ChapterHeading
-        number="05"
+        number={chapterNumber("credentials")}
         eyebrow="THE JOURNEY SO FAR"
         title={
           <>

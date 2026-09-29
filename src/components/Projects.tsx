@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { getContent, type Project, type ProjectImage } from "../lib/content";
 import { ArrowLeft, ArrowUpRight, FolderOpen } from "lucide-react";
 import { ChapterHeading } from "./ui/ChapterHeading";
+import { chapterNumber } from "./Nav";
 import { InteractiveFigure } from "./InteractiveFigure";
 import { PaperSheet } from "./PaperSheet";
 
@@ -342,7 +343,7 @@ export function Projects() {
     <>
       <PaperSheet pageNumber={1}>
         <ChapterHeading
-          number="02"
+          number={chapterNumber("work")}
           eyebrow="SELECTED WORK"
           title={
             <>

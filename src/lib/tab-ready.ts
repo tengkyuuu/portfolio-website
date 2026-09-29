@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { TabId } from "../components/Nav";
+import { getContent } from "./content";
+import { publicDesigns } from "./gallery";
 
 /**
  * Assets to warm before revealing a tab, with a bounded wait:
@@ -10,12 +12,7 @@ import type { TabId } from "../components/Nav";
 
 function imageSrcsForTab(tab: TabId): string[] {
   if (tab === "top") {
-    return [
-      "/james.jpg",
-      "/james-shades.jpg",
-      "/james-dark.jpg",
-      "/james-dark-peace.jpg",
-    ];
+    return ["/no-shades.jpg", "/with-shades.png"];
   }
   if (tab === "work") {
     // First image of each project's figure — the rest of a carousel lazy-loads.
@@ -25,6 +22,14 @@ function imageSrcsForTab(tab: TabId): string[] {
       "/projects/famecrm-landing.webp",
       "/projects/shm-landing.webp",
     ];
+  }
+  if (tab === "gallery") {
+    // The first row is what's on screen when the tab opens; the rest
+    // lazy-load. The wait is capped at 1.5s either way (see below).
+    return publicDesigns(getContent().designs)
+      .slice(0, 3)
+      .map((d) => d.image)
+      .filter(Boolean);
   }
   return [];
 }

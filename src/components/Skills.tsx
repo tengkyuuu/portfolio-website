@@ -19,6 +19,7 @@ import {
 import { SkillDetailPanel } from "./SkillDetailPanel";
 import { Wrench } from "lucide-react";
 import { ChapterHeading } from "./ui/ChapterHeading";
+import { chapterNumber } from "./Nav";
 
 /**
  * Core Competencies — the skill deck rendered as an instrument panel.
@@ -114,7 +115,7 @@ export function Skills() {
 
   return (
     <section>
-      <ChapterHeading number="04" eyebrow="THE TOOLKIT" title={<>Different tools.{" "}<br /><em>Connected thinking.</em></>} description="Hardware, software, and everything in between. Explore a skill to see how it connects to my projects."><Wrench /></ChapterHeading>
+      <ChapterHeading number={chapterNumber("stack")} eyebrow="THE TOOLKIT" title={<>Different tools.{" "}<br /><em>Connected thinking.</em></>} description="Hardware, software, and everything in between. Explore a skill to see how it connects to my projects."><Wrench /></ChapterHeading>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 section-rule pb-1.5 mb-4">
         <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue">
           {t("section.coreCompetencies")}

@@ -50,6 +50,8 @@ export type SectionId =
   | "about"
   | "skills"
   | "projects"
+  | "gallery"
+  | "blog"
   | "credentials"
   | "contact"
   | "inbox"
@@ -63,6 +65,8 @@ export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string
   { id: "about", label: "About", icon: "person", tab: "About tab" },
   { id: "skills", label: "Skills", icon: "build", tab: "Skills tab" },
   { id: "projects", label: "Projects", icon: "folder", tab: "Projects tab" },
+  { id: "gallery", label: "Gallery", icon: "photo_library", tab: "Graphic design gallery" },
+  { id: "blog", label: "Blog", icon: "edit_note", tab: "Posts on the Blog tab" },
   { id: "credentials", label: "Credentials", icon: "school", tab: "Credentials tab" },
   { id: "contact", label: "Contact", icon: "mail", tab: "Contact tab" },
   { id: "inbox", label: "Inbox", icon: "inbox", tab: "Messages from the contact form" },

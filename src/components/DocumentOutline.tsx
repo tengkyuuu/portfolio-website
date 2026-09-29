@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { ArrowUpRight, FileText, PanelLeftClose, Search } from "lucide-react";
-import { tabs, type TabId } from "./Nav";
+import { visibleTabs, type TabId } from "./Nav";
 import { useI18n } from "../lib/i18n";
 import { getContent } from "../lib/content";
 
 const descriptions: Record<TabId, string> = {
   top: "A little introduction",
   work: "Things I’ve brought to life",
+  gallery: "Graphic design, up close",
   about: "The person behind the work",
   stack: "My everyday toolkit",
   credentials: "Learning along the way",
+  blog: "Notes, written down",
   contact: "Start a conversation",
 };
 
@@ -62,7 +64,7 @@ export function DocumentOutline({
       <div
         className={"outline-items " + (view === "pages" ? "outline-pages" : "")}
       >
-        {tabs.map((tab, i) => (
+        {visibleTabs().map((tab, i) => (
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
@@ -92,7 +94,7 @@ export function DocumentOutline({
       </div>
       <div className="outline-bottom">
         <div className="outline-person">
-          <img src="/james.jpg" alt="" />
+          <img src="/no-shades.jpg" alt="" />
           <div>
             <strong>{hero.name.split(" ").slice(0, 2).join(" ")}</strong>
             <span>{hero.location}</span>
