@@ -36,7 +36,9 @@ import crypto from "node:crypto";
  * your key can actually reach with:
  *   curl -H "x-goog-api-key: $GEMINI_API_KEY"  *     https://generativelanguage.googleapis.com/v1beta/models
  */
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+// 3.6-flash was answering "experiencing high demand" to every request for
+// minutes at a time; Gemini's own deprecation notices point at 3.8-flash.
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
 /**
  * Reasoning tokens are billed against maxOutputTokens on Gemini 2.5+, and
@@ -54,7 +56,7 @@ const THINKING_OFF = { thinkingConfig: { thinkingBudget: 0 } } as const;
 const MAX_TOKENS = 800;
 
 /**
- * Whether this model accepts thinkingConfig. gemini-3.6-flash does not, and
+ * Whether this model accepts thinkingConfig. Some don't (gemini-3.6-flash), and
  * without this memo every single message would pay a wasted 400 before the
  * real call — doubling upstream latency for good. Flipped on first rejection
  * and held for the life of the warm instance, so the probe costs one request

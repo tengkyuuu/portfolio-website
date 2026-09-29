@@ -794,7 +794,7 @@ apiApp.post("/api/chat", async (req, res) => {
   const summary = lines.join("\n").slice(0, 9000);
 
   try {
-    const model = env("GEMINI_MODEL") || "gemini-3.6-flash";
+    const model = env("GEMINI_MODEL") || "gemini-3.8-flash";
     // Gemini puts the system prompt in its own field, calls the assistant
     // role "model", and carries text as an array of parts.
     const upstream = await fetch(
