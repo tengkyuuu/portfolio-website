@@ -36,11 +36,7 @@ export async function login(password: string, username = ""): Promise<LoginResul
 
   // A real server accepted the password.
   if (result.reachable && result.ok) {
-    sessionStorage.setItem(AUTH_KEY, "1");
-    sessionStorage.setItem(TOKEN_KEY, result.token);
-    sessionStorage.setItem(MODE_KEY, "server");
-    sessionStorage.setItem(EXPIRES_KEY, String(Date.now() + CLIENT_TTL_MS));
-    sessionStorage.setItem(USER_KEY, JSON.stringify(result.user));
+    establishSession(result.token, result.user);
     return { ok: true, mode: "server" };
   }
 
@@ -87,6 +83,16 @@ export async function login(password: string, username = ""): Promise<LoginResul
 
 export function getAdminToken(): string | null {
   return sessionStorage.getItem(TOKEN_KEY);
+}
+
+/** Signs a session in as a real admin — used both by a normal password
+ *  sign-in and by redeeming an invite link, which ends the same way. */
+export function establishSession(token: string, user: AdminUser): void {
+  sessionStorage.setItem(AUTH_KEY, "1");
+  sessionStorage.setItem(TOKEN_KEY, token);
+  sessionStorage.setItem(MODE_KEY, "server");
+  sessionStorage.setItem(EXPIRES_KEY, String(Date.now() + CLIENT_TTL_MS));
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 /** Replace the stored token — after changing your own password, the

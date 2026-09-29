@@ -120,7 +120,40 @@ function localAuthed(req) {
 
 const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
 const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
-const TEAM_FIELDS = ["id", "username", "display_name", "disabled", "created_at", "last_login_at"];
+const TEAM_FIELDS = ["id", "username", "display_name", "email", "disabled", "created_at", "last_login_at", "invite_expires_at"];
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // a week to find the email
+const INVITE_EMAIL_RE = /^[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+$/;
+
+function generateInviteToken() {
+  return crypto.randomBytes(32).toString("base64url");
+}
+function hashInviteToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+/** Best-effort, mirrors api/login.ts — a failed or unconfigured send isn't
+ *  an error, the owner falls back to copying the link. */
+async function sendAdminInviteEmail(email, name, inviteUrl) {
+  const apiKey = env("RESEND_API_KEY");
+  const from = env("RESEND_FROM");
+  if (!apiKey || !from) return false;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        subject: "You're invited to edit Portfolio.docx",
+        html: `<p>Hi ${name}, you've been added as an admin on Portfolio.docx. <a href="${inviteUrl}">Set your password</a> to finish setting up your account. This link works once and expires in 7 days.</p>`,
+        text: `Hi ${name}, you've been added as an admin on Portfolio.docx.\n\nSet your password (this link works once, expires in 7 days): ${inviteUrl}`,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 function readAdmins() {
   try {
@@ -263,8 +296,47 @@ apiApp.post("/api/login", (req, res, next) => {
   res.json({ token: issueToken(user), user });
 });
 
+// Public: the invitee has no session yet. Mirrors api/login.ts's ?op=invite.
+apiApp.all("/api/login", (req, res, next) => {
+  if (req.query.op !== "invite") return next();
+  const token = req.method === "GET" ? req.query.token : req.body?.token;
+  if (typeof token !== "string" || !/^[A-Za-z0-9_-]{20,200}$/.test(token)) {
+    res.status(400).json({ error: "Invalid invite link." });
+    return;
+  }
+  const admins = readAdmins();
+  const row = admins.find((a) => a.invite_token_hash === hashInviteToken(token));
+  if (!row || !row.invite_expires_at || Date.parse(row.invite_expires_at) <= Date.now()) {
+    res.status(410).json({
+      error: "This invite link is invalid or has expired. Ask the document owner to send a new one.",
+    });
+    return;
+  }
+  if (req.method === "GET") {
+    res.json({ name: row.display_name, username: row.username });
+    return;
+  }
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+  const problem = passwordProblem(req.body?.password);
+  if (problem) {
+    res.status(400).json({ error: problem });
+    return;
+  }
+  row.password_hash = hashTeamPassword(req.body.password);
+  row.password_changed_at = new Date().toISOString();
+  row.invite_token_hash = null;
+  row.invite_expires_at = null;
+  writeAdmins(admins);
+  logActivity("team.invite_accepted", { username: row.username });
+  const user = { id: row.id, username: row.username, name: row.display_name, role: "admin" };
+  res.json({ token: issueToken(user), user });
+});
+
 // Team routes — the ?op= half of /api/login. Mirrors api/login.ts.
-apiApp.all("/api/login", requireAuth, (req, res) => {
+apiApp.all("/api/login", requireAuth, async (req, res) => {
   const op = req.query.op;
   const actor = req.actor;
   const body = req.body ?? {};
@@ -318,6 +390,7 @@ apiApp.all("/api/login", requireAuth, (req, res) => {
   if (req.method === "POST") {
     const username = String(body.username ?? "").trim().toLowerCase();
     const name = String(body.name ?? "").trim();
+    const email = String(body.email ?? "").trim().toLowerCase();
     if (!USERNAME_RE.test(username) || username === "owner") {
       res.status(400).json({ error: "Username must be 3–32 characters: lowercase letters, numbers, dots, dashes or underscores." });
       return;
@@ -326,20 +399,26 @@ apiApp.all("/api/login", requireAuth, (req, res) => {
       res.status(400).json({ error: "Display name must be 1–60 characters." });
       return;
     }
-    const problem = passwordProblem(body.password);
-    if (problem) {
-      res.status(400).json({ error: problem });
+    if (!email || email.length > 254 || !INVITE_EMAIL_RE.test(email)) {
+      res.status(400).json({ error: "Enter a valid email address." });
       return;
     }
     if (admins.some((a) => a.username === username)) {
       res.status(409).json({ error: `The username "${username}" is taken.` });
       return;
     }
+    const token = generateInviteToken();
+    const inviteLink = `${req.protocol}://${req.get("host")}/admin?invite=${token}`;
     const row = {
       id: crypto.randomUUID(),
       username,
       display_name: name,
-      password_hash: hashTeamPassword(body.password),
+      email,
+      // Satisfies the same password_hash field a real account needs;
+      // nobody, including the owner, ever sees this one.
+      password_hash: hashTeamPassword(crypto.randomBytes(24).toString("base64url")),
+      invite_token_hash: hashInviteToken(token),
+      invite_expires_at: new Date(Date.now() + INVITE_TTL_MS).toISOString(),
       disabled: false,
       created_by: actor.name,
       created_at: new Date().toISOString(),
@@ -347,8 +426,9 @@ apiApp.all("/api/login", requireAuth, (req, res) => {
       password_changed_at: null,
     };
     writeAdmins([...admins, row]);
-    logActivity("team.add", { username, by: actor.name });
-    res.status(201).json(publicAdmin(row));
+    const emailSent = await sendAdminInviteEmail(email, name, inviteLink);
+    logActivity("team.invite", { username, email, by: actor.name });
+    res.status(201).json({ ...publicAdmin(row), inviteLink, emailSent });
     return;
   }
 
@@ -379,9 +459,24 @@ apiApp.all("/api/login", requireAuth, (req, res) => {
       row.password_changed_at = new Date().toISOString();
       changes.push("password reset");
     }
+    let freshInvite = null;
+    if (body.resendInvite === true) {
+      const token = generateInviteToken();
+      row.invite_token_hash = hashInviteToken(token);
+      row.invite_expires_at = new Date(Date.now() + INVITE_TTL_MS).toISOString();
+      freshInvite = { inviteLink: `${req.protocol}://${req.get("host")}/admin?invite=${token}` };
+      changes.push("invite resent");
+    }
     writeAdmins(admins);
+    let emailSent;
+    if (freshInvite && row.email) {
+      emailSent = await sendAdminInviteEmail(row.email, row.display_name, freshInvite.inviteLink);
+    }
     logActivity("team.update", { username: row.username, changes, by: actor.name });
-    res.json(publicAdmin(row));
+    res.json({
+      ...publicAdmin(row),
+      ...(freshInvite ? { inviteLink: freshInvite.inviteLink, emailSent: emailSent ?? false } : {}),
+    });
     return;
   }
 

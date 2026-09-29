@@ -4,6 +4,7 @@ import { getAuthMode, isAdminAuthed, setAdminUser } from "../lib/auth";
 import { syncFromServer } from "../lib/content";
 import { fetchMe } from "../lib/team-api";
 import { AboutEditor } from "./admin/AboutEditor";
+import { AcceptInvite } from "./admin/AcceptInvite";
 import { ActivityEditor } from "./admin/ActivityEditor";
 import {
   AdminLayout,
@@ -29,6 +30,14 @@ const SESSION_LOST =
   "Your session ended — it expired, or the document owner changed your access. Sign in again to keep editing.";
 
 export function AdminPage() {
+  // A link a moment ago wins over whatever's already signed in — clicking
+  // your own invite while signed in as someone else is a deliberate switch,
+  // not an accident. Read once: accepting it clears the param below.
+  const [inviteToken, setInviteToken] = useState<string | null>(() =>
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("invite")
+      : null
+  );
   const [authed, setAuthed] = useState(isAdminAuthed);
   const [notice, setNotice] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -79,6 +88,20 @@ export function AdminPage() {
       cancelled = true;
     };
   }, [authed]);
+
+  if (inviteToken) {
+    return (
+      <AcceptInvite
+        token={inviteToken}
+        onAuthed={() => {
+          window.history.replaceState(null, "", "/admin");
+          setInviteToken(null);
+          setNotice(null);
+          setAuthed(true);
+        }}
+      />
+    );
+  }
 
   if (!authed) {
     return (

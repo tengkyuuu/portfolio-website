@@ -146,8 +146,15 @@ type Load =
   | { state: "setup"; message: string }
   | { state: "error"; message: string };
 
-/** Shown once after a create or reset, then gone for good. */
-type Handoff = { name: string; username: string; password: string; reset: boolean };
+/** Shown once after a reset or a fresh invite, then gone for good. */
+type Handoff =
+  | { kind: "reset"; name: string; username: string; password: string }
+  | { kind: "invite"; name: string; email: string; inviteLink: string; emailSent: boolean };
+
+/** True while the invite hasn't been redeemed — expired or not. */
+function isPending(member: TeamMember): boolean {
+  return Boolean(member.invite_expires_at);
+}
 
 function AdminsCard() {
   const [load, setLoad] = useState<Load>({ state: "loading" });
@@ -196,7 +203,10 @@ function AdminsCard() {
                   member={m}
                   onChanged={refresh}
                   onReset={(password) =>
-                    setHandoff({ name: m.display_name, username: m.username, password, reset: true })
+                    setHandoff({ kind: "reset", name: m.display_name, username: m.username, password })
+                  }
+                  onResend={(email, inviteLink, emailSent) =>
+                    setHandoff({ kind: "invite", name: m.display_name, email, inviteLink, emailSent })
                   }
                 />
               ))}
@@ -220,10 +230,12 @@ function MemberRow({
   member,
   onChanged,
   onReset,
+  onResend,
 }: {
   member: TeamMember;
   onChanged: () => void;
   onReset: (password: string) => void;
+  onResend: (email: string, inviteLink: string, emailSent: boolean) => void;
 }) {
   const [mode, setMode] = useState<"idle" | "reset" | "remove">("idle");
   const [password, setPassword] = useState("");
@@ -266,6 +278,21 @@ function MemberRow({
       return r.ok ? { ok: true } : { ok: false, message: r.message };
     }).then((ok) => ok && onChanged());
 
+  async function resend() {
+    setPending(true);
+    setError(null);
+    const r = await updateTeamMember(member.id, { resendInvite: true });
+    setPending(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
+    }
+    if (r.data.inviteLink) {
+      onResend(member.email ?? "", r.data.inviteLink, r.data.emailSent ?? false);
+    }
+    onChanged();
+  }
+
   return (
     <li className="px-4 py-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -287,15 +314,27 @@ function MemberRow({
                 Disabled
               </span>
             )}
+            {isPending(member) && (
+              <span className="font-ui text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/50 px-1.5 py-0.5 rounded-sm">
+                {Date.parse(member.invite_expires_at!) > Date.now() ? "Invite pending" : "Invite expired"}
+              </span>
+            )}
           </div>
           <div className="font-ui text-[11px] text-ink-subtle">
-            {member.last_login_at
-              ? `Last signed in ${relativeTime(member.last_login_at)}`
-              : "Hasn't signed in yet"}
+            {isPending(member)
+              ? `Hasn't set a password yet${member.email ? ` · sent to ${member.email}` : ""}`
+              : member.last_login_at
+                ? `Last signed in ${relativeTime(member.last_login_at)}`
+                : "Hasn't signed in yet"}
           </div>
         </div>
         {mode === "idle" && (
           <div className="flex flex-wrap gap-1.5">
+            {isPending(member) && (
+              <Button variant="ghost" icon="forward_to_inbox" onClick={() => void resend()} disabled={pending}>
+                Resend invite
+              </Button>
+            )}
             <Button variant="ghost" icon="key" onClick={() => { setPassword(generatePassword()); setMode("reset"); }} disabled={pending}>
               Reset password
             </Button>
@@ -357,30 +396,52 @@ function MemberRow({
   );
 }
 
+const EMAIL_RE = /^[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+$/;
+
+/** "Maria Santos" -> "maria", sanitized to match the server's USERNAME_RE. */
+function suggestUsername(name: string): string {
+  const first = name.trim().split(/\s+/)[0] ?? "";
+  return first
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "")
+    .slice(0, 32);
+}
+
 function AddAdminCard({ onAdded }: { onAdded: (h: Handoff) => void }) {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState(() => generatePassword());
+  const [usernameTouched, setUsernameTouched] = useState(false);
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   async function submit() {
     setPending(true);
     setError(null);
-    const r = await addTeamMember({ name, username, password });
+    const r = await addTeamMember({ name, username, email });
     setPending(false);
     if (!r.ok) {
       setError(r.message);
       return;
     }
-    onAdded({ name: r.data.display_name, username: r.data.username, password, reset: false });
+    onAdded({
+      kind: "invite",
+      name: r.data.display_name,
+      email,
+      inviteLink: r.data.inviteLink,
+      emailSent: r.data.emailSent,
+    });
     setName("");
     setUsername("");
-    setPassword(generatePassword());
+    setUsernameTouched(false);
+    setEmail("");
   }
 
   return (
-    <Card title="Add an admin" description="They'll sign in at /admin with the username and password below.">
+    <Card
+      title="Add an admin"
+      description="They'll get a link by email to set their own password and sign in — you never see or send it yourself."
+    >
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -390,34 +451,37 @@ function AddAdminCard({ onAdded }: { onAdded: (h: Handoff) => void }) {
       >
         <Row>
           <Field label="Display name" hint="Shown in History">
-            <Input value={name} onChange={setName} placeholder="Maria Santos" />
+            <Input
+              value={name}
+              onChange={(v) => {
+                setName(v);
+                if (!usernameTouched) setUsername(suggestUsername(v));
+              }}
+              placeholder="Maria Santos"
+            />
           </Field>
           <Field label="Username" hint="Lowercase, 3–32 characters">
             <Input
               value={username}
-              onChange={(v) => setUsername(v.toLowerCase().replace(/\s+/g, ""))}
+              onChange={(v) => {
+                setUsername(v.toLowerCase().replace(/\s+/g, ""));
+                setUsernameTouched(true);
+              }}
               placeholder="maria"
             />
           </Field>
         </Row>
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="flex-1 min-w-[14rem]">
-            <Field label="Temporary password" hint="They can change it after signing in">
-              <Input value={password} onChange={setPassword} monospace />
-            </Field>
-          </div>
-          <Button variant="secondary" icon="casino" onClick={() => setPassword(generatePassword())}>
-            Generate
-          </Button>
-        </div>
+        <Field label="Email" hint="Where their invite link goes">
+          <Input type="email" value={email} onChange={setEmail} placeholder="maria@example.com" />
+        </Field>
         {error && <StatusLine tone="error" text={error} />}
         <Button
           type="submit"
           variant="primary"
-          icon="person_add"
-          disabled={pending || !name.trim() || username.length < 3 || password.length < 10}
+          icon="forward_to_inbox"
+          disabled={pending || !name.trim() || username.length < 3 || !EMAIL_RE.test(email.trim())}
         >
-          {pending ? "Adding…" : "Add admin"}
+          {pending ? "Sending invite…" : "Send invite"}
         </Button>
       </form>
     </Card>
@@ -426,29 +490,35 @@ function AddAdminCard({ onAdded }: { onAdded: (h: Handoff) => void }) {
 
 /** The only time a password is shown in full. Copy it, send it, done. */
 function HandoffCard({ handoff, onDismiss }: { handoff: Handoff; onDismiss: () => void }) {
+  if (handoff.kind === "reset") return <ResetHandoff handoff={handoff} onDismiss={onDismiss} />;
+  return <InviteHandoff handoff={handoff} onDismiss={onDismiss} />;
+}
+
+/** The only time a password is shown in full. Copy it, send it, done. */
+function ResetHandoff({
+  handoff,
+  onDismiss,
+}: {
+  handoff: Extract<Handoff, { kind: "reset" }>;
+  onDismiss: () => void;
+}) {
   const [copied, setCopied] = useState(false);
   const signIn = `${window.location.origin}/admin`;
   const text = `Sign in to edit the portfolio: ${signIn}\nUsername: ${handoff.username}\nPassword: ${handoff.password}`;
 
   return (
-    <section
-      role="status"
-      className="mb-6 border border-word-blue rounded-sm bg-paper overflow-hidden"
-    >
+    <section role="status" className="mb-6 border border-word-blue rounded-sm bg-paper overflow-hidden">
       <div className="flex items-center gap-2 border-b border-rule bg-word-blue-light px-4 py-2">
         <span aria-hidden="true" className="material-symbols-outlined icon-fill text-word-blue" style={{ fontSize: 16 }}>
-          {handoff.reset ? "key" : "how_to_reg"}
+          key
         </span>
         <span className="font-ui text-[12px] font-semibold text-word-blue">
-          {handoff.reset
-            ? `New password for ${handoff.name}`
-            : `${handoff.name} can now sign in`}
+          New password for {handoff.name}
         </span>
       </div>
       <div className="px-4 py-3 space-y-3">
         <p className="font-ui text-[12px] text-ink-muted">
-          Send these privately. The password won't be shown again — if it's lost,
-          reset it.
+          Send this privately. The password won't be shown again — if it's lost, reset it again.
         </p>
         <pre className="font-ui text-[12px] text-ink bg-row-alt border border-rule rounded-sm px-3 py-2 whitespace-pre-wrap break-all">
           {text}
@@ -457,11 +527,65 @@ function HandoffCard({ handoff, onDismiss }: { handoff: Handoff; onDismiss: () =
           <Button
             variant="primary"
             icon={copied ? "check" : "content_copy"}
-            onClick={() => {
-              void navigator.clipboard.writeText(text).then(() => setCopied(true));
-            }}
+            onClick={() => void navigator.clipboard.writeText(text).then(() => setCopied(true))}
           >
             {copied ? "Copied" : "Copy details"}
+          </Button>
+          <Button variant="ghost" onClick={onDismiss}>
+            Done
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Shown right after inviting (or resending an invite to) an admin. */
+function InviteHandoff({
+  handoff,
+  onDismiss,
+}: {
+  handoff: Extract<Handoff, { kind: "invite" }>;
+  onDismiss: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const gmailHref = `https://mail.google.com/mail/?${new URLSearchParams({
+    view: "cm",
+    fs: "1",
+    to: handoff.email,
+    su: "You're invited to edit Portfolio.docx",
+    body: `Hi ${handoff.name},\n\nYou've been added as an admin on the portfolio. Set your password here (this link works once and expires in 7 days):\n${handoff.inviteLink}`,
+  })}`;
+
+  return (
+    <section role="status" className="mb-6 border border-word-blue rounded-sm bg-paper overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-rule bg-word-blue-light px-4 py-2">
+        <span aria-hidden="true" className="material-symbols-outlined icon-fill text-word-blue" style={{ fontSize: 16 }}>
+          how_to_reg
+        </span>
+        <span className="font-ui text-[12px] font-semibold text-word-blue">
+          {handoff.emailSent ? `Invite sent to ${handoff.name}` : `${handoff.name}'s invite is ready`}
+        </span>
+      </div>
+      <div className="px-4 py-3 space-y-3">
+        <p className="font-ui text-[12px] text-ink-muted">
+          {handoff.emailSent
+            ? `An email went to ${handoff.email} with a link to set their password. It works once and expires in 7 days.`
+            : `Email sending isn't set up yet, so nothing was sent automatically. Share this link with ${handoff.name} yourself — it works once and expires in 7 days.`}
+        </p>
+        <pre className="font-ui text-[12px] text-ink bg-row-alt border border-rule rounded-sm px-3 py-2 whitespace-pre-wrap break-all">
+          {handoff.inviteLink}
+        </pre>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="primary"
+            icon={copied ? "check" : "content_copy"}
+            onClick={() => void navigator.clipboard.writeText(handoff.inviteLink).then(() => setCopied(true))}
+          >
+            {copied ? "Copied" : "Copy link"}
+          </Button>
+          <Button variant="secondary" icon="mail" onClick={() => window.open(gmailHref, "_blank", "noopener")}>
+            Open in Gmail
           </Button>
           <Button variant="ghost" onClick={onDismiss}>
             Done

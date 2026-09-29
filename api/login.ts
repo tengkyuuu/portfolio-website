@@ -7,16 +7,26 @@ import crypto from "node:crypto";
  *   POST                         public — { username?, password } → { token, user }
  *   GET    ?op=me                auth   — who this token belongs to, re-checked
  *   GET    ?op=team              owner  — list team admins
- *   POST   ?op=team              owner  — { username, name, password } → create
+ *   POST   ?op=team              owner  — { username, name, email } → invite
  *   PATCH  ?op=team              owner  — { id, name?, password?, disabled? }
  *   DELETE ?op=team&id=<uuid>    owner  — remove
  *   POST   ?op=password          admin  — { current, next } → change own password
+ *   GET    ?op=invite&token=…    public — validate an invite link → { name, username }
+ *   POST   ?op=invite            public — { token, password } → { token, user }, redeeming it
  *
  * Two kinds of account. The owner signs in with the env-configured
  * password (ADMIN_PASSWORD_HASH) and no username: nothing stored in the
  * database can lock it out, and only it can manage the team. Team admins
  * live in admin_users (migration 006) with scrypt hashes, and can edit
  * everything except the team itself.
+ *
+ * Adding an admin never means the owner handling a password. ?op=team's
+ * POST (migration 009) generates a random, unshared password to satisfy
+ * the NOT NULL column, a one-time invite token, and emails (or hands
+ * back, if Resend isn't set up) a link to /admin?invite=<token>. Only the
+ * token's hash is stored — a database read can't grant a pending invite.
+ * The invitee picks their own password through ?op=invite, which redeems
+ * the token exactly once and signs them straight in.
  *
  * Team management lives here rather than in its own endpoint because every
  * file under api/ is a Serverless Function and the Hobby plan caps a
@@ -36,6 +46,9 @@ const OWNER_USERNAME = "owner";
 const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
 const MIN_PASSWORD = 10;
 const MAX_PASSWORD = 200;
+const INVITE_EMAIL_RE = /^[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+$/;
+const INVITE_TOKEN_RE = /^[A-Za-z0-9_-]{20,200}$/;
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // a week to find the email
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -307,13 +320,13 @@ export function normalizeUsername(raw: unknown): string {
   return typeof raw === "string" ? raw.trim().toLowerCase() : "";
 }
 
-export function validateNewAdmin(body: unknown):
-  | { ok: true; value: { username: string; name: string; password: string } }
+export function validateNewAdminInvite(body: unknown):
+  | { ok: true; value: { username: string; name: string; email: string } }
   | { ok: false; error: string } {
   const b = (body ?? {}) as Record<string, unknown>;
   const username = normalizeUsername(b.username);
   const name = typeof b.name === "string" ? b.name.trim() : "";
-  const password = typeof b.password === "string" ? b.password : "";
+  const email = typeof b.email === "string" ? b.email.trim().toLowerCase() : "";
   if (!USERNAME_RE.test(username)) {
     return {
       ok: false,
@@ -327,9 +340,10 @@ export function validateNewAdmin(body: unknown):
   if (!name || name.length > 60) {
     return { ok: false, error: "Display name must be 1–60 characters." };
   }
-  const pw = validatePassword(password);
-  if (pw) return { ok: false, error: pw };
-  return { ok: true, value: { username, name, password } };
+  if (!email || email.length > 254 || !INVITE_EMAIL_RE.test(email)) {
+    return { ok: false, error: "Enter a valid email address." };
+  }
+  return { ok: true, value: { username, name, email } };
 }
 
 export function validatePassword(password: string): string | null {
@@ -340,6 +354,75 @@ export function validatePassword(password: string): string | null {
     return `Password must be at most ${MAX_PASSWORD} characters.`;
   }
   return null;
+}
+
+/* ---------------- invite tokens + email ---------------- */
+
+function generateInviteToken(): string {
+  return crypto.randomBytes(32).toString("base64url");
+}
+
+/** Only the hash is ever stored — a database read alone can't grant
+ *  access to a pending invite. 32 random bytes has no brute-force
+ *  surface, so a fast hash (not scrypt) is the right tool here. */
+function hashInviteToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+/** Mirrors invitationConfig()'s siteUrl resolution in api/inquiries.ts —
+ *  duplicated rather than imported (see the file header: no api/_lib). */
+function resolveSiteUrl(): string | null {
+  try {
+    const url = new URL(
+      process.env.SITE_URL ||
+        (process.env.VERCEL_PROJECT_PRODUCTION_URL
+          ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+          : "")
+    );
+    if (url.protocol !== "https:" || url.username || url.password) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(
+    /[&<>"']/g,
+    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]!)
+  );
+}
+
+function adminInviteEmail(name: string, inviteUrl: string) {
+  const safeName = escapeHtml(name);
+  const url = escapeHtml(inviteUrl);
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#edf0f5;color:#283246;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:32px 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:auto;background:white;border:1px solid #dbe1eb"><tr><td style="background:#244b87;padding:18px 28px;color:white;font-size:13px;font-weight:bold">W &nbsp; Portfolio.docx</td></tr><tr><td style="padding:34px 28px"><p style="font-size:10px;letter-spacing:2px;color:#2d5592">YOU'RE INVITED TO EDIT</p><h1 style="font-family:Georgia,serif;font-size:28px;font-weight:normal;margin:18px 0 24px">Hi ${safeName}, you're set up as an admin.</h1><p style="font-size:15px;line-height:1.8;margin-bottom:28px">Pick a password to finish setting up your account. This link works once and expires in 7 days.</p><a href="${url}" style="display:inline-block;background:#2d5592;color:white;padding:13px 20px;text-decoration:none;border-radius:4px;font-size:13px;font-weight:bold">Set your password →</a><p style="font-size:11px;color:#6b7280;margin-top:30px">If you weren't expecting this, you can ignore it — nothing happens until that link is used.</p></td></tr></table></td></tr></table></body></html>`;
+  const text = `Hi ${name}, you've been added as an admin on Portfolio.docx.\n\nSet your password (this link works once, expires in 7 days): ${inviteUrl}\n\nIf you weren't expecting this, ignore it — nothing happens until that link is used.`;
+  return { html, text };
+}
+
+/** Best-effort: a failed or unconfigured send isn't an error, the owner
+ *  falls back to copying the link (see TeamPanel's HandoffCard). */
+async function sendAdminInviteEmail(email: string, name: string, inviteUrl: string): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM;
+  if (!apiKey || !from) return false;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: AbortSignal.timeout(15000),
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        subject: "You're invited to edit Portfolio.docx",
+        ...adminInviteEmail(name, inviteUrl),
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 function safeJson(s: string): unknown {
@@ -455,7 +538,8 @@ async function signIn(req: VercelRequest, res: VercelResponse, body: Record<stri
 
 /* ---------------- team ---------------- */
 
-const TEAM_COLUMNS = "id, username, display_name, disabled, created_at, last_login_at";
+const TEAM_COLUMNS =
+  "id, username, display_name, email, disabled, created_at, last_login_at, invite_expires_at";
 
 async function team(
   req: VercelRequest,
@@ -485,15 +569,28 @@ async function team(
   }
 
   if (req.method === "POST") {
-    const parsed = validateNewAdmin(body);
+    const parsed = validateNewAdminInvite(body);
     if (!parsed.ok) return res.status(400).json({ error: parsed.error });
-    const { username, name, password } = parsed.value;
+    const { username, name, email } = parsed.value;
+    const siteUrl = resolveSiteUrl();
+    if (!siteUrl) {
+      return res.status(503).json({
+        error: "Set SITE_URL to your public HTTPS website address before inviting an admin.",
+      });
+    }
+    const token = generateInviteToken();
+    const inviteLink = `${siteUrl}/admin?invite=${token}`;
     const { data, error } = await supabase
       .from("admin_users")
       .insert({
         username,
         display_name: name,
-        password_hash: await hashPassword(password),
+        email,
+        // Satisfies the NOT NULL column until the invite is redeemed and
+        // replaces it — nobody, including the owner, ever sees this one.
+        password_hash: await hashPassword(crypto.randomBytes(24).toString("base64url")),
+        invite_token_hash: hashInviteToken(token),
+        invite_expires_at: new Date(Date.now() + INVITE_TTL_MS).toISOString(),
         created_by: actor.name,
       })
       .select(TEAM_COLUMNS)
@@ -506,8 +603,9 @@ async function team(
         .status(isMissingTable(error) ? 503 : 500)
         .json({ error: isMissingTable(error) ? NO_TABLE : error.message });
     }
-    await logActivity(supabase, "team.add", { username, by: actor.name });
-    return res.status(201).json(data);
+    const emailSent = await sendAdminInviteEmail(email, name, inviteLink);
+    await logActivity(supabase, "team.invite", { username, email, by: actor.name });
+    return res.status(201).json({ ...data, inviteLink, emailSent });
   }
 
   const id = req.method === "DELETE" ? firstQuery(req.query.id) : body.id;
@@ -538,6 +636,24 @@ async function team(
       patch.password_changed_at = new Date().toISOString();
       changes.push("password reset");
     }
+    // A lost or never-arrived invite gets a fresh link rather than
+    // deleting and recreating the whole account. The previous token stops
+    // working the moment this one is written (the unique index means only
+    // one hash can be live per row anyway).
+    let freshInvite: { token: string; inviteLink: string } | null = null;
+    if (body.resendInvite === true) {
+      const siteUrl = resolveSiteUrl();
+      if (!siteUrl) {
+        return res.status(503).json({
+          error: "Set SITE_URL to your public HTTPS website address before resending an invite.",
+        });
+      }
+      const token = generateInviteToken();
+      patch.invite_token_hash = hashInviteToken(token);
+      patch.invite_expires_at = new Date(Date.now() + INVITE_TTL_MS).toISOString();
+      freshInvite = { token, inviteLink: `${siteUrl}/admin?invite=${token}` };
+      changes.push("invite resent");
+    }
     if (changes.length === 0) {
       return res.status(400).json({ error: "Nothing to change." });
     }
@@ -549,12 +665,20 @@ async function team(
       .maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "Admin not found." });
+    const row = data as { username: string; display_name: string; email: string | null };
+    let emailSent: boolean | undefined;
+    if (freshInvite && row.email) {
+      emailSent = await sendAdminInviteEmail(row.email, row.display_name, freshInvite.inviteLink);
+    }
     await logActivity(supabase, "team.update", {
-      username: (data as { username: string }).username,
+      username: row.username,
       changes,
       by: actor.name,
     });
-    return res.status(200).json(data);
+    return res.status(200).json({
+      ...data,
+      ...(freshInvite ? { inviteLink: freshInvite.inviteLink, emailSent: emailSent ?? false } : {}),
+    });
   }
 
   if (req.method === "DELETE") {
@@ -634,6 +758,84 @@ async function changeOwnPassword(
   return res.status(200).json({ token: signToken(actor.id, actor.name) });
 }
 
+/* ---------------- accept invite ---------------- */
+
+/**
+ * Public — the invitee has no session yet; this is what grants them one.
+ * GET validates the link and greets them by name; POST redeems it exactly
+ * once, replacing the placeholder password with their own real one and
+ * signing them straight in, the same way changeOwnPassword hands back a
+ * fresh token after a self-service password change.
+ */
+async function handleInvite(
+  req: VercelRequest,
+  res: VercelResponse,
+  body: Record<string, unknown>
+) {
+  const token =
+    req.method === "GET"
+      ? firstQuery(req.query.token)
+      : typeof body.token === "string"
+        ? body.token
+        : undefined;
+  if (!token || !INVITE_TOKEN_RE.test(token)) {
+    return res.status(400).json({ error: "Invalid invite link." });
+  }
+  if (!isStoreConfigured()) {
+    return res.status(503).json({ error: "No content store configured." });
+  }
+  const key = `invite:${clientKey(req)}`;
+  if (tooManyAttempts(key)) {
+    return res.status(429).json({ error: "Too many attempts. Wait a few minutes, then try again." });
+  }
+
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("id, display_name, username, invite_expires_at")
+    .eq("invite_token_hash", hashInviteToken(token))
+    .maybeSingle();
+  const row = data as
+    | { id: string; display_name: string; username: string; invite_expires_at: string | null }
+    | null;
+  if (error || !row || !row.invite_expires_at || Date.parse(row.invite_expires_at) <= Date.now()) {
+    recordFailedAttempt(key);
+    return res.status(410).json({
+      error: "This invite link is invalid or has expired. Ask the document owner to send a new one.",
+    });
+  }
+
+  if (req.method === "GET") {
+    return res.status(200).json({ name: row.display_name, username: row.username });
+  }
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "GET, POST");
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const password = typeof body.password === "string" ? body.password : "";
+  const pw = validatePassword(password);
+  if (pw) return res.status(400).json({ error: pw });
+
+  clearAttempts(key);
+  const { error: upErr } = await supabase
+    .from("admin_users")
+    .update({
+      password_hash: await hashPassword(password),
+      password_changed_at: new Date().toISOString(),
+      invite_token_hash: null,
+      invite_expires_at: null,
+    })
+    .eq("id", row.id);
+  if (upErr) return res.status(500).json({ error: upErr.message });
+  await logActivity(supabase, "team.invite_accepted", { username: row.username });
+
+  return res.status(200).json({
+    token: signToken(row.id, row.display_name),
+    user: { id: row.id, username: row.username, name: row.display_name, role: "admin" },
+  });
+}
+
 /* ---------------- handler ---------------- */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -648,6 +850,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(405).json({ error: "Method not allowed" });
     }
     return signIn(req, res, body ?? {});
+  }
+
+  if (op === "invite") {
+    try {
+      return await handleInvite(req, res, body ?? {});
+    } catch (e) {
+      return res.status(500).json({ error: e instanceof Error ? e.message : "Server error" });
+    }
   }
 
   const actor = await authorize(req);

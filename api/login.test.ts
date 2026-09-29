@@ -20,11 +20,12 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: () => createFakeSupabase(db),
 }));
 
-const { default: handler, hashPassword, verifyPassword, validateNewAdmin } =
+const { default: handler, hashPassword, verifyPassword, validateNewAdminInvite } =
   await import("./login");
 
 const OWNER_PASSWORD = "correct horse battery";
 const SECRET = "test-secret";
+const SITE_URL = "https://portfolio.example";
 
 let ipSeq = 0;
 async function call(init: Parameters<typeof fakeReq>[0]) {
@@ -42,21 +43,39 @@ async function ownerToken(): Promise<string> {
   return res.body.token as string;
 }
 
-async function addAdmin(owner: string, username = "maria", password = "a-long-password-1") {
+/** Owner sends the invite. Doesn't sign anyone in — no password exists yet. */
+async function invite(owner: string, username = "maria", email = "maria@example.com") {
   const res = await call({
     method: "POST",
     query: { op: "team" },
     token: owner,
-    body: { username, name: "Maria Santos", password },
+    body: { username, name: "Maria Santos", email },
   });
   expect(res.statusCode).toBe(201);
-  return res.body as { id: string };
+  return res.body as { id: string; inviteLink: string; emailSent: boolean };
 }
 
-async function adminToken(username = "maria", password = "a-long-password-1") {
-  const res = await call({ method: "POST", body: { username, password } });
-  expect(res.statusCode).toBe(200);
-  return res.body.token as string;
+function tokenFromLink(link: string): string {
+  const found = new URL(link).searchParams.get("invite");
+  if (!found) throw new Error(`no ?invite= on ${link}`);
+  return found;
+}
+
+async function checkInvite(token: string) {
+  return call({ method: "GET", query: { op: "invite", token } });
+}
+
+async function acceptInvite(token: string, password: string) {
+  return call({ method: "POST", query: { op: "invite" }, body: { token, password } });
+}
+
+/** The common case: invite an admin and immediately redeem it, so a test
+ *  that just needs a working session doesn't have to think about email. */
+async function addAdminAndSignIn(owner: string, username = "maria", password = "a-long-password-1") {
+  const created = await invite(owner, username);
+  const accepted = await acceptInvite(tokenFromLink(created.inviteLink), password);
+  expect(accepted.statusCode).toBe(200);
+  return { id: created.id, token: accepted.body.token as string };
 }
 
 function signWith(secret: string, payload: object): string {
@@ -71,6 +90,7 @@ beforeEach(() => {
   vi.stubEnv("ADMIN_TOKEN_SECRET", SECRET);
   vi.stubEnv("SUPABASE_URL", "http://supabase.test");
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
+  vi.stubEnv("SITE_URL", SITE_URL);
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-09-29T08:00:00Z"));
 });
@@ -94,21 +114,23 @@ describe("password hashing", () => {
   });
 });
 
-describe("validateNewAdmin", () => {
+describe("validateNewAdminInvite", () => {
   it("reserves the owner's name", () => {
-    const r = validateNewAdmin({ username: "Owner", name: "X", password: "a-long-password" });
+    const r = validateNewAdminInvite({ username: "Owner", name: "X", email: "x@example.com" });
     expect(r.ok).toBe(false);
   });
 
-  it("rejects short passwords and malformed usernames", () => {
-    expect(validateNewAdmin({ username: "ok_name", name: "X", password: "short" }).ok).toBe(false);
-    expect(validateNewAdmin({ username: "no spaces", name: "X", password: "a-long-password" }).ok).toBe(false);
-    expect(validateNewAdmin({ username: "ab", name: "X", password: "a-long-password" }).ok).toBe(false);
+  it("rejects a malformed username, an empty name, and a bad email", () => {
+    expect(validateNewAdminInvite({ username: "no spaces", name: "X", email: "x@example.com" }).ok).toBe(false);
+    expect(validateNewAdminInvite({ username: "ab", name: "X", email: "x@example.com" }).ok).toBe(false);
+    expect(validateNewAdminInvite({ username: "ok_name", name: "", email: "x@example.com" }).ok).toBe(false);
+    expect(validateNewAdminInvite({ username: "ok_name", name: "X", email: "not-an-email" }).ok).toBe(false);
+    expect(validateNewAdminInvite({ username: "ok_name", name: "X", email: "" }).ok).toBe(false);
   });
 
-  it("normalises the username", () => {
-    const r = validateNewAdmin({ username: "  Maria.S ", name: " Maria ", password: "a-long-password" });
-    expect(r).toEqual({ ok: true, value: { username: "maria.s", name: "Maria", password: "a-long-password" } });
+  it("normalises the username and email", () => {
+    const r = validateNewAdminInvite({ username: "  Maria.S ", name: " Maria ", email: " Maria@Example.COM " });
+    expect(r).toEqual({ ok: true, value: { username: "maria.s", name: "Maria", email: "maria@example.com" } });
   });
 });
 
@@ -148,61 +170,168 @@ describe("owner sign-in", () => {
   });
 });
 
-describe("team", () => {
-  it("lets the owner add an admin who can then sign in", async () => {
+describe("inviting a team admin", () => {
+  it("creates an invite that isn't a working sign-in until it's redeemed", async () => {
     const owner = await ownerToken();
-    await addAdmin(owner);
-    const signIn = await call({ method: "POST", body: { username: "maria", password: "a-long-password-1" } });
-    expect(signIn.statusCode).toBe(200);
-    expect(signIn.body.user).toMatchObject({ role: "admin", username: "maria", name: "Maria Santos" });
+    const created = await invite(owner);
+    expect(created.inviteLink).toContain(`${SITE_URL}/admin?invite=`);
+    expect(created.emailSent).toBe(false); // no RESEND_* configured in the test env
 
-    const list = await call({ method: "GET", query: { op: "team" }, token: owner });
-    expect(list.body.items).toHaveLength(1);
-    // The hash never leaves the server.
-    expect(JSON.stringify(list.body)).not.toContain("scrypt$");
+    const tooEarly = await call({ method: "POST", body: { username: "maria", password: "anything-long-enough" } });
+    expect(tooEarly.statusCode).toBe(401);
   });
 
-  it("gives the same answer for an unknown user and a wrong password", async () => {
+  it("refuses without SITE_URL — there'd be no working link to send", async () => {
+    vi.unstubAllEnvs();
+    vi.stubEnv("ADMIN_PASSWORD_HASH", crypto.createHash("sha256").update(OWNER_PASSWORD).digest("hex"));
+    vi.stubEnv("ADMIN_TOKEN_SECRET", SECRET);
+    vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
     const owner = await ownerToken();
-    await addAdmin(owner);
-    const unknown = await call({ method: "POST", body: { username: "nobody", password: "a-long-password-1" } });
-    const wrong = await call({ method: "POST", body: { username: "maria", password: "a-long-password-X" } });
-    expect(unknown.statusCode).toBe(401);
-    expect(wrong.statusCode).toBe(401);
-    expect(unknown.body.error).toBe(wrong.body.error);
+    const res = await call({
+      method: "POST",
+      query: { op: "team" },
+      token: owner,
+      body: { username: "maria", name: "Maria Santos", email: "maria@example.com" },
+    });
+    expect(res.statusCode).toBe(503);
   });
 
   it("refuses a duplicate username", async () => {
     const owner = await ownerToken();
-    await addAdmin(owner);
+    await invite(owner);
     const again = await call({
       method: "POST",
       query: { op: "team" },
       token: owner,
-      body: { username: "maria", name: "Other", password: "a-long-password-1" },
+      body: { username: "maria", name: "Other", email: "other@example.com" },
     });
     expect(again.statusCode).toBe(409);
   });
 
   it("keeps team management owner-only", async () => {
     const owner = await ownerToken();
-    await addAdmin(owner);
-    const admin = await adminToken();
+    const { token: admin } = await addAdminAndSignIn(owner);
     const list = await call({ method: "GET", query: { op: "team" }, token: admin });
     expect(list.statusCode).toBe(403);
     const add = await call({
       method: "POST",
       query: { op: "team" },
       token: admin,
-      body: { username: "sneaky", name: "S", password: "a-long-password-1" },
+      body: { username: "sneaky", name: "S", email: "sneaky@example.com" },
     });
     expect(add.statusCode).toBe(403);
   });
 
+  it("never puts a password hash in the team list", async () => {
+    const owner = await ownerToken();
+    await addAdminAndSignIn(owner);
+    const list = await call({ method: "GET", query: { op: "team" }, token: owner });
+    expect(JSON.stringify(list.body)).not.toContain("scrypt$");
+  });
+});
+
+describe("accepting an invite", () => {
+  it("greets the invitee by name before they type a password", async () => {
+    const owner = await ownerToken();
+    const created = await invite(owner);
+    const res = await checkInvite(tokenFromLink(created.inviteLink));
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ name: "Maria Santos", username: "maria" });
+  });
+
+  it("rejects a garbage or unknown token the same way it rejects an expired one", async () => {
+    expect((await checkInvite("not-a-real-token")).statusCode).toBe(400);
+    expect((await checkInvite("A".repeat(40))).statusCode).toBe(410);
+  });
+
+  it("expires after 7 days", async () => {
+    const owner = await ownerToken();
+    const created = await invite(owner);
+    const token = tokenFromLink(created.inviteLink);
+    vi.setSystemTime(new Date("2026-10-06T08:00:00.001Z")); // 7 days + 1ms
+    expect((await checkInvite(token)).statusCode).toBe(410);
+    expect((await acceptInvite(token, "a-long-enough-password")).statusCode).toBe(410);
+  });
+
+  it("enforces the same password rules as everywhere else", async () => {
+    const owner = await ownerToken();
+    const created = await invite(owner);
+    const res = await acceptInvite(tokenFromLink(created.inviteLink), "short");
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("redeems exactly once — the same link can't be used twice", async () => {
+    const owner = await ownerToken();
+    const created = await invite(owner);
+    const token = tokenFromLink(created.inviteLink);
+    const first = await acceptInvite(token, "a-long-password-1");
+    expect(first.statusCode).toBe(200);
+    expect(first.body.user).toMatchObject({ role: "admin", username: "maria" });
+
+    const second = await acceptInvite(token, "a-different-password");
+    expect(second.statusCode).toBe(410);
+  });
+
+  it("signs the new admin in with a token that works right away", async () => {
+    const owner = await ownerToken();
+    const { token } = await addAdminAndSignIn(owner);
+    const me = await call({ method: "GET", query: { op: "me" }, token });
+    expect(me.statusCode).toBe(200);
+    expect(me.body.user).toMatchObject({ role: "admin", username: "maria" });
+  });
+
+  it("rate-limits repeated bad tokens from the same client", async () => {
+    // checkInvite()/call() give every request its own synthetic IP unless
+    // told otherwise, so this drives the handler directly with one fixed ip
+    // — otherwise five "different" clients would never trip the same key.
+    const ip = "203.0.113.9";
+    for (let i = 0; i < 5; i++) {
+      const res = await call({ method: "GET", query: { op: "invite", token: "B".repeat(40) }, ip });
+      expect(res.statusCode).toBe(410);
+    }
+    const locked = await call({ method: "GET", query: { op: "invite", token: "B".repeat(40) }, ip });
+    expect(locked.statusCode).toBe(429);
+  });
+});
+
+describe("resending an invite", () => {
+  it("invalidates the old link and issues a new one", async () => {
+    const owner = await ownerToken();
+    const created = await invite(owner);
+    const oldToken = tokenFromLink(created.inviteLink);
+
+    const resend = await call({
+      method: "PATCH",
+      query: { op: "team" },
+      token: owner,
+      body: { id: created.id, resendInvite: true },
+    });
+    expect(resend.statusCode).toBe(200);
+    const newToken = tokenFromLink(resend.body.inviteLink as string);
+    expect(newToken).not.toBe(oldToken);
+
+    expect((await checkInvite(oldToken)).statusCode).toBe(410);
+    expect((await checkInvite(newToken)).statusCode).toBe(200);
+  });
+
+  it("is owner-only, like every other team change", async () => {
+    const owner = await ownerToken();
+    const { token: admin } = await addAdminAndSignIn(owner, "jose", "another-long-password");
+    const res = await call({
+      method: "PATCH",
+      query: { op: "team" },
+      token: admin,
+      body: { id: "anything", resendInvite: true },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+});
+
+describe("team lifecycle", () => {
   it("revokes a disabled admin's live token at once", async () => {
     const owner = await ownerToken();
-    const { id } = await addAdmin(owner);
-    const admin = await adminToken();
+    const { id, token: admin } = await addAdminAndSignIn(owner);
     expect((await call({ method: "GET", query: { op: "me" }, token: admin })).statusCode).toBe(200);
 
     await call({ method: "PATCH", query: { op: "team" }, token: owner, body: { id, disabled: true } });
@@ -214,8 +343,7 @@ describe("team", () => {
 
   it("revokes a removed admin's live token at once", async () => {
     const owner = await ownerToken();
-    const { id } = await addAdmin(owner);
-    const admin = await adminToken();
+    const { id, token: admin } = await addAdminAndSignIn(owner);
     const del = await call({ method: "DELETE", query: { op: "team", id }, token: owner });
     expect(del.statusCode).toBe(200);
     expect((await call({ method: "GET", query: { op: "me" }, token: admin })).statusCode).toBe(401);
@@ -223,8 +351,9 @@ describe("team", () => {
 
   it("signs an admin out of older sessions when the owner resets their password", async () => {
     const owner = await ownerToken();
-    const { id } = await addAdmin(owner);
-    const stale = await adminToken();
+    const { id } = await addAdminAndSignIn(owner);
+    const stale = (await call({ method: "POST", body: { username: "maria", password: "a-long-password-1" } })).body
+      .token as string;
 
     vi.setSystemTime(new Date("2026-09-29T08:05:00Z"));
     await call({
@@ -234,16 +363,17 @@ describe("team", () => {
       body: { id, password: "a-brand-new-password" },
     });
     expect((await call({ method: "GET", query: { op: "me" }, token: stale })).statusCode).toBe(401);
-    const fresh = await adminToken("maria", "a-brand-new-password");
-    expect((await call({ method: "GET", query: { op: "me" }, token: fresh })).statusCode).toBe(200);
+    const fresh = await call({ method: "POST", body: { username: "maria", password: "a-brand-new-password" } });
+    expect((await call({ method: "GET", query: { op: "me" }, token: fresh.body.token as string })).statusCode).toBe(
+      200
+    );
   });
 });
 
 describe("changing your own password", () => {
   it("needs the current password, then hands back a working token", async () => {
     const owner = await ownerToken();
-    await addAdmin(owner);
-    const before = await adminToken();
+    const { token: before } = await addAdminAndSignIn(owner);
 
     const wrong = await call({
       method: "POST",
@@ -280,11 +410,22 @@ describe("changing your own password", () => {
 });
 
 describe("activity", () => {
-  it("records who changed the team", async () => {
+  it("records who invited whom", async () => {
     const owner = await ownerToken();
-    await addAdmin(owner);
+    await invite(owner);
     expect(db.activity_log).toContainEqual(
-      expect.objectContaining({ action: "team.add", detail: { username: "maria", by: "Owner" } })
+      expect.objectContaining({
+        action: "team.invite",
+        detail: { username: "maria", email: "maria@example.com", by: "Owner" },
+      })
+    );
+  });
+
+  it("records who accepted an invite, without naming the owner", async () => {
+    const owner = await ownerToken();
+    await addAdminAndSignIn(owner);
+    expect(db.activity_log).toContainEqual(
+      expect.objectContaining({ action: "team.invite_accepted", detail: { username: "maria" } })
     );
   });
 });

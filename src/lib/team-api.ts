@@ -15,8 +15,11 @@ export type TeamMember = {
   id: string;
   username: string;
   display_name: string;
+  email: string | null;
   disabled: boolean;
   created_at: string;
+  /** Non-null while the invite hasn't been redeemed — may be in the past. */
+  invite_expires_at: string | null;
   last_login_at: string | null;
 };
 
@@ -68,15 +71,19 @@ export function listTeam() {
   return request<{ items: TeamMember[] }>("GET", "team");
 }
 
-export function addTeamMember(input: { username: string; name: string; password: string }) {
-  return request<TeamMember>("POST", "team", { body: input });
+export type InviteResult = TeamMember & { inviteLink: string; emailSent: boolean };
+
+export function addTeamMember(input: { username: string; name: string; email: string }) {
+  return request<InviteResult>("POST", "team", { body: input });
 }
 
 export function updateTeamMember(
   id: string,
-  patch: { name?: string; disabled?: boolean; password?: string }
+  patch: { name?: string; disabled?: boolean; password?: string; resendInvite?: true }
 ) {
-  return request<TeamMember>("PATCH", "team", { body: { id, ...patch } });
+  return request<TeamMember & { inviteLink?: string; emailSent?: boolean }>("PATCH", "team", {
+    body: { id, ...patch },
+  });
 }
 
 export function removeTeamMember(id: string) {
@@ -85,6 +92,52 @@ export function removeTeamMember(id: string) {
 
 export function changeOwnPassword(current: string, next: string) {
   return request<{ token: string }>("POST", "password", { body: { current, next } });
+}
+
+/* ---------------- accept invite (no session yet) ---------------- */
+
+export type InviteCheck =
+  | { ok: true; name: string; username: string }
+  | { ok: false; message: string };
+
+/** Validate an invite link, before showing the "set your password" form. */
+export async function checkInvite(token: string): Promise<InviteCheck> {
+  try {
+    const res = await fetch(`/api/login?op=invite&token=${encodeURIComponent(token)}`);
+    const body = (await res.json().catch(() => null)) as
+      | { name?: string; username?: string; error?: string }
+      | null;
+    if (res.ok && body?.name && body.username) {
+      return { ok: true, name: body.name, username: body.username };
+    }
+    return { ok: false, message: body?.error ?? `Request failed (${res.status}).` };
+  } catch {
+    return { ok: false, message: "No connection to the server." };
+  }
+}
+
+export type AcceptInviteResult =
+  | { ok: true; token: string; user: AdminUser }
+  | { ok: false; message: string };
+
+/** Redeems the invite exactly once and signs the new admin straight in. */
+export async function acceptInvite(token: string, password: string): Promise<AcceptInviteResult> {
+  try {
+    const res = await fetch("/api/login?op=invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
+    });
+    const body = (await res.json().catch(() => null)) as
+      | { token?: string; user?: AdminUser; error?: string }
+      | null;
+    if (res.ok && body?.token && body.user) {
+      return { ok: true, token: body.token, user: body.user };
+    }
+    return { ok: false, message: body?.error ?? `Request failed (${res.status}).` };
+  } catch {
+    return { ok: false, message: "No connection to the server." };
+  }
 }
 
 /** A readable one-time password for a new admin: 4 groups of 4 from an
