@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { ProjectImage } from "../../lib/content";
-import { compressImage, dataUrlBytes, formatBytes } from "../../lib/image";
+import { dataUrlBytes, formatBytes } from "../../lib/image";
+import { uploadImage } from "../../lib/upload";
 import { Button, IconButton, Input } from "./ui";
 
 type Props = {
@@ -10,27 +11,33 @@ type Props = {
 
 /**
  * Editor for a project's image gallery. Upload one or many screenshots
- * (compressed to data URLs) or add a URL/path entry. Two or more images
+ * (to image storage, or inline when there is none) or add a URL/path entry. Two or more images
  * render as a carousel on the site; reorder with ▲▼.
  */
 export function GalleryField({ images, onChange }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
 
   async function addFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setError(null);
+    setNote(null);
     setWorking(true);
+    // Keep whatever finished if a later file fails, rather than dropping
+    // every upload in the batch.
+    const added: ProjectImage[] = [];
     try {
-      const added: ProjectImage[] = [];
       for (const file of Array.from(files)) {
-        added.push({ src: await compressImage(file) });
+        const result = await uploadImage(file, "projects");
+        added.push({ src: result.url });
+        if (result.note) setNote(result.note);
       }
-      onChange([...images, ...added]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't process image.");
     } finally {
+      if (added.length > 0) onChange([...images, ...added]);
       setWorking(false);
       if (fileRef.current) fileRef.current.value = "";
     }
@@ -133,7 +140,7 @@ export function GalleryField({ images, onChange }: Props) {
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
           multiple
           onChange={(e) => addFiles(e.target.files)}
           className="sr-only"
@@ -144,7 +151,7 @@ export function GalleryField({ images, onChange }: Props) {
           onClick={() => fileRef.current?.click()}
           disabled={working}
         >
-          {working ? "Compressing…" : "Upload images"}
+          {working ? "Uploading…" : "Upload images"}
         </Button>
         <Button
           variant="secondary"
@@ -158,10 +165,16 @@ export function GalleryField({ images, onChange }: Props) {
       {error && (
         <p className="font-ui text-[12px] text-red-600 dark:text-red-400">{error}</p>
       )}
+      {note && (
+        <p className="font-ui text-[12px] text-ink-muted">
+          Saved inline instead of to storage — {note}
+        </p>
+      )}
 
       <p className="font-ui text-[11px] text-ink-subtle">
-        Uploads are resized to fit 1600 px and saved as JPEG, stored with your
-        content. Two or more images become a swipeable carousel on the site.
+        Uploads go to the site's image storage (inline in the content when
+        there is none). Two or more images become a swipeable carousel on the
+        site.
       </p>
     </div>
   );

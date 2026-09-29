@@ -61,39 +61,106 @@ const PASSWORD_HASH = (
 
 /* -------------------------------- sessions ------------------------------- */
 
-const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // 12h
-const sessions = new Map(); // token -> expiry epoch ms
+const TOKEN_TTL_MS = 4 * 60 * 60 * 1000; // 4h, as in api/login.ts
+const sessions = new Map(); // token -> { expiry, issued, user }
 
-function issueToken() {
+const OWNER_USER = { id: "owner", username: "owner", name: "Owner", role: "owner" };
+
+function issueToken(user = OWNER_USER) {
   const token = crypto.randomBytes(32).toString("hex");
-  sessions.set(token, Date.now() + TOKEN_TTL_MS);
+  sessions.set(token, { expiry: Date.now() + TOKEN_TTL_MS, issued: Date.now(), user });
   return token;
 }
 
-function isValidToken(token) {
-  if (!token) return false;
-  const expiry = sessions.get(token);
-  if (!expiry) return false;
-  if (Date.now() > expiry) {
+/**
+ * The session's user, or null. Like authorize() in api/*.ts, a team
+ * admin is re-checked against the store on every call, so disabling,
+ * removing or resetting one signs them out at once.
+ */
+function sessionUser(token) {
+  if (!token) return null;
+  const session = sessions.get(token);
+  if (!session) return null;
+  if (Date.now() > session.expiry) {
     sessions.delete(token);
-    return false;
+    return null;
   }
-  return true;
+  if (session.user.role === "owner") return session.user;
+  const row = readAdmins().find((a) => a.id === session.user.id);
+  if (!row || row.disabled) return null;
+  if (row.password_changed_at && Date.parse(row.password_changed_at) > session.issued) return null;
+  return { ...session.user, name: row.display_name };
+}
+
+function bearer(req) {
+  return (req.headers.authorization ?? "").replace(/^Bearer\s+/i, "");
 }
 
 function requireAuth(req, res, next) {
-  const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/i, "");
-  if (!isValidToken(token)) {
+  const user = sessionUser(bearer(req));
+  if (!user) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+  req.actor = user;
   next();
 }
 
 /** Same check as requireAuth, as a predicate — for routes where one method
  *  serves both the public and the admin (see /api/chat). */
 function localAuthed(req) {
-  return isValidToken((req.headers.authorization ?? "").replace(/^Bearer\s+/i, ""));
+  return sessionUser(bearer(req)) !== null;
+}
+
+/* ------------------------------ team (local dev) ----------------------------- */
+/**
+ * File-backed mirror of the team routes in api/login.ts. Accounts live in
+ * server/data/admins.json (gitignored with the rest of server/data/).
+ */
+
+const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
+const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
+const TEAM_FIELDS = ["id", "username", "display_name", "disabled", "created_at", "last_login_at"];
+
+function readAdmins() {
+  try {
+    return JSON.parse(fs.readFileSync(ADMINS_FILE, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+function writeAdmins(rows) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(ADMINS_FILE, JSON.stringify(rows, null, 2), "utf8");
+}
+
+function publicAdmin(row) {
+  return Object.fromEntries(TEAM_FIELDS.map((k) => [k, row[k] ?? null]));
+}
+
+function hashTeamPassword(plain) {
+  const salt = crypto.randomBytes(16);
+  const key = crypto.scryptSync(plain, salt, 64, { N: 16384, r: 8, p: 1 });
+  return `scrypt$16384$8$1$${salt.toString("base64")}$${key.toString("base64")}`;
+}
+
+function checkTeamPassword(plain, stored) {
+  const [kind, n, r, p, salt, hash] = String(stored).split("$");
+  if (kind !== "scrypt" || !hash) return false;
+  const expected = Buffer.from(hash, "base64");
+  const got = crypto.scryptSync(plain, Buffer.from(salt, "base64"), expected.length, {
+    N: Number(n),
+    r: Number(r),
+    p: Number(p),
+  });
+  return crypto.timingSafeEqual(got, expected);
+}
+
+function passwordProblem(pw) {
+  if (typeof pw !== "string" || pw.length < 10) return "Password must be at least 10 characters.";
+  if (pw.length > 200) return "Password must be at most 200 characters.";
+  return null;
 }
 
 /* --------------------------- login rate limiting -------------------------- */
@@ -152,7 +219,8 @@ apiApp.get("/api/health", (_req, res) => {
   });
 });
 
-apiApp.post("/api/login", (req, res) => {
+apiApp.post("/api/login", (req, res, next) => {
+  if (req.query.op) return next();
   if (!PASSWORD_HASH) {
     res.status(503).json({
       error:
@@ -165,12 +233,166 @@ apiApp.post("/api/login", (req, res) => {
     return;
   }
   const password = typeof req.body?.password === "string" ? req.body.password : "";
-  if (!hashesMatch(sha256Hex(password), PASSWORD_HASH)) {
-    failedAttempts.push(Date.now());
-    res.status(401).json({ error: "Incorrect password." });
+  const username =
+    typeof req.body?.username === "string" ? req.body.username.trim().toLowerCase() : "";
+
+  if (!username || username === "owner") {
+    if (!hashesMatch(sha256Hex(password), PASSWORD_HASH)) {
+      failedAttempts.push(Date.now());
+      res.status(401).json({ error: "Incorrect password." });
+      return;
+    }
+    res.json({ token: issueToken(OWNER_USER), user: OWNER_USER });
     return;
   }
-  res.json({ token: issueToken() });
+
+  const admins = readAdmins();
+  const row = admins.find((a) => a.username === username);
+  if (!row || !checkTeamPassword(password, row.password_hash)) {
+    failedAttempts.push(Date.now());
+    res.status(401).json({ error: "Incorrect username or password." });
+    return;
+  }
+  if (row.disabled) {
+    res.status(403).json({ error: "This account has been disabled. Ask the document owner." });
+    return;
+  }
+  row.last_login_at = new Date().toISOString();
+  writeAdmins(admins);
+  const user = { id: row.id, username: row.username, name: row.display_name, role: "admin" };
+  res.json({ token: issueToken(user), user });
+});
+
+// Team routes — the ?op= half of /api/login. Mirrors api/login.ts.
+apiApp.all("/api/login", requireAuth, (req, res) => {
+  const op = req.query.op;
+  const actor = req.actor;
+  const body = req.body ?? {};
+
+  if (op === "me") {
+    res.json({ user: actor });
+    return;
+  }
+
+  if (op === "password") {
+    if (actor.role === "owner") {
+      res.status(400).json({ error: "The owner password is set by ADMIN_PASSWORD_HASH in .env.local." });
+      return;
+    }
+    const admins = readAdmins();
+    const row = admins.find((a) => a.id === actor.id);
+    if (!row || !checkTeamPassword(String(body.current ?? ""), row.password_hash)) {
+      res.status(401).json({ error: "Your current password is incorrect." });
+      return;
+    }
+    const problem = passwordProblem(body.next);
+    if (problem) {
+      res.status(400).json({ error: problem });
+      return;
+    }
+    row.password_hash = hashTeamPassword(body.next);
+    row.password_changed_at = new Date().toISOString();
+    writeAdmins(admins);
+    logActivity("account.password", { by: actor.name });
+    // Issued after the change, so it survives the check in sessionUser().
+    res.json({ token: issueToken(actor) });
+    return;
+  }
+
+  if (op !== "team") {
+    res.status(400).json({ error: `Unknown op "${op}".` });
+    return;
+  }
+  if (actor.role !== "owner") {
+    res.status(403).json({ error: "Only the document owner can manage the team." });
+    return;
+  }
+
+  const admins = readAdmins();
+
+  if (req.method === "GET") {
+    res.json({ items: admins.map(publicAdmin) });
+    return;
+  }
+
+  if (req.method === "POST") {
+    const username = String(body.username ?? "").trim().toLowerCase();
+    const name = String(body.name ?? "").trim();
+    if (!USERNAME_RE.test(username) || username === "owner") {
+      res.status(400).json({ error: "Username must be 3–32 characters: lowercase letters, numbers, dots, dashes or underscores." });
+      return;
+    }
+    if (!name || name.length > 60) {
+      res.status(400).json({ error: "Display name must be 1–60 characters." });
+      return;
+    }
+    const problem = passwordProblem(body.password);
+    if (problem) {
+      res.status(400).json({ error: problem });
+      return;
+    }
+    if (admins.some((a) => a.username === username)) {
+      res.status(409).json({ error: `The username "${username}" is taken.` });
+      return;
+    }
+    const row = {
+      id: crypto.randomUUID(),
+      username,
+      display_name: name,
+      password_hash: hashTeamPassword(body.password),
+      disabled: false,
+      created_by: actor.name,
+      created_at: new Date().toISOString(),
+      last_login_at: null,
+      password_changed_at: null,
+    };
+    writeAdmins([...admins, row]);
+    logActivity("team.add", { username, by: actor.name });
+    res.status(201).json(publicAdmin(row));
+    return;
+  }
+
+  const id = req.method === "DELETE" ? req.query.id : body.id;
+  const row = admins.find((a) => a.id === id);
+  if (!row) {
+    res.status(404).json({ error: "Admin not found." });
+    return;
+  }
+
+  if (req.method === "PATCH") {
+    const changes = [];
+    if (typeof body.name === "string" && body.name.trim()) {
+      row.display_name = body.name.trim().slice(0, 60);
+      changes.push("name");
+    }
+    if (typeof body.disabled === "boolean") {
+      row.disabled = body.disabled;
+      changes.push(body.disabled ? "disabled" : "enabled");
+    }
+    if (typeof body.password === "string") {
+      const problem = passwordProblem(body.password);
+      if (problem) {
+        res.status(400).json({ error: problem });
+        return;
+      }
+      row.password_hash = hashTeamPassword(body.password);
+      row.password_changed_at = new Date().toISOString();
+      changes.push("password reset");
+    }
+    writeAdmins(admins);
+    logActivity("team.update", { username: row.username, changes, by: actor.name });
+    res.json(publicAdmin(row));
+    return;
+  }
+
+  if (req.method === "DELETE") {
+    writeAdmins(admins.filter((a) => a.id !== id));
+    logActivity("team.remove", { username: row.username, by: actor.name });
+    res.json({ ok: true });
+    return;
+  }
+
+  res.status(405).json({ error: "Method not allowed" });
 });
 
 apiApp.get("/api/content", (_req, res) => {
@@ -196,17 +418,35 @@ apiApp.put("/api/content", requireAuth, (req, res) => {
   } catch {
     /* no previous content */
   }
+  // ?sections=a,b merges only those keys into what is published, like
+  // api/content.ts, so two admins editing different sections don't erase
+  // each other with their older copies of the rest.
+  const scope = String(req.query.sections ?? "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter((k) => SECTION_KEYS.includes(k));
+  const next =
+    scope.length > 0 && prev
+      ? { ...prev, ...Object.fromEntries(scope.map((k) => [k, req.body[k]])) }
+      : req.body;
   if (prev) {
-    const sections = changedSections(prev, req.body);
-    if (sections.length > 0) snapshotVersion(prev, sections);
+    const sections = changedSections(prev, next);
+    if (sections.length > 0) snapshotVersion(prev, sections, { by: req.actor.name });
   }
-  writeContentAtomic(JSON.stringify(req.body));
+  writeContentAtomic(JSON.stringify(next));
   res.json({ ok: true });
 });
 
-apiApp.delete("/api/content", requireAuth, (_req, res) => {
+// Uploads (POST ?op=upload) need Supabase Storage, which the local store
+// doesn't have. Answer the way a project without the bucket does, so the
+// admin falls back to an inline image exactly as it would in production.
+apiApp.post("/api/content", requireAuth, (_req, res) => {
+  res.status(503).json({ error: "the local dev server has no image storage." });
+});
+
+apiApp.delete("/api/content", requireAuth, (req, res) => {
   fs.rmSync(DATA_FILE, { force: true });
-  logActivity("content.reset", null);
+  logActivity("content.reset", { by: req.actor.name });
   res.json({ ok: true });
 });
 
@@ -218,7 +458,7 @@ apiApp.delete("/api/content", requireAuth, (_req, res) => {
 
 const VERSIONS_FILE = path.join(DATA_DIR, "versions.json");
 const ACTIVITY_FILE = path.join(DATA_DIR, "activity.json");
-const SECTION_KEYS = ["hero", "about", "skills", "projects", "certs", "timeline", "contact"];
+const SECTION_KEYS = ["hero", "about", "skills", "projects", "certs", "timeline", "contact", "posts", "designs"];
 const SNAPSHOT_COOLDOWN_MS = 5 * 60_000;
 const KEEP_VERSIONS = 20;
 
@@ -254,7 +494,7 @@ function logActivity(action, detail) {
   writeJsonFile(ACTIVITY_FILE, all.slice(0, 200));
 }
 
-function snapshotVersion(content, sections, { bypassCooldown = false } = {}) {
+function snapshotVersion(content, sections, { bypassCooldown = false, by } = {}) {
   const all = readJsonFile(VERSIONS_FILE, []);
   const newest = all[0];
   const newestAge = newest
@@ -269,7 +509,7 @@ function snapshotVersion(content, sections, { bypassCooldown = false } = {}) {
     created_at: new Date().toISOString(),
   });
   writeJsonFile(VERSIONS_FILE, all.slice(0, KEEP_VERSIONS));
-  logActivity("content.publish", { sections });
+  if (by) logActivity("content.publish", { sections, by });
 }
 
 apiApp.get("/api/versions", requireAuth, (req, res) => {
@@ -314,7 +554,7 @@ apiApp.post("/api/versions", requireAuth, (req, res) => {
   }
   if (prev) snapshotVersion(prev, ["pre-restore backup"], { bypassCooldown: true });
   writeContentAtomic(JSON.stringify(row.content));
-  logActivity("content.restore", { version_id: id });
+  logActivity("content.restore", { version_id: id, by: req.actor.name });
   res.json({ ok: true });
 });
 

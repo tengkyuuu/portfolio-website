@@ -75,6 +75,49 @@ export type ContactContent = {
   bookingUrl?: string;
 };
 
+/** A blog post, written and published from the admin. */
+export type BlogPost = {
+  /** Stable identity. Never shown, and survives a slug edit. */
+  id: string;
+  /** URL segment — the post lives at #blog/<slug>. */
+  slug: string;
+  title: string;
+  /** ISO date, yyyy-mm-dd. Posts sort newest first on it. */
+  date: string;
+  /** One or two sentences for the index, search, and link previews. */
+  excerpt: string;
+  /** Markdown subset — see lib/markdown.tsx for exactly what renders. */
+  body: string;
+  tags: string[];
+  cover?: string;
+  /** What is visibly in the cover image. */
+  coverAlt?: string;
+  /** Hidden from the Blog tab and search. Not private: a draft still
+   *  travels in the published content JSON, like everything else. */
+  draft: boolean;
+};
+
+/** One piece in the graphic-design gallery. */
+export type Design = {
+  /** Stable identity, also the #gallery/<id> deep link. */
+  id: string;
+  title: string;
+  /** Storage URL, /public path, or (without storage) a data URL. */
+  image: string;
+  /** What is visibly in the image — not what it was for. */
+  alt: string;
+  /** A sentence or two: the brief, the idea, the outcome. */
+  caption?: string;
+  /** Poster, Logo, Social, Packaging… — drives the filter chips. */
+  category?: string;
+  tools?: string[];
+  year?: string;
+  /** Behance, Dribbble, or the live piece. */
+  link?: string;
+  /** Parked: kept in the admin, off the site. */
+  hidden?: boolean;
+};
+
 export type SiteContent = {
   hero: HeroContent;
   about: AboutContent;
@@ -83,8 +126,15 @@ export type SiteContent = {
   certs: Cert[];
   timeline: TimelineEntry[];
   contact: ContactContent;
+  posts: BlogPost[];
+  designs: Design[];
 };
 
+/**
+ * Posts and designs ship empty. Both are written from the admin; nothing
+ * here should invent a post or a piece of work to fill the space. A tab
+ * with nothing in it stays off the ribbon (see visibleTabs in Nav.tsx).
+ */
 export const DEFAULT_CONTENT: SiteContent = {
   hero: defaultHero,
   about: defaultAbout,
@@ -93,6 +143,8 @@ export const DEFAULT_CONTENT: SiteContent = {
   certs: defaultCerts,
   timeline: defaultTimeline,
   contact: defaultContact,
+  posts: [],
+  designs: [],
 };
 
 function shallowMerge<T extends object>(defaults: T, override?: Partial<T>): T {
@@ -119,6 +171,9 @@ function normalizeContent(stored: Partial<SiteContent>): SiteContent {
       ...stored.contact,
       channels: stored.contact?.channels ?? DEFAULT_CONTENT.contact.channels,
     },
+    // A snapshot published before these existed simply has none.
+    posts: Array.isArray(stored.posts) ? stored.posts : DEFAULT_CONTENT.posts,
+    designs: Array.isArray(stored.designs) ? stored.designs : DEFAULT_CONTENT.designs,
   };
 }
 
@@ -225,19 +280,33 @@ function emitSync(status: SyncStatus) {
 
 const PUSH_DEBOUNCE_MS = 800;
 let pushTimer: number | undefined;
+/** Sections edited since the last push, or "all" for a whole-document
+ *  write (import, reset). */
+let pending: Set<keyof SiteContent> | "all" = new Set();
 
-/** Debounced publish to the server. No-op (reported as "local") when the
- *  admin isn't server-authenticated, e.g. static deploys. */
-function schedulePush(content: SiteContent) {
+/**
+ * Debounced publish to the server. No-op (reported as "local") when the
+ * admin isn't server-authenticated, e.g. static deploys.
+ *
+ * An ordinary edit publishes only the sections it touched, and the server
+ * merges them into what's there. Pushing the whole document let two
+ * admins erase each other — one editing the blog, the other a project,
+ * each re-publishing the other's section as it was when they opened it.
+ */
+function schedulePush(content: SiteContent, sections: (keyof SiteContent)[] | "all") {
   const token = getAdminToken();
   if (!token) {
     emitSync("local");
     return;
   }
+  if (sections === "all" || pending === "all") pending = "all";
+  else sections.forEach((s) => (pending as Set<keyof SiteContent>).add(s));
   emitSync("saving");
   if (pushTimer) window.clearTimeout(pushTimer);
   pushTimer = window.setTimeout(() => {
-    void pushContent(content, token).then((result) => {
+    const scope = pending === "all" ? undefined : [...pending];
+    pending = new Set();
+    void pushContent(content, token, scope).then((result) => {
       emitSync(result === "ok" ? "saved" : result === "offline" ? "local" : "error");
     });
   }, PUSH_DEBOUNCE_MS);
@@ -269,9 +338,10 @@ export async function syncFromServer(): Promise<boolean> {
   return true;
 }
 
+/** Replace the whole document — import and restore. */
 export function saveContent(content: SiteContent): void {
   applyContent(content, "local");
-  schedulePush(content);
+  schedulePush(content, "all");
 }
 
 export function saveSection<K extends keyof SiteContent>(
@@ -280,15 +350,15 @@ export function saveSection<K extends keyof SiteContent>(
 ): SiteContent {
   const current = getContent();
   const next = { ...current, [section]: value };
-  saveContent(next);
+  applyContent(next, "local");
+  schedulePush(next, [section]);
   return next;
 }
 
 export function resetSection<K extends keyof SiteContent>(
   section: K
 ): SiteContent[K] {
-  const current = getContent();
-  saveContent({ ...current, [section]: DEFAULT_CONTENT[section] });
+  saveSection(section, DEFAULT_CONTENT[section]);
   return DEFAULT_CONTENT[section];
 }
 

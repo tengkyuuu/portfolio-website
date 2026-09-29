@@ -4,9 +4,16 @@ import { getExpectedHash, login, sha256Hex } from "../../lib/auth";
 
 type Props = {
   onAuth: () => void;
+  /** Why the visitor is here again, e.g. their session was revoked. */
+  notice?: string | null;
 };
 
-export function PasswordGate({ onAuth }: Props) {
+const ATTEMPT_KEY = "jvc_admin_failed_attempts_v1";
+const LOCK_KEY = "jvc_admin_lock_until_v1";
+const MAX_LOCAL_ATTEMPTS = 5;
+const LOCAL_LOCK_MS = 10 * 60 * 1000;
+
+export function PasswordGate({ onAuth, notice }: Props) {
   const expected = getExpectedHash();
   // The server may have ADMIN_PASSWORD_HASH configured even when the client
   // bundle has no VITE_ hash — ask it before declaring setup incomplete.
@@ -17,37 +24,65 @@ export function PasswordGate({ onAuth }: Props) {
     void fetchHealth().then((h) => setServerAuth(h?.authConfigured ?? false));
   }, [expected]);
 
-  if (expected || serverAuth) return <Gate onAuth={onAuth} />;
+  if (expected || serverAuth) return <Gate onAuth={onAuth} notice={notice} />;
   if (serverAuth === null) return null; // health check in flight
   return <SetupGuide />;
 }
 
 /* ─── Sign-in dialog — modelled on MS Word's "Restrict editing" / sign-in panel ─── */
 
-function Gate({ onAuth }: Props) {
+function Gate({ onAuth, notice }: Props) {
+  const [username, setUsername] = useState("");
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
   const [pending, setPending] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [lockUntil, setLockUntil] = useState(() =>
+    Number(localStorage.getItem(LOCK_KEY) || 0),
+  );
   const inputRef = useRef<HTMLInputElement>(null);
+  const lockedFor = Math.max(0, lockUntil - now);
 
   // Focus the password field on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    if (!lockedFor) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [lockedFor]);
+
   async function attempt() {
     if (pending) return;
+    if (lockUntil > Date.now()) {
+      setError("Too many attempts. Wait a few minutes, then try again.");
+      return;
+    }
     setError(null);
     setPending(true);
-    const result = await login(value);
+    const result = await login(value, username);
     setPending(false);
     if (result.ok) {
+      localStorage.removeItem(ATTEMPT_KEY);
+      localStorage.removeItem(LOCK_KEY);
       onAuth();
       return;
     }
-    setError(result.error);
+    const tries = Number(localStorage.getItem(ATTEMPT_KEY) || 0) + 1;
+    localStorage.setItem(ATTEMPT_KEY, String(tries));
+    if (tries >= MAX_LOCAL_ATTEMPTS) {
+      const until = Date.now() + LOCAL_LOCK_MS;
+      localStorage.setItem(LOCK_KEY, String(until));
+      setLockUntil(until);
+      setNow(Date.now());
+      setError("Too many attempts. Wait a few minutes, then try again.");
+    } else {
+      setError(result.error);
+    }
     setShaking(true);
     setTimeout(() => setShaking(false), 420);
     // Keep what they typed so they can correct, but select it for easy retry
@@ -86,7 +121,10 @@ function Gate({ onAuth }: Props) {
             aria-label="Close"
             className="grid h-7 w-7 place-items-center rounded-sm text-ink-muted hover:bg-ribbon-hover hover:text-ink transition-colors"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 18 }}
+            >
               close
             </span>
           </a>
@@ -106,12 +144,28 @@ function Gate({ onAuth }: Props) {
                 Sign in
               </h1>
               <p className="font-ui text-[12px] text-ink-subtle">
-                Enter the document password to make edits.
+                Enter your password to make edits.
               </p>
             </div>
           </div>
 
-          {/* Password field */}
+          {notice && (
+            <p
+              role="status"
+              className="mb-4 flex items-start gap-1.5 border-l-2 border-word-blue bg-word-blue-light px-3 py-2 font-ui text-[12px] text-ink leading-snug"
+            >
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined shrink-0 mt-px text-word-blue"
+                style={{ fontSize: 14 }}
+              >
+                info
+              </span>
+              <span>{notice}</span>
+            </p>
+          )}
+
+          {/* Username + password */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -119,6 +173,30 @@ function Gate({ onAuth }: Props) {
             }}
             className="space-y-3"
           >
+            <label className="block">
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                  Username
+                </span>
+                <span className="font-ui text-[11px] italic text-ink-subtle">
+                  Leave blank if you own this document
+                </span>
+              </span>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError(null);
+                }}
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                disabled={pending || lockedFor > 0}
+                placeholder="owner"
+                className="mt-1.5 w-full border border-rule rounded-sm bg-paper px-3 py-2.5 text-[14px] text-ink placeholder:text-ink-subtle outline-none transition-colors focus:border-word-blue focus:ring-2 focus:ring-word-blue/20 disabled:opacity-50"
+              />
+            </label>
             <label className="block">
               <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
                 Password
@@ -141,8 +219,8 @@ function Gate({ onAuth }: Props) {
                   }}
                   autoComplete="current-password"
                   spellCheck={false}
-                  disabled={pending}
-                  placeholder="Document password"
+                  disabled={pending || lockedFor > 0}
+                  placeholder="Your password"
                   className="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-[14px] text-ink placeholder:text-ink-subtle outline-none disabled:opacity-50"
                 />
                 <button
@@ -153,7 +231,10 @@ function Gate({ onAuth }: Props) {
                   tabIndex={-1}
                   className="grid w-10 place-items-center text-ink-muted hover:text-ink hover:bg-ribbon-hover border-l border-rule transition-colors"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 18 }}
+                  >
                     {revealed ? "visibility_off" : "visibility"}
                   </span>
                 </button>
@@ -177,10 +258,20 @@ function Gate({ onAuth }: Props) {
 
             <button
               type="submit"
-              disabled={pending || !value}
+              disabled={pending || !value || lockedFor > 0}
               className="w-full inline-flex items-center justify-center gap-2 bg-word-blue hover:bg-word-blue-dark active:scale-[0.99] text-paper font-ui text-[14px] font-semibold py-2.5 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {pending ? (
+              {lockedFor > 0 ? (
+                <>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 16 }}
+                  >
+                    lock_clock
+                  </span>
+                  Try again in {Math.ceil(lockedFor / 60000)} min
+                </>
+              ) : pending ? (
                 <>
                   <span
                     className="material-symbols-outlined animate-spin"
@@ -193,7 +284,10 @@ function Gate({ onAuth }: Props) {
               ) : (
                 <>
                   Sign in
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 16 }}
+                  >
                     arrow_forward
                   </span>
                 </>
@@ -207,13 +301,16 @@ function Gate({ onAuth }: Props) {
               href="/"
               className="inline-flex items-center gap-1 text-ink-subtle hover:text-ink"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 13 }}
+              >
                 arrow_back
               </span>
               Back to portfolio
             </a>
             <span className="text-ink-subtle">
-              Only the document owner can edit.
+              For the owner and invited admins.
             </span>
           </div>
         </div>
@@ -278,7 +375,10 @@ function SetupGuide() {
             aria-label="Close"
             className="grid h-7 w-7 place-items-center rounded-sm text-ink-muted hover:bg-ribbon-hover hover:text-ink transition-colors"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 18 }}
+            >
               close
             </span>
           </a>
@@ -317,7 +417,10 @@ function SetupGuide() {
                   tabIndex={-1}
                   className="grid w-10 place-items-center text-ink-muted hover:text-ink border-l border-rule"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 18 }}
+                  >
                     {revealed ? "visibility_off" : "visibility"}
                   </span>
                 </button>
@@ -358,11 +461,12 @@ function SetupGuide() {
                 3 · Paste into your env
               </div>
               <pre className="font-ui text-[12px] text-ink overflow-x-auto">
-{`VITE_ADMIN_PASSWORD_HASH=${hash || "<your-hash-here>"}`}
+                {`VITE_ADMIN_PASSWORD_HASH=${hash || "<your-hash-here>"}`}
               </pre>
               <p className="font-ui text-[11px] text-ink-subtle mt-2">
                 On Vercel: Project → Settings → Environment Variables. Apply to{" "}
-                <b>Production · Preview · Development</b>, then trigger a fresh deploy.
+                <b>Production · Preview · Development</b>, then trigger a fresh
+                deploy.
               </p>
             </div>
           </div>
@@ -371,7 +475,10 @@ function SetupGuide() {
             href="/"
             className="mt-6 inline-flex items-center gap-1 font-ui text-[12px] text-ink-subtle hover:text-ink"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 14 }}
+            >
               arrow_back
             </span>
             Back to portfolio

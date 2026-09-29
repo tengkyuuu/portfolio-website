@@ -202,7 +202,32 @@ const ACTION_META: Record<string, { icon: string; describe: (d: Record<string, u
     icon: "delete",
     describe: () => "Deleted an inquiry",
   },
+  "team.add": {
+    icon: "person_add",
+    describe: (d) => `Added @${String(d?.username ?? "…")} as an admin`,
+  },
+  "team.update": {
+    icon: "manage_accounts",
+    describe: (d) => {
+      const changes = Array.isArray(d?.changes) ? (d?.changes as string[]) : [];
+      return `Updated @${String(d?.username ?? "…")}${changes.length ? ` — ${changes.join(", ")}` : ""}`;
+    },
+  },
+  "team.remove": {
+    icon: "person_remove",
+    describe: (d) => `Removed @${String(d?.username ?? "…")}`,
+  },
+  "account.password": {
+    icon: "key",
+    describe: () => "Changed their password",
+  },
 };
+
+/** Who did it — written by the server from the session, so it can't be
+ *  claimed. Rows from before team accounts carry no name. */
+function actorOf(detail: Record<string, unknown> | null): string | null {
+  return typeof detail?.by === "string" && detail.by ? detail.by : null;
+}
 
 function ActivityCard() {
   const [items, setItems] = useState<ActivityRow[]>([]);
@@ -229,7 +254,7 @@ function ActivityCard() {
   return (
     <Card
       title="Track Changes"
-      description="Every content publish, restore, reset, and inbox action — written server-side, so the trail can't be skipped."
+      description="Every publish, restore, reset, inbox and team action, and who made it — written server-side, so the trail can't be skipped."
       actions={
         <Button variant="ghost" icon="refresh" onClick={() => void load()}>
           Refresh
@@ -265,6 +290,11 @@ function ActivityCard() {
                   <p className="font-ui text-[13px] text-ink">
                     {meta.describe(row.detail)}
                   </p>
+                  {actorOf(row.detail) && (
+                    <p className="font-ui text-[11px] text-ink-subtle">
+                      by {actorOf(row.detail)}
+                    </p>
+                  )}
                 </div>
                 <span
                   className="font-ui text-[11px] text-ink-subtle tabular-nums shrink-0"

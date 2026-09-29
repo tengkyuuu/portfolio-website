@@ -7,6 +7,10 @@ import crypto from "node:crypto";
  * so the log can't be forgotten or forged by a client.
  */
 
+/* ---- admin session: identical in every authed handler (api/sessions.test.ts) ---- */
+
+type Actor = { id: string; name: string; role: "owner" | "admin" };
+
 function extractBearer(h: string | string[] | undefined): string | null {
   const s = Array.isArray(h) ? h[0] : h;
   if (!s) return null;
@@ -14,30 +18,87 @@ function extractBearer(h: string | string[] | undefined): string | null {
   return m ? m[1].trim() : null;
 }
 
-function verifyToken(token: string | null | undefined): boolean {
-  if (!token) return false;
+/** Check the HMAC and expiry; the claims, or null. */
+function readToken(
+  token: string | null | undefined
+): (Actor & { iat: number }) | null {
   const secret = process.env.ADMIN_TOKEN_SECRET;
-  if (!secret) return false;
+  if (!token || !secret) return null;
   const dot = token.indexOf(".");
-  if (dot < 0) return false;
+  if (dot < 0) return null;
   const body = token.slice(0, dot);
-  const sig = token.slice(dot + 1);
   const expected = crypto
     .createHmac("sha256", secret)
     .update(body)
     .digest("base64url");
-  const a = new Uint8Array(Buffer.from(sig));
+  const a = new Uint8Array(Buffer.from(token.slice(dot + 1)));
   const b = new Uint8Array(Buffer.from(expected));
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
   try {
-    const payload = JSON.parse(
-      Buffer.from(body, "base64url").toString("utf8")
-    ) as { exp: number };
-    return payload.exp > Math.floor(Date.now() / 1000);
+    const p = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as {
+      exp?: number;
+      iat?: number;
+      sub?: string;
+      name?: string;
+    };
+    if (typeof p.exp !== "number" || p.exp <= Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+    const iat = typeof p.iat === "number" ? p.iat : 0;
+    // Tokens minted before team accounts carry no subject, and only the
+    // owner could sign in then.
+    if (!p.sub || p.sub === "owner") {
+      return { id: "owner", name: p.name || "Owner", role: "owner", iat };
+    }
+    return { id: p.sub, name: p.name || "Admin", role: "admin", iat };
   } catch {
-    return false;
+    return null;
   }
 }
+
+/**
+ * Who is calling, or null. The owner's token is trusted on its signature.
+ * A team admin's is re-checked against admin_users on every call, so
+ * removing, disabling or resetting an admin takes effect at once rather
+ * than when their token expires. Fails closed: if the table can't be
+ * read, a team token is refused.
+ */
+async function authorize(req: VercelRequest): Promise<Actor | null> {
+  const claims = readToken(extractBearer(req.headers.authorization));
+  if (!claims) return null;
+  const { iat, ...actor } = claims;
+  if (actor.role === "owner") return actor;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await sb
+      .from("admin_users")
+      .select("display_name, disabled, password_changed_at")
+      .eq("id", actor.id)
+      .maybeSingle();
+    const row = data as {
+      display_name: string;
+      disabled: boolean;
+      password_changed_at: string | null;
+    } | null;
+    if (error || !row || row.disabled) return null;
+    // A password reset signs out every session issued before it.
+    const changed = row.password_changed_at
+      ? Math.floor(Date.parse(row.password_changed_at) / 1000)
+      : 0;
+    if (changed > iat) return null;
+    return { ...actor, name: row.display_name };
+  } catch {
+    return null;
+  }
+}
+
+/* ---- end admin session ---- */
 
 export default async function handler(
   req: VercelRequest,
@@ -50,8 +111,7 @@ export default async function handler(
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Content store is not configured." });
   }
-  const token = extractBearer(req.headers.authorization);
-  if (!verifyToken(token)) {
+  if (!(await authorize(req))) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

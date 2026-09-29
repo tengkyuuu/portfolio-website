@@ -52,6 +52,61 @@ export async function compressImage(
   }
 }
 
+/** Types the media bucket accepts (migration 007). */
+const STORABLE = new Set(["image/webp", "image/jpeg", "image/png", "image/gif", "image/avif"]);
+/** An original under this size and box is uploaded untouched. */
+const KEEP_ORIGINAL_BYTES = 3 * 1024 * 1024;
+
+/**
+ * Prepare an image for Storage, as a Blob rather than a data URL.
+ *
+ * A designer's own export is usually better than anything a canvas will
+ * re-encode, so an original that already fits the box and weighs under
+ * 3 MB is sent as-is. So is any GIF — a canvas keeps only its first
+ * frame. Everything else is downscaled and encoded as WebP, which keeps
+ * transparency (a logo on a transparent PNG would come out of JPEG with a
+ * black background); a browser that can't encode WebP falls back to PNG
+ * for a PNG source and JPEG for the rest.
+ */
+export async function encodeImage(
+  file: File,
+  options: CompressOptions = {}
+): Promise<Blob> {
+  const maxDim = options.maxDimension ?? DEFAULT_MAX_DIMENSION;
+  const quality = options.quality ?? DEFAULT_QUALITY;
+  if (!file.type.startsWith("image/")) throw new Error("Not an image file.");
+  if (file.type === "image/gif") return file;
+
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImage(url);
+    const fits = img.naturalWidth <= maxDim && img.naturalHeight <= maxDim;
+    if (fits && STORABLE.has(file.type) && file.size <= KEEP_ORIGINAL_BYTES) {
+      return file;
+    }
+    const { width, height } = fitInside(img.naturalWidth, img.naturalHeight, maxDim);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas 2D context unavailable.");
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, width, height);
+    const webp = await toBlob(canvas, "image/webp", quality);
+    if (webp?.type === "image/webp") return webp;
+    const fallbackType = file.type === "image/png" ? "image/png" : "image/jpeg";
+    const blob = await toBlob(canvas, fallbackType, quality);
+    if (!blob) throw new Error("Couldn't encode that image.");
+    return blob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function toBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();

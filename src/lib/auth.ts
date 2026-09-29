@@ -10,34 +10,59 @@
  * In that mode edits persist to localStorage only — visitors won't see them.
  */
 
-import { serverLogin } from "./api";
+import { serverLogin, type AdminUser } from "./api";
+
+export type { AdminUser };
 
 const AUTH_KEY = "jvc_admin_auth_v1";
 const TOKEN_KEY = "jvc_admin_token_v1";
 const MODE_KEY = "jvc_admin_mode_v1";
+const EXPIRES_KEY = "jvc_admin_expires_v1";
+const USER_KEY = "jvc_admin_user_v1";
+const CLIENT_TTL_MS = 4 * 60 * 60 * 1000;
+
+const OWNER: AdminUser = { id: "owner", username: "owner", name: "Owner", role: "owner" };
 
 export type AuthMode = "server" | "local";
 
 export type LoginResult =
-  | { ok: true; mode: AuthMode }
-  | { ok: false; error: string };
+  { ok: true; mode: AuthMode } | { ok: false; error: string };
 
-export async function login(password: string): Promise<LoginResult> {
+export async function login(password: string, username = ""): Promise<LoginResult> {
   if (!password) return { ok: false, error: "Enter your password." };
+  const name = username.trim().toLowerCase();
 
-  const result = await serverLogin(password);
+  const result = await serverLogin(password, name);
 
   // A real server accepted the password.
   if (result.reachable && result.ok) {
     sessionStorage.setItem(AUTH_KEY, "1");
     sessionStorage.setItem(TOKEN_KEY, result.token);
     sessionStorage.setItem(MODE_KEY, "server");
+    sessionStorage.setItem(EXPIRES_KEY, String(Date.now() + CLIENT_TTL_MS));
+    sessionStorage.setItem(USER_KEY, JSON.stringify(result.user));
     return { ok: true, mode: "server" };
   }
 
-  // A real API explicitly rejected the password (401) — trust it, no fallback.
-  if (result.reachable && !result.ok && result.status === 401) {
+  // A real API explicitly rejected the sign-in — trust it, no fallback.
+  // 403 is a disabled team account; 429 is the rate limit.
+  if (
+    result.reachable &&
+    !result.ok &&
+    (result.status === 401 || result.status === 403 || result.status === 429)
+  ) {
     return { ok: false, error: result.error || "Incorrect password." };
+  }
+
+  // Team accounts live on the server; the offline fallback below only
+  // knows the owner's password hash.
+  if (name && name !== "owner") {
+    return {
+      ok: false,
+      error: result.reachable
+        ? result.error
+        : "Team accounts need the server. Check your connection and try again.",
+    };
   }
 
   // Otherwise there's no working content API: a static deploy returns 404/405
@@ -55,11 +80,44 @@ export async function login(password: string): Promise<LoginResult> {
   if (!ok) return { ok: false, error: "Incorrect password." };
   sessionStorage.setItem(AUTH_KEY, "1");
   sessionStorage.setItem(MODE_KEY, "local");
+  sessionStorage.setItem(EXPIRES_KEY, String(Date.now() + CLIENT_TTL_MS));
+  sessionStorage.setItem(USER_KEY, JSON.stringify(OWNER));
   return { ok: true, mode: "local" };
 }
 
 export function getAdminToken(): string | null {
   return sessionStorage.getItem(TOKEN_KEY);
+}
+
+/** Replace the stored token — after changing your own password, the
+ *  server refuses every older token, this session's included. */
+export function setAdminToken(token: string): void {
+  sessionStorage.setItem(TOKEN_KEY, token);
+  sessionStorage.setItem(EXPIRES_KEY, String(Date.now() + CLIENT_TTL_MS));
+}
+
+/** The signed-in user. A session from before team accounts has no record
+ *  and was necessarily the owner's. */
+export function getAdminUser(): AdminUser {
+  try {
+    const raw = sessionStorage.getItem(USER_KEY);
+    const parsed = raw ? (JSON.parse(raw) as Partial<AdminUser>) : null;
+    if (parsed?.id && parsed.name && (parsed.role === "owner" || parsed.role === "admin")) {
+      return {
+        id: parsed.id,
+        username: parsed.username ?? "",
+        name: parsed.name,
+        role: parsed.role,
+      };
+    }
+  } catch {
+    /* fall through */
+  }
+  return OWNER;
+}
+
+export function setAdminUser(user: AdminUser): void {
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 export function getAuthMode(): AuthMode | null {
@@ -97,15 +155,24 @@ export async function checkPassword(input: string): Promise<boolean> {
 }
 
 export function isAdminAuthed(): boolean {
-  return sessionStorage.getItem(AUTH_KEY) === "1";
+  if (sessionStorage.getItem(AUTH_KEY) !== "1") return false;
+  const expires = Number(sessionStorage.getItem(EXPIRES_KEY));
+  if (!Number.isFinite(expires) || expires <= Date.now()) {
+    clearAdminAuth();
+    return false;
+  }
+  return true;
 }
 
 export function setAdminAuthed(): void {
   sessionStorage.setItem(AUTH_KEY, "1");
+  sessionStorage.setItem(EXPIRES_KEY, String(Date.now() + CLIENT_TTL_MS));
 }
 
 export function clearAdminAuth(): void {
   sessionStorage.removeItem(AUTH_KEY);
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(MODE_KEY);
+  sessionStorage.removeItem(EXPIRES_KEY);
+  sessionStorage.removeItem(USER_KEY);
 }

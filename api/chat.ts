@@ -100,6 +100,10 @@ function clientIp(headers: Record<string, string | string[] | undefined>): strin
    this file: Vercel's dependency tracer bundles self-contained functions
    reliably and shared folders it does not. Mirrors api/inquiries.ts. */
 
+/* ---- admin session: identical in every authed handler (api/sessions.test.ts) ---- */
+
+type Actor = { id: string; name: string; role: "owner" | "admin" };
+
 function extractBearer(h: string | string[] | undefined): string | null {
   const s = Array.isArray(h) ? h[0] : h;
   if (!s) return null;
@@ -107,33 +111,90 @@ function extractBearer(h: string | string[] | undefined): string | null {
   return m ? m[1].trim() : null;
 }
 
-function verifyToken(token: string | null | undefined): boolean {
-  if (!token) return false;
+/** Check the HMAC and expiry; the claims, or null. */
+function readToken(
+  token: string | null | undefined
+): (Actor & { iat: number }) | null {
   const secret = process.env.ADMIN_TOKEN_SECRET;
-  if (!secret) return false;
+  if (!token || !secret) return null;
   const dot = token.indexOf(".");
-  if (dot < 0) return false;
+  if (dot < 0) return null;
   const body = token.slice(0, dot);
-  const sig = token.slice(dot + 1);
   const expected = crypto
     .createHmac("sha256", secret)
     .update(body)
     .digest("base64url");
-  const a = new Uint8Array(Buffer.from(sig));
+  const a = new Uint8Array(Buffer.from(token.slice(dot + 1)));
   const b = new Uint8Array(Buffer.from(expected));
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
   try {
-    const payload = JSON.parse(
-      Buffer.from(body, "base64url").toString("utf8")
-    ) as { exp: number };
-    return payload.exp > Math.floor(Date.now() / 1000);
+    const p = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as {
+      exp?: number;
+      iat?: number;
+      sub?: string;
+      name?: string;
+    };
+    if (typeof p.exp !== "number" || p.exp <= Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+    const iat = typeof p.iat === "number" ? p.iat : 0;
+    // Tokens minted before team accounts carry no subject, and only the
+    // owner could sign in then.
+    if (!p.sub || p.sub === "owner") {
+      return { id: "owner", name: p.name || "Owner", role: "owner", iat };
+    }
+    return { id: p.sub, name: p.name || "Admin", role: "admin", iat };
   } catch {
-    return false;
+    return null;
   }
 }
 
-function isAdmin(req: VercelRequest): boolean {
-  return verifyToken(extractBearer(req.headers.authorization));
+/**
+ * Who is calling, or null. The owner's token is trusted on its signature.
+ * A team admin's is re-checked against admin_users on every call, so
+ * removing, disabling or resetting an admin takes effect at once rather
+ * than when their token expires. Fails closed: if the table can't be
+ * read, a team token is refused.
+ */
+async function authorize(req: VercelRequest): Promise<Actor | null> {
+  const claims = readToken(extractBearer(req.headers.authorization));
+  if (!claims) return null;
+  const { iat, ...actor } = claims;
+  if (actor.role === "owner") return actor;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await sb
+      .from("admin_users")
+      .select("display_name, disabled, password_changed_at")
+      .eq("id", actor.id)
+      .maybeSingle();
+    const row = data as {
+      display_name: string;
+      disabled: boolean;
+      password_changed_at: string | null;
+    } | null;
+    if (error || !row || row.disabled) return null;
+    // A password reset signs out every session issued before it.
+    const changed = row.password_changed_at
+      ? Math.floor(Date.parse(row.password_changed_at) / 1000)
+      : 0;
+    if (changed > iat) return null;
+    return { ...actor, name: row.display_name };
+  } catch {
+    return null;
+  }
+}
+
+/* ---- end admin session ---- */
+
+async function isAdmin(req: VercelRequest): Promise<boolean> {
+  return (await authorize(req)) !== null;
 }
 
 /* ------------------------------ live chat -------------------------------- */
@@ -326,7 +387,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "GET") {
     // Admin: the session list behind the Chat panel's badge.
     if (firstQuery(req.query.sessions)) {
-      if (!isAdmin(req)) return res.status(401).json({ error: "Unauthorized" });
+      if (!(await isAdmin(req))) return res.status(401).json({ error: "Unauthorized" });
       return adminSessionList(res);
     }
     // A session id present means "give me this transcript" — the admin
@@ -334,7 +395,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sessionParam = firstQuery(req.query.session);
     if (sessionParam) {
       const asAdmin = Boolean(firstQuery(req.query.admin));
-      if (asAdmin && !isAdmin(req)) {
+      if (asAdmin && !(await isAdmin(req))) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       return readTranscript(res, sessionParam, firstQuery(req.query.after), asAdmin);
@@ -352,7 +413,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Admin actions never touch Gemini, so they work even with no API key.
   if (action === "reply" || action === "handback") {
-    if (!isAdmin(req)) return res.status(401).json({ error: "Unauthorized" });
+    if (!(await isAdmin(req))) return res.status(401).json({ error: "Unauthorized" });
     if (!isStoreConfigured()) {
       return res.status(503).json({ error: "No content store configured." });
     }

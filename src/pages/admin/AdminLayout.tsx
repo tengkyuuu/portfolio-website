@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { SYNC_EVENT, type SyncStatus } from "../../lib/content";
-import { clearAdminAuth } from "../../lib/auth";
+import { clearAdminAuth, getAdminUser } from "../../lib/auth";
+import { getContent } from "../../lib/content";
 import { fetchInquiries } from "../../lib/inquiry-api";
 import { fetchChatSessions } from "../../lib/chat-api";
 import { Button } from "./ui";
@@ -54,6 +55,7 @@ export type SectionId =
   | "inbox"
   | "chat"
   | "history"
+  | "team"
   | "tools";
 
 export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string }[] = [
@@ -66,6 +68,7 @@ export const SECTIONS: { id: SectionId; label: string; icon: string; tab: string
   { id: "inbox", label: "Inbox", icon: "inbox", tab: "Messages from the contact form" },
   { id: "chat", label: "Chat", icon: "forum", tab: "Live conversations — reply as yourself" },
   { id: "history", label: "History", icon: "history", tab: "Version history & track changes" },
+  { id: "team", label: "Team", icon: "group", tab: "Who can edit, and your account" },
   { id: "tools", label: "Tools", icon: "settings", tab: "Backup, import, danger zone" },
 ];
 
@@ -261,6 +264,7 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
 
         <div className="flex items-center gap-2">
           <SavedPill sync={sync} />
+          <UserChip onOpen={() => onChange("team")} />
           <a
             href="/"
             target="_blank"
@@ -288,7 +292,7 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
                 item={s}
                 active={active === s.id}
                 onClick={() => onChange(s.id)}
-                topDivider={s.id === "tools" && i > 0}
+                topDivider={s.id === "team" && i > 0}
                 badge={badgeFor(s.id, inboxUnread, chatWaiting)}
               />
             ))}
@@ -479,6 +483,54 @@ export function AdminLayout({ active, onChange, onLogout, children }: Props) {
         </main>
       </div>
     </div>
+  );
+}
+
+/** Initials for an avatar: first letters of the first two words. */
+export function initials(name: string): string {
+  // Letters and digits only: "Maria (test)" is MT, not M(.
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter(Boolean);
+  return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? "?").slice(0, 2)).toUpperCase();
+}
+
+/** Who is signed in — Word's account button, top right. Opens Team. */
+/** The name to show for whoever is signed in. The owner has no account
+ *  record, so their name comes from the document itself. */
+export function displayName(user: { role: string; name: string }): string {
+  if (user.role !== "owner") return user.name;
+  const hero = getContent().hero.name.trim().split(/\s+/).slice(0, 2).join(" ");
+  return hero || user.name;
+}
+
+function UserChip({ onOpen }: { onOpen: () => void }) {
+  const user = getAdminUser();
+  const name = displayName(user);
+  const role = user.role === "owner" ? "Owner" : "Admin";
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Signed in as ${name}, ${role}. Open team and account settings`}
+      title={`${name} · ${role}`}
+      className="inline-flex items-center gap-2 rounded-sm px-1.5 py-1 hover:bg-ribbon-hover transition-colors"
+    >
+      <span
+        aria-hidden="true"
+        className="grid h-7 w-7 place-items-center rounded-full bg-word-blue text-paper font-ui text-[11px] font-semibold"
+      >
+        {initials(name)}
+      </span>
+      <span className="hidden lg:flex flex-col items-start leading-tight">
+        <span className="font-ui text-[12px] font-medium text-ink">{name}</span>
+        <span className="font-ui text-[10px] uppercase tracking-[0.12em] text-ink-subtle">
+          {role}
+        </span>
+      </span>
+    </button>
   );
 }
 

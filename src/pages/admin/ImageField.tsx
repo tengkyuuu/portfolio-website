@@ -1,25 +1,41 @@
 import { useRef, useState } from "react";
-import { compressImage, dataUrlBytes, formatBytes } from "../../lib/image";
+import { dataUrlBytes, formatBytes } from "../../lib/image";
+import { isInlineImage, uploadImage, type UploadFolder } from "../../lib/upload";
 import { Button, Field, Input } from "./ui";
 
 type Props = {
   image?: string;
   alt?: string;
   onChange: (next: { image?: string; alt?: string }) => void;
+  /** Where uploads are filed in the media bucket. */
+  folder?: UploadFolder;
+  /** Alt-text placeholder — describe what's visibly in the picture. */
+  altPlaceholder?: string;
+  uploadLabel?: string;
 };
 
-export function ImageField({ image, alt, onChange }: Props) {
+export function ImageField({
+  image,
+  alt,
+  onChange,
+  folder = "projects",
+  altPlaceholder = "Smart Fan captive-portal control panel screenshot",
+  uploadLabel = "Upload screenshot",
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<"idle" | "working">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
     setError(null);
+    setNote(null);
     setStatus("working");
     try {
-      const dataUrl = await compressImage(file);
-      onChange({ image: dataUrl, alt });
+      const result = await uploadImage(file, folder);
+      onChange({ image: result.url, alt });
+      if (result.note) setNote(result.note);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't process image.");
     } finally {
@@ -28,8 +44,9 @@ export function ImageField({ image, alt, onChange }: Props) {
     }
   }
 
-  const size = image && image.startsWith("data:") ? dataUrlBytes(image) : 0;
-  const isUrl = image && !image.startsWith("data:");
+  const inlineImage = isInlineImage(image);
+  const size = image && inlineImage ? dataUrlBytes(image) : 0;
+  const isUrl = image && !inlineImage;
 
   return (
     <div className="space-y-3">
@@ -52,7 +69,7 @@ export function ImageField({ image, alt, onChange }: Props) {
             Remove
           </button>
           <div className="absolute bottom-2 left-2 font-ui text-[10px] uppercase tracking-[0.15em] bg-paper/85 text-ink-muted px-1.5 py-0.5 rounded-sm border border-rule">
-            {isUrl ? "URL reference" : `Uploaded · ${formatBytes(size)}`}
+            {isUrl ? "Linked image" : `Inline · ${formatBytes(size)}`}
           </div>
         </div>
       ) : (
@@ -66,7 +83,7 @@ export function ImageField({ image, alt, onChange }: Props) {
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
           onChange={(e) => handleFile(e.target.files?.[0])}
           className="sr-only"
         />
@@ -76,7 +93,7 @@ export function ImageField({ image, alt, onChange }: Props) {
           onClick={() => fileRef.current?.click()}
           disabled={status === "working"}
         >
-          {status === "working" ? "Compressing…" : "Upload screenshot"}
+          {status === "working" ? "Uploading…" : uploadLabel}
         </Button>
         <span className="font-ui text-[11px] text-ink-subtle">or paste URL</span>
         <div className="flex-1 min-w-[12rem]">
@@ -91,23 +108,29 @@ export function ImageField({ image, alt, onChange }: Props) {
       {error && (
         <p className="font-ui text-[12px] text-red-600 dark:text-red-400">{error}</p>
       )}
+      {note && (
+        <p className="font-ui text-[12px] text-ink-muted">
+          Saved inline instead of to storage — {note}
+        </p>
+      )}
 
       {/* Alt text */}
       <Field
         label="Alt text"
-        hint="Describes the screenshot for accessibility + when the image fails to load"
+        hint="Describe what's visibly in the picture"
       >
         <Input
           value={alt ?? ""}
           onChange={(v) => onChange({ image, alt: v || undefined })}
-          placeholder="Smart Fan captive-portal control panel screenshot"
+          placeholder={altPlaceholder}
         />
       </Field>
 
       <p className="font-ui text-[11px] text-ink-subtle">
-        Uploads are resized to fit 1600 px and saved as JPEG. They live in this
-        browser's localStorage — back up the content (Tools → Copy JSON) if you
-        want them on other devices.
+        Uploads go to the site's image storage and are linked from the page.
+        Without storage they're compressed and saved inside the content
+        itself, which every visitor downloads — fine for one or two, heavy
+        for a gallery.
       </p>
     </div>
   );

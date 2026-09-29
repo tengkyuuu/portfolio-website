@@ -167,3 +167,48 @@ describe("syncFromServer", () => {
     await expect(mod.syncFromServer()).resolves.toBe(false);
   });
 });
+
+describe("publishing", () => {
+  // Two admins, each editing a different section from their own copy,
+  // must not re-publish each other's sections as they were when loaded.
+  // A whole-document push did exactly that.
+  it("publishes only the section an edit touched", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    sessionStorage.setItem("jvc_admin_token_v1", "token");
+    try {
+      const mod = await freshModule();
+      mod.saveSection("posts", []);
+      mod.saveSection("designs", []);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).toBe("/api/content?sections=posts,designs");
+      expect(init.method).toBe("PUT");
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      sessionStorage.clear();
+    }
+  });
+
+  it("publishes the whole document for an import", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    sessionStorage.setItem("jvc_admin_token_v1", "token");
+    try {
+      const mod = await freshModule();
+      mod.saveSection("posts", []);
+      mod.saveContent(structuredClone(mod.DEFAULT_CONTENT));
+      await vi.advanceTimersByTimeAsync(1000);
+      const [url] = fetchMock.mock.calls[0] as unknown as [string];
+      expect(url).toBe("/api/content");
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      sessionStorage.clear();
+    }
+  });
+});
