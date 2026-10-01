@@ -8,8 +8,17 @@ try {
   const page = await context.newPage();
   await page.goto(origin, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+  // initPwa reloads once on first activation; let that finish before
+  // initiating the two repeat visits we want to verify.
+  await page.waitForFunction(() => performance.getEntriesByType("navigation")[0]?.type === "reload");
+  await page.waitForLoadState("load");
   for (let visit = 1; visit <= 2; visit++) {
-    await page.reload({ waitUntil: "load" });
+    // First activation can trigger the app's own controllerchange reload
+    // at the same time. Wait for that navigation if it supersedes ours.
+    await page.reload({ waitUntil: "load" }).catch(error => {
+      if (!error.message.includes("ERR_ABORTED")) throw error;
+    });
+    await page.waitForLoadState("load");
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => [...document.fonts].some(font => font.family.replaceAll('"', "") === "Material Symbols Outlined" && font.status === "loaded"));
     const state = await page.evaluate(() => ({

@@ -182,11 +182,10 @@ describe("inviting a team admin", () => {
   });
 
   it("refuses without SITE_URL — there'd be no working link to send", async () => {
-    vi.unstubAllEnvs();
-    vi.stubEnv("ADMIN_PASSWORD_HASH", crypto.createHash("sha256").update(OWNER_PASSWORD).digest("hex"));
-    vi.stubEnv("ADMIN_TOKEN_SECRET", SECRET);
-    vi.stubEnv("SUPABASE_URL", "http://supabase.test");
-    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
+    // Restoring the environment reintroduces SITE_URL on the CI runner.
+    // Explicitly remove both supported origins for this missing-config case.
+    vi.stubEnv("SITE_URL", "");
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "");
     const owner = await ownerToken();
     const res = await call({
       method: "POST",
