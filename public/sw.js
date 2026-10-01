@@ -26,7 +26,7 @@
  * shipped defaults once the cached copy passes API_MAX_STALE_MS.
  */
 
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 const SHELL_CACHE = `pd-shell-${CACHE_VERSION}`;
 const API_CACHE = `pd-api-${CACHE_VERSION}`;
 const ASSET_CACHE = `pd-asset-${CACHE_VERSION}`;
@@ -102,12 +102,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Same-origin assets or well-known CDNs → cache-first with TTL
+  // Worker fetch() uses connect-src even for CSS, fonts, and images.
+  // Keep these exact origins permitted in vercel.json's connect-src.
   const isAsset =
     url.origin === self.location.origin ||
-    /(jsdelivr\.net|googleapis\.com|gstatic\.com|googleusercontent\.com)$/.test(
-      url.hostname
-    );
+    ["https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"].includes(url.origin);
   if (isAsset) {
     event.respondWith(cacheFirstTTL(req, ASSET_CACHE, ASSET_TTL_MS));
     return;
