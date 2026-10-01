@@ -31,13 +31,14 @@ export function createFakeSupabase(db: FakeDb) {
     let op: "select" | "insert" | "update" | "delete" | "upsert" = "select";
     let payload: Row | Row[] | undefined;
     const filters: [string, unknown][] = [];
+    const after: [string, string][] = [];
     let order: { col: string; asc: boolean } | null = null;
     let window: [number, number] | null = null;
     let returning = true;
     let columns = "*";
 
     const matching = () =>
-      db[table].filter((r) => filters.every(([c, v]) => r[c] === v));
+      db[table].filter((r) => filters.every(([c, v]) => r[c] === v) && after.every(([c, v]) => String(r[c]) > v));
 
     /** Honour the column list, so a test can prove a column is never sent. */
     const project = (rows: Row[]): Row[] => {
@@ -65,7 +66,7 @@ export function createFakeSupabase(db: FakeDb) {
               return { data: null, error: { code: "23505", message: "duplicate key" } };
             }
           }
-          const row = { id: uuid(), created_at: new Date().toISOString(), ...p };
+          const row = { ...(table === "admin_users" ? { disabled: false } : {}), id: uuid(), created_at: new Date().toISOString(), ...p };
           rows.push(row);
           made.push(row);
         }
@@ -125,6 +126,7 @@ export function createFakeSupabase(db: FakeDb) {
         filters.push([col, val]);
         return builder;
       },
+      gt(col: string, val: string) { after.push([col, val]); return builder; },
       order(col: string, opts?: { ascending?: boolean }) {
         order = { col, asc: opts?.ascending !== false };
         return builder;
@@ -176,7 +178,7 @@ export function createFakeSupabase(db: FakeDb) {
     },
   };
 
-  return { from, storage };
+  return { from, storage, rpc: async () => ({ data: true, error: null }) };
 }
 
 /* ---------------- request / response doubles ---------------- */

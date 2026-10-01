@@ -369,23 +369,15 @@ ${summary}`;
  * same object to dist/content-defaults.json at build time instead, so
  * there is one source of truth and no import graph to get wrong.
  */
-async function shippedContent(req: VercelRequest): Promise<unknown> {
-  // The public host the visitor actually reached, not VERCEL_URL: that
-  // names the per-deployment URL, which Deployment Protection can gate
-  // behind auth — the fetch then gets an HTML login page, not our JSON.
-  const host =
-    (req.headers["x-forwarded-host"] as string | undefined) ||
-    req.headers.host ||
-    process.env.VERCEL_URL;
-  if (!host) return {};
-  const proto = host.startsWith("localhost") ? "http" : "https";
+async function shippedContent(): Promise<unknown> {
+  const origin = process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://engrjamescalunsag.vercel.app");
   try {
-    const res = await fetch(`${proto}://${host}/content-defaults.json`);
+    const url = new URL("/content-defaults.json", origin);
+    if (url.protocol !== "https:" || url.username || url.password) return {};
+    const res = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(5000) });
     return res.ok ? await res.json() : {};
-  } catch {
-    // Grounding on nothing is bad; failing the whole answer is worse.
-    return {};
-  }
+  } catch { return {}; }
 }
 
 /* --------------------------------- handler ------------------------------- */
@@ -412,7 +404,33 @@ function validateMessages(body: unknown): ChatMessage[] | null {
   return total > 9000 ? null : trimmed;
 }
 
+/* ---- shared security limiter (keep copies identical) ---- */
+async function consumeLimit(key: string, limit: number, seconds: number): Promise<boolean | null> {
+  if (!isStoreConfigured() || !process.env.ADMIN_TOKEN_SECRET) return null;
+  try {
+    const client = await getSupabase();
+    const digest = crypto.createHmac("sha256", process.env.ADMIN_TOKEN_SECRET).update(key).digest("hex");
+    const { data, error } = await client.rpc("consume_security_limit", {
+      p_key: digest, p_limit: limit, p_window_seconds: seconds,
+    });
+    return error || typeof data !== "boolean" ? null : data;
+  } catch { return null; }
+}
+async function requireLimit(res: VercelResponse, key: string, limit: number, seconds: number): Promise<boolean> {
+  const allowed = await consumeLimit(key, limit, seconds);
+  if (allowed === true) return true;
+  if (allowed === false) {
+    res.setHeader("Retry-After", String(seconds));
+    res.status(429).json({ error: "Too many requests. Please try again later." });
+  } else {
+    res.status(503).json({ error: "Request protection is temporarily unavailable. Please try again later." });
+  }
+  return false;
+}
+/* ---- end shared security limiter ---- */
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Cache-Control", "no-store");
   const configured = Boolean(process.env.GEMINI_API_KEY) && isStoreConfigured();
 
   if (req.method === "GET") {
@@ -465,6 +483,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = await getSupabase();
     const ipHash = hashIp(clientIp(req.headers));
 
+    // Reserve capacity before storing visitor content or calling Gemini.
+    // Human takeover and failed upstream calls consume capacity too.
+    if (!(await requireLimit(res, `chat:ip:${ipHash ?? "unknown"}`, PER_IP_PER_10MIN, 600))) return;
+    if (!(await requireLimit(res, "chat:global", GLOBAL_PER_DAY, 86400))) return;
+
     /* Persist the visitor's turn and find out who owns this conversation.
        A client that predates sessions (cached bundle) sends no sessionId —
        it keeps the old stateless behaviour rather than erroring. */
@@ -486,39 +509,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ mode: "human", reply: null });
     }
 
-    // Rate limits via activity_log (content of messages is never stored).
-    try {
-      const tenMinAgo = new Date(Date.now() - 10 * 60_000).toISOString();
-      const dayAgo = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
-      const [{ count: globalCount }, ipResult] = await Promise.all([
-        supabase
-          .from("activity_log")
-          .select("id", { count: "exact", head: true })
-          .eq("action", "chat.message")
-          .gte("created_at", dayAgo),
-        ipHash
-          ? supabase
-              .from("activity_log")
-              .select("id", { count: "exact", head: true })
-              .eq("action", "chat.message")
-              .eq("detail->>ip_hash", ipHash)
-              .gte("created_at", tenMinAgo)
-          : Promise.resolve({ count: 0 }),
-      ]);
-      if ((globalCount ?? 0) >= GLOBAL_PER_DAY) {
-        return res.status(429).json({
-          error: "The assistant has hit its daily limit. Please use the contact form instead.",
-        });
-      }
-      if (((ipResult as { count: number | null }).count ?? 0) >= PER_IP_PER_10MIN) {
-        return res.status(429).json({
-          error: "Slow down a little — try again in a few minutes.",
-        });
-      }
-    } catch {
-      // If the limit check itself fails, allow the request (bounded by max_tokens).
-    }
-
     // Ground on the published content, falling back to what shipped.
     //
     // These are two different sources and either can be the live one. A
@@ -532,7 +522,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq("id", "default")
       .maybeSingle();
     const published = (data as { content: unknown } | null)?.content ?? null;
-    const summary = summarizeContent(published ?? (await shippedContent(req)));
+    const summary = summarizeContent(published ?? (await shippedContent()));
 
     /* Gemini's request shape differs from Anthropic's in three ways that
        matter here: the system prompt is its own top-level field, the
@@ -574,11 +564,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!upstream.ok) {
-      const detail = (await upstream.json().catch(() => null)) as {
-        error?: { message?: string };
-      } | null;
+      await upstream.body?.cancel();
       return res.status(502).json({
-        error: detail?.error?.message ?? `Assistant unavailable (${upstream.status}).`,
+        error: "The assistant is temporarily unavailable. Please try again later.",
       });
     }
 
@@ -612,7 +600,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ reply, reaction, mode: "ai" });
   } catch (e) {
     return res.status(500).json({
-      error: e instanceof Error ? e.message : "Server error",
+      error: "Unable to process this chat request. Please try again later.",
     });
   }
 }

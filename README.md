@@ -58,11 +58,11 @@ images render as a carousel with arrows. You can also upload them in `/admin`.
 
 ## Admin
 
-The admin is gated by a SHA-256 hash of your password — the plaintext never
-ships, only the hash. Set it via env var:
+The API verifies the owner password using a server-only SHA-256 hash. Neither
+the password nor its configured hash belongs in the browser bundle. Set:
 
 ```
-VITE_ADMIN_PASSWORD_HASH=<sha-256 hex of your password>
+ADMIN_PASSWORD_HASH=<sha-256 hex of your password>
 ```
 
 Generate the hash at `/admin` (the setup screen has a built-in generator) or with
@@ -97,8 +97,9 @@ resolve to `index.html`.
 2. In the Vercel dashboard: **Add New → Project → Import** the repo.
    - Framework preset: **Vite** (auto-detected).
    - Build command / output: already set by `vercel.json` (`npm run build` → `dist`).
-3. Add an Environment Variable: **`VITE_ADMIN_PASSWORD_HASH`** = your hash
-   (Production + Preview). Without it, `/admin` shows the setup screen.
+3. Configure **ADMIN_PASSWORD_HASH**, **ADMIN_TOKEN_SECRET**, **SUPABASE_URL**,
+   and **SUPABASE_SERVICE_ROLE_KEY** as server-only environment variables. Run
+   the migrations in [the security rollout](docs/security.md) before deploying.
 4. **Deploy.** Every push to the default branch redeploys automatically.
 
 The Express server under `server/` powers the writable API for **local dev only**
@@ -126,3 +127,7 @@ See [setup instructions](docs/spotify-setup.md) for the Spotify connection helpe
 Resend sending once a custom domain and API key are configured. See the
 [invitation setup guide](docs/invitations.md). Invitations link to the public
 portfolio; they do not grant admin access.
+
+## Security rollout
+
+Read [the security rollout](docs/security.md) before deploying: run Supabase migrations 012 and 013 first, move the owner password hash to a server-only variable, and verify the deployed headers.

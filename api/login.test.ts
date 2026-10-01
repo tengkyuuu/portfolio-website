@@ -429,3 +429,25 @@ describe("activity", () => {
     );
   });
 });
+
+
+describe("invite security", () => {
+  it("allows exactly one simultaneous redemption", async () => {
+    const owner = await ownerToken();
+    const invitation = await invite(owner);
+    const token = tokenFromLink(invitation.inviteLink);
+    const responses = await Promise.all([
+      acceptInvite(token, "first-password-long"),
+      acceptInvite(token, "second-password-long"),
+    ]);
+    expect(responses.map(r => r.statusCode).sort(), JSON.stringify(responses.map(r => r.body))).toEqual([200, 410]);
+    expect(responses.filter(r => r.body.token)).toHaveLength(1);
+  });
+  it("refuses an invite for a disabled admin", async () => {
+    const invitation = await invite(await ownerToken());
+    db.admin_users[0].disabled = true;
+    const res = await acceptInvite(tokenFromLink(invitation.inviteLink), "long-password-here");
+    expect(res.statusCode).toBe(410);
+    expect(res.body.token).toBeUndefined();
+  });
+});

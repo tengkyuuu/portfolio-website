@@ -143,7 +143,8 @@ export type ServerHealth = {
 
 export async function fetchHealth(): Promise<ServerHealth | null> {
   try {
-    const res = await fetch("/api/health");
+    const token = sessionStorage.getItem("jvc_admin_token_v1");
+    const res = await fetch("/api/health", { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!res.ok) return null;
     return (await res.json()) as ServerHealth;
   } catch {

@@ -328,7 +328,7 @@ function Gate({ onAuth, notice }: Props) {
   );
 }
 
-/* ─── Setup screen — shown when neither server nor VITE_ADMIN_PASSWORD_HASH is configured ─── */
+/* ─── Setup screen — shown when neither server nor ADMIN_PASSWORD_HASH is configured ─── */
 
 function SetupGuide() {
   const [pw, setPw] = useState("");
@@ -391,7 +391,7 @@ function SetupGuide() {
           <p className="font-ui text-[13px] text-ink-muted leading-relaxed">
             Generate a SHA-256 hash of your chosen password, then set it as the{" "}
             <code className="font-ui text-[12px] bg-ribbon px-1 rounded-sm">
-              VITE_ADMIN_PASSWORD_HASH
+              ADMIN_PASSWORD_HASH
             </code>{" "}
             environment variable in your hosting provider and redeploy.
           </p>
@@ -461,7 +461,7 @@ function SetupGuide() {
                 3 · Paste into your env
               </div>
               <pre className="font-ui text-[12px] text-ink overflow-x-auto">
-                {`VITE_ADMIN_PASSWORD_HASH=${hash || "<your-hash-here>"}`}
+                {`ADMIN_PASSWORD_HASH=${hash || "<your-hash-here>"}`}
               </pre>
               <p className="font-ui text-[11px] text-ink-subtle mt-2">
                 On Vercel: Project → Settings → Environment Variables. Apply to{" "}

@@ -42,7 +42,7 @@ describe("admin session helpers", () => {
     // session — their own check is intentional and different.
     const expected = readsBearer.filter(({ file }) => !["tests.ts", "lighthouse.ts"].includes(file));
     expect(expected.map((h) => h.file).sort()).toEqual(
-      ["activity.ts", "chat.ts", "content.ts", "inquiries.ts", "login.ts", "versions.ts"].sort()
+      ["activity.ts", "chat.ts", "content.ts", "health.ts", "inquiries.ts", "login.ts", "versions.ts"].sort()
     );
     for (const { file, src } of expected) {
       expect(block(src), `${file} is missing the admin session block`).not.toBeNull();

@@ -20,6 +20,8 @@ async function call(body?: object, auth: string | undefined = token()) {
 }
 beforeEach(() => {
   vi.stubEnv("ADMIN_TOKEN_SECRET", secret);
+  vi.stubEnv("SUPABASE_URL", "https://supabase.test");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test");
   vi.stubEnv("RESEND_API_KEY", "re_test");
   vi.stubEnv("RESEND_FROM", "James <hello@example.com>");
   vi.stubEnv("RESEND_REPLY_TO", "reply@example.com");

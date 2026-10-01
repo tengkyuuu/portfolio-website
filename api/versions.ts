@@ -131,6 +131,7 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  res.setHeader("Cache-Control", "no-store");
   if (!isStoreConfigured()) {
     return res.status(503).json({
       error:

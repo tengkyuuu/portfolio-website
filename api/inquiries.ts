@@ -254,6 +254,8 @@ export async function handleInvitations(req: VercelRequest, res: VercelResponse,
   const email = invitationEmail(invite, config.siteUrl);
   if (body.preview === true) return res.status(200).json({ ...email, subject: invite.subject, recipients: invite.recipients, from: config.from || "Sender not configured", siteUrl: config.siteUrl });
   if (config.missing.length) return res.status(503).json({ error: `Configure ${config.missing.join(", ")} on the server before sending.` });
+  if (!(await requireLimit(res, `invitation:${actor.id}`, 10, 3600))) return;
+  if (!(await requireLimit(res, "invitation:global", 30, 86400))) return;
   try {
     const upstream = await fetch("https://api.resend.com/emails/batch", {
       method: "POST", signal: AbortSignal.timeout(15000),
@@ -274,10 +276,36 @@ export async function handleInvitations(req: VercelRequest, res: VercelResponse,
   }
 }
 
+/* ---- shared security limiter (keep copies identical) ---- */
+async function consumeLimit(key: string, limit: number, seconds: number): Promise<boolean | null> {
+  if (!isStoreConfigured() || !process.env.ADMIN_TOKEN_SECRET) return null;
+  try {
+    const client = await getSupabase();
+    const digest = crypto.createHmac("sha256", process.env.ADMIN_TOKEN_SECRET).update(key).digest("hex");
+    const { data, error } = await client.rpc("consume_security_limit", {
+      p_key: digest, p_limit: limit, p_window_seconds: seconds,
+    });
+    return error || typeof data !== "boolean" ? null : data;
+  } catch { return null; }
+}
+async function requireLimit(res: VercelResponse, key: string, limit: number, seconds: number): Promise<boolean> {
+  const allowed = await consumeLimit(key, limit, seconds);
+  if (allowed === true) return true;
+  if (allowed === false) {
+    res.setHeader("Retry-After", String(seconds));
+    res.status(429).json({ error: "Too many requests. Please try again later." });
+  } else {
+    res.status(503).json({ error: "Request protection is temporarily unavailable. Please try again later." });
+  }
+  return false;
+}
+/* ---- end shared security limiter ---- */
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  res.setHeader("Cache-Control", "no-store");
   if (req.query.op === "invitations") {
     const actor = await authorize(req);
     if (!actor) return res.status(401).json({ error: "Unauthorized" });
@@ -308,24 +336,8 @@ export default async function handler(
       const ipHash = hashIp(ip);
       const supabase = await getSupabase();
 
-      if (ipHash) {
-        try {
-          const since = new Date(Date.now() - 10 * 60_000).toISOString();
-          const { count } = await supabase
-            .from(TABLE)
-            .select("id", { count: "exact", head: true })
-            .eq("ip_hash", ipHash)
-            .gte("created_at", since);
-          if ((count ?? 0) >= MAX_PER_10_MIN) {
-            return res.status(429).json({
-              error:
-                "Too many messages from this address. Please try again in a few minutes.",
-            });
-          }
-        } catch {
-          // rate-limit failure shouldn't block a real visitor
-        }
-      }
+      if (!(await requireLimit(res, `inquiry:${ipHash ?? "unknown"}`, MAX_PER_10_MIN, 600))) return;
+      if (!(await requireLimit(res, "inquiry:global", 200, 86400))) return;
 
       const uaRaw = req.headers["user-agent"];
       const userAgent = (Array.isArray(uaRaw) ? uaRaw[0] : uaRaw) ?? null;
@@ -443,7 +455,7 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   } catch (e) {
     return res.status(500).json({
-      error: e instanceof Error ? e.message : "Server error",
+      error: "Unable to process this request. Please try again later.",
     });
   }
 }

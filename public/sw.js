@@ -26,7 +26,7 @@
  * shipped defaults once the cached copy passes API_MAX_STALE_MS.
  */
 
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 const SHELL_CACHE = `pd-shell-${CACHE_VERSION}`;
 const API_CACHE = `pd-api-${CACHE_VERSION}`;
 const ASSET_CACHE = `pd-asset-${CACHE_VERSION}`;
@@ -84,7 +84,7 @@ self.addEventListener("fetch", (event) => {
 
   // Admin writes (POST/PUT/DELETE) already skipped above; also don't
   // intercept the login endpoint — it must always hit fresh.
-  if (url.pathname === "/api/login" || url.pathname.startsWith("/api/inquir")) {
+  if (url.pathname === "/api/health" || url.pathname === "/api/login" || url.pathname.startsWith("/api/inquir")) {
     return;
   }
 
@@ -129,7 +129,7 @@ async function networkFirstAPI(req, cacheName, maxStaleMs) {
   const cache = await caches.open(cacheName);
   try {
     const res = await fetch(req);
-    if (res.ok) {
+    if (res.ok && !/no-store|private/i.test(res.headers.get("cache-control") || "")) {
       const cloned = res.clone();
       const body = await cloned.blob();
       const headers = new Headers(cloned.headers);
@@ -163,7 +163,7 @@ async function networkFirstAPI(req, cacheName, maxStaleMs) {
 async function networkFirstShell(req) {
   try {
     const res = await fetch(req);
-    if (res.ok) {
+    if (res.ok && !/no-store|private/i.test(res.headers.get("cache-control") || "")) {
       const cache = await caches.open(SHELL_CACHE);
       cache.put("/", res.clone());
     }
@@ -184,7 +184,7 @@ async function cacheFirstTTL(req, cacheName, ttlMs) {
   }
   try {
     const res = await fetch(req);
-    if (res.ok) {
+    if (res.ok && !/no-store|private/i.test(res.headers.get("cache-control") || "")) {
       // Wrap the response so we can attach a "cached at" timestamp header
       const cloned = res.clone();
       const body = await cloned.blob();

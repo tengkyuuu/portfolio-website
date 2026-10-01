@@ -1,4 +1,45 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { lookup } from "node:dns/promises";
+import { request } from "node:https";
+import ipaddr from "ipaddr.js";
+
+export function publicAddress(address: string): boolean {
+  try { return ipaddr.process(address).range() === "unicast"; }
+  catch { return false; }
+}
+
+/** Validate every DNS answer, then connect only to that pinned address.
+ * The original hostname is retained for TLS certificate/SNI validation. */
+export async function probeHeaders(url: URL): Promise<{ status: number; headers: Headers }> {
+  const hostname = url.hostname.replace(/^\[|\]$/g, "");
+  const signal = AbortSignal.timeout(5000);
+  const addresses = await Promise.race([
+    lookup(hostname, { all: true, verbatim: true }),
+    new Promise<never>((_, reject) => signal.addEventListener("abort", () => reject(new Error("timeout")), { once: true })),
+  ]);
+  if (!addresses.length || addresses.some(({ address }) => !publicAddress(address))) {
+    throw new Error("Blocked address");
+  }
+  const chosen = addresses[0];
+  return new Promise((resolve, reject) => {
+    const req = request(url, {
+      method: "HEAD", agent: false, signal,
+      // An explicit family prevents automatic selection/re-resolution.
+      family: chosen.family,
+      lookup: (_hostname, _options, callback) => callback(null, chosen.address, chosen.family),
+      headers: { "user-agent": "portfolio-embed-check/2.0" },
+    }, (response) => {
+      const headers = new Headers();
+      for (const [key, value] of Object.entries(response.headers)) {
+        if (value) headers.set(key, Array.isArray(value) ? value.join(", ") : value);
+      }
+      resolve({ status: response.statusCode ?? 502, headers });
+      response.destroy();
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
 
 /**
  * GET /api/embed-check?url=<https://…>
@@ -10,20 +51,8 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
  * tab fall back gracefully.
  *
  * Public + read-only. SSRF hardening: https only, no localhost/private
- * hosts, 5s timeout, only headers inspected (body discarded).
+ * DNS answers checked and pinned, no redirects, HEAD only, 5s timeout.
  */
-
-const TIMEOUT_MS = 5000;
-
-function isPrivateHost(host: string): boolean {
-  const h = host.toLowerCase();
-  if (h === "localhost" || h.endsWith(".local") || h.endsWith(".internal")) return true;
-  // Raw IPv4 private/reserved ranges + loopback IPv6
-  if (/^(10\.|127\.|192\.168\.|169\.254\.|0\.)/.test(h)) return true;
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
-  if (h === "::1" || h.startsWith("[")) return true;
-  return false;
-}
 
 export default async function handler(
   req: VercelRequest,
@@ -44,26 +73,16 @@ export default async function handler(
   } catch {
     return res.status(400).json({ error: "Invalid URL." });
   }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    return res.status(400).json({ error: "Only http(s) URLs are supported." });
+  if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443") || urlStr.length > 2048) {
+    return res.status(400).json({ error: "Use an HTTPS URL on the standard port, without credentials." });
   }
-  if (isPrivateHost(url.hostname)) {
-    return res.status(400).json({ error: "Private hosts are not allowed." });
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
   try {
-    // GET (not HEAD): several hosts reject HEAD or omit security headers
-    // on it. We only read headers; the body is never consumed.
-    const upstream = await fetch(url.toString(), {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: { "user-agent": "portfolio-embed-check/1.0" },
-    });
-
+    // Node's https client never follows redirects. A redirect is inconclusive:
+    // the browser can try it, but the server must not fetch the Location URL.
+    const upstream = await probeHeaders(url);
+    if (upstream.status >= 300 && upstream.status < 400) {
+      return res.status(200).json({ ok: false, embeddable: true, reason: "redirect", status: upstream.status });
+    }
     const xfo = (upstream.headers.get("x-frame-options") ?? "").toLowerCase();
     const csp = (upstream.headers.get("content-security-policy") ?? "").toLowerCase();
 
@@ -108,7 +127,5 @@ export default async function handler(
       reason: e instanceof Error && e.name === "AbortError" ? "timeout" : "unreachable",
       status: null,
     });
-  } finally {
-    clearTimeout(timer);
   }
 }

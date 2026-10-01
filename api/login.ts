@@ -262,6 +262,7 @@ function tooManyAttempts(key: string): boolean {
 
 function recordFailedAttempt(key: string): void {
   const now = Date.now();
+  if (attempts.size >= 1000) attempts.delete(attempts.keys().next().value!);
   const record = attempts.get(key);
   if (!record || now - record.first > LOGIN_WINDOW_MS) {
     attempts.set(key, { count: 1, first: now });
@@ -282,8 +283,9 @@ function isStoreConfigured(): boolean {
   );
 }
 
+let supabaseModule: Promise<typeof import("@supabase/supabase-js")> | undefined;
 async function getSupabase() {
-  const { createClient } = await import("@supabase/supabase-js");
+  const { createClient } = await (supabaseModule ??= import("@supabase/supabase-js"));
   return createClient(
     process.env.SUPABASE_URL as string,
     process.env.SUPABASE_SERVICE_ROLE_KEY as string,
@@ -455,12 +457,14 @@ async function signIn(req: VercelRequest, res: VercelResponse, body: Record<stri
   }
 
   const password = body.password;
-  if (typeof password !== "string" || !password) {
+  if (typeof password !== "string" || !password || password.length > 256) {
     return res.status(400).json({ error: "Password is required." });
   }
   const username = normalizeUsername(body.username);
 
   const key = clientKey(req);
+  if (!(await requireLimit(res, `login:${key}`, 10, 900))) return;
+  if (!(await requireLimit(res, "login:global", 500, 900))) return;
   if (tooManyAttempts(key)) {
     return res.status(429).json({
       error: "Too many sign-in attempts. Wait a few minutes, then try again.",
@@ -725,6 +729,7 @@ async function changeOwnPassword(
   if (pw) return res.status(400).json({ error: pw });
 
   const key = `password:${actor.id}`;
+  if (!(await requireLimit(res, key, 10, 900))) return;
   if (tooManyAttempts(key)) {
     return res.status(429).json({ error: "Too many attempts. Wait a few minutes." });
   }
@@ -785,6 +790,7 @@ async function handleInvite(
     return res.status(503).json({ error: "No content store configured." });
   }
   const key = `invite:${clientKey(req)}`;
+  if (!(await requireLimit(res, key, 20, 900))) return;
   if (tooManyAttempts(key)) {
     return res.status(429).json({ error: "Too many attempts. Wait a few minutes, then try again." });
   }
@@ -792,13 +798,13 @@ async function handleInvite(
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("admin_users")
-    .select("id, display_name, username, invite_expires_at")
+    .select("id, display_name, username, invite_expires_at, disabled")
     .eq("invite_token_hash", hashInviteToken(token))
     .maybeSingle();
   const row = data as
-    | { id: string; display_name: string; username: string; invite_expires_at: string | null }
+    | { id: string; display_name: string; username: string; invite_expires_at: string | null; disabled: boolean }
     | null;
-  if (error || !row || !row.invite_expires_at || Date.parse(row.invite_expires_at) <= Date.now()) {
+  if (error || !row || row.disabled || !row.invite_expires_at || Date.parse(row.invite_expires_at) <= Date.now()) {
     recordFailedAttempt(key);
     return res.status(410).json({
       error: "This invite link is invalid or has expired. Ask the document owner to send a new one.",
@@ -818,7 +824,7 @@ async function handleInvite(
   if (pw) return res.status(400).json({ error: pw });
 
   clearAttempts(key);
-  const { error: upErr } = await supabase
+  const { data: redeemed, error: upErr } = await supabase
     .from("admin_users")
     .update({
       password_hash: await hashPassword(password),
@@ -826,8 +832,14 @@ async function handleInvite(
       invite_token_hash: null,
       invite_expires_at: null,
     })
-    .eq("id", row.id);
-  if (upErr) return res.status(500).json({ error: upErr.message });
+    .eq("id", row.id)
+    .eq("invite_token_hash", hashInviteToken(token))
+    .eq("disabled", false)
+    .gt("invite_expires_at", new Date().toISOString())
+    .select("id")
+    .maybeSingle();
+  if (upErr) return res.status(500).json({ error: "Could not accept the invite." });
+  if (!redeemed) return res.status(410).json({ error: "This invite has expired or was already used." });
   await logActivity(supabase, "team.invite_accepted", { username: row.username });
 
   return res.status(200).json({
@@ -838,7 +850,33 @@ async function handleInvite(
 
 /* ---------------- handler ---------------- */
 
+/* ---- shared security limiter (keep copies identical) ---- */
+async function consumeLimit(key: string, limit: number, seconds: number): Promise<boolean | null> {
+  if (!isStoreConfigured() || !process.env.ADMIN_TOKEN_SECRET) return null;
+  try {
+    const client = await getSupabase();
+    const digest = crypto.createHmac("sha256", process.env.ADMIN_TOKEN_SECRET).update(key).digest("hex");
+    const { data, error } = await client.rpc("consume_security_limit", {
+      p_key: digest, p_limit: limit, p_window_seconds: seconds,
+    });
+    return error || typeof data !== "boolean" ? null : data;
+  } catch { return null; }
+}
+async function requireLimit(res: VercelResponse, key: string, limit: number, seconds: number): Promise<boolean> {
+  const allowed = await consumeLimit(key, limit, seconds);
+  if (allowed === true) return true;
+  if (allowed === false) {
+    res.setHeader("Retry-After", String(seconds));
+    res.status(429).json({ error: "Too many requests. Please try again later." });
+  } else {
+    res.status(503).json({ error: "Request protection is temporarily unavailable. Please try again later." });
+  }
+  return false;
+}
+/* ---- end shared security limiter ---- */
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Cache-Control", "no-store");
   const body = (
     typeof req.body === "string" ? safeJson(req.body) : (req.body ?? {})
   ) as Record<string, unknown> | null;

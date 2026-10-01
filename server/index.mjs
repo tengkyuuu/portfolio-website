@@ -11,12 +11,15 @@
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { securityHeaders } from "./security-headers.mjs";
 import { apiApp } from "./app.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, "..", "dist");
 
 const app = express();
+app.disable("x-powered-by");
+app.use(securityHeaders);
 app.use(apiApp);
 app.use(express.static(DIST));
 // SPA fallback — client-side routes like /admin resolve to index.html

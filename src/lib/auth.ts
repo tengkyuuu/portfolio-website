@@ -5,9 +5,7 @@
  * ADMIN_PASSWORD_HASH (never shipped to the client) and issues a bearer
  * token used for content writes.
  *
- * Fallback path (no server reachable, e.g. a static deploy): the legacy
- * client-side check against the SHA-256 digest in `VITE_ADMIN_PASSWORD_HASH`.
- * In that mode edits persist to localStorage only — visitors won't see them.
+ * Sign-in requires the API; unavailable verification never grants a session.
  */
 
 import { serverLogin, type AdminUser } from "./api";
@@ -50,35 +48,10 @@ export async function login(password: string, username = ""): Promise<LoginResul
     return { ok: false, error: result.error || "Incorrect password." };
   }
 
-  // Team accounts live on the server; the offline fallback below only
-  // knows the owner's password hash.
-  if (name && name !== "owner") {
-    return {
-      ok: false,
-      error: result.reachable
-        ? result.error
-        : "Team accounts need the server. Check your connection and try again.",
-    };
-  }
-
-  // Otherwise there's no working content API: a static deploy returns 404/405
-  // for /api/login, and offline returns a network error. Fall back to the
-  // client-side hash check against VITE_ADMIN_PASSWORD_HASH.
-  const expected = getExpectedHash();
-  if (!expected) {
-    return {
-      ok: false,
-      error:
-        "This deployment has no admin password configured. Set VITE_ADMIN_PASSWORD_HASH in your hosting environment variables, then redeploy.",
-    };
-  }
-  const ok = await checkPassword(password);
-  if (!ok) return { ok: false, error: "Incorrect password." };
-  sessionStorage.setItem(AUTH_KEY, "1");
-  sessionStorage.setItem(MODE_KEY, "local");
-  sessionStorage.setItem(EXPIRES_KEY, String(Date.now() + CLIENT_TTL_MS));
-  sessionStorage.setItem(USER_KEY, JSON.stringify(OWNER));
-  return { ok: true, mode: "local" };
+  return {
+    ok: false,
+    error: result.reachable ? result.error : "The sign-in server is unavailable. Please try again later.",
+  };
 }
 
 export function getAdminToken(): string | null {
@@ -139,8 +112,9 @@ export async function sha256Hex(text: string): Promise<string> {
 }
 
 export function getExpectedHash(): string | undefined {
-  const raw = import.meta.env.VITE_ADMIN_PASSWORD_HASH as string | undefined;
-  return raw?.trim().toLowerCase() || undefined;
+  // Password verification belongs to the API. Never compile even a hash
+  // of an admin password into a downloadable browser bundle.
+  return undefined;
 }
 
 /** Constant-time string compare for hex strings of equal length. */
