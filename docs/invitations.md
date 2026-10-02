@@ -6,7 +6,7 @@ Open **Admin → Invitations**. Add up to ten addresses, edit the subject and me
 
 Without a custom sending domain, preview the invitation and choose **Open in Gmail** for each person. Gmail opens a plain-text draft with the invitation and portfolio link. Select your Gmail account, review it, and send it there. Opening the draft does not send anything.
 
-The current website URL is `https://engrjamescalunsag.vercel.app`. Use `jamescalunsag13@gmail.com` as the Reply-To address for future Resend emails.
+The current website URL is `https://jamescalunsag.online`. Use `jamescalunsag13@gmail.com` as the Reply-To address for future Resend emails.
 
 ## Enable Resend
 
@@ -15,7 +15,7 @@ Resend requires a domain you own and verify. An `@gmail.com` address cannot be y
 Set these server environment variables locally in `.env.local` and in your Vercel project:
 
 ```dotenv
-SITE_URL=https://engrjamescalunsag.vercel.app
+SITE_URL=https://jamescalunsag.online
 RESEND_API_KEY=your-key
 RESEND_FROM="James Calunsag <hello@your-verified-domain.com>"
 RESEND_REPLY_TO=jamescalunsag13@gmail.com

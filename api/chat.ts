@@ -371,7 +371,7 @@ ${summary}`;
  */
 async function shippedContent(): Promise<unknown> {
   const origin = process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://engrjamescalunsag.vercel.app");
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://jamescalunsag.online");
   try {
     const url = new URL("/content-defaults.json", origin);
     if (url.protocol !== "https:" || url.username || url.password) return {};

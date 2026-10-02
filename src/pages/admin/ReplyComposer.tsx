@@ -36,7 +36,7 @@ If it's easier, feel free to book a quick call from the Contact page on my site.
 
 Best,
 James Vincent Calunsag
-engrjamescalunsag.vercel.app`,
+jamescalunsag.online`,
   },
   resume: {
     label: "Résumé request",
@@ -46,7 +46,7 @@ engrjamescalunsag.vercel.app`,
 
 Thanks for your interest! You can view and download my résumé here:
 
-https://engrjamescalunsag.vercel.app/resume
+https://jamescalunsag.online/resume
 
 It supports role-specific views (Frontend / Full-Stack / IT Support) and an ATS-friendly format — use the pickers at the top, then Download PDF.
 

@@ -1,7 +1,7 @@
 # Security hardening and rollout
 
 These changes reduce verified risks; they cannot guarantee immunity from attacks.
-The live `engrjamescalunsag.vercel.app` site already uses HTTPS. Vercel includes
+The live `jamescalunsag.online` site already uses HTTPS. Vercel includes
 [automatic certificates and platform protections](https://vercel.com/docs/security)
 and [DDoS mitigation on every plan](https://vercel.com/docs/vercel-firewall/ddos-mitigation).
 Buying a domain or upgrading hosting is not required for these code changes.

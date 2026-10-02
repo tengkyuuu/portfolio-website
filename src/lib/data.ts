@@ -719,7 +719,7 @@ export const defaultHero: HeroContent = {
     name: "James Vincent Calunsag",
     role: "Computer Engineer · Embedded · Frontend · Design",
     email: "jamescalunsag13@gmail.com",
-    website: "https://engrjamescalunsag.vercel.app/",
+    website: "https://jamescalunsag.online/",
     location: "Dapitan City, PH",
     available: true,
     availableText: "Available for work",
