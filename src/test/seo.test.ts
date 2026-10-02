@@ -30,9 +30,12 @@ function meta(attr: "name" | "property", key: string): string | null {
   return re.exec(compact)?.[1] ?? null;
 }
 
-/** A public/ PNG's real dimensions, read out of its IHDR header. */
+/** A public/ PNG's real dimensions, read out of its IHDR header.
+ *  Strips a cache-busting "?v=N" first — that query string is what makes
+ *  browsers refetch the file, but it isn't part of the file's path on
+ *  disk, so resolving it literally would always miss. */
 function png(src: string): { width: number; height: number } {
-  const file = path.join(ROOT, "public", src);
+  const file = path.join(ROOT, "public", src.split("?")[0]);
   expect(existsSync(file), `${src} is referenced but not in public/`).toBe(true);
   const bytes = readFileSync(file);
   expect(bytes.subarray(1, 4).toString(), `${src} is not a PNG`).toBe("PNG");
@@ -255,7 +258,7 @@ describe("service worker shell", () => {
     for (const url of urls) {
       if (url === "/" || url === "/index.html") continue;
       expect(
-        existsSync(path.join(ROOT, "public", url)),
+        existsSync(path.join(ROOT, "public", url.split("?")[0])),
         `${url} is precached but not in public/`
       ).toBe(true);
     }

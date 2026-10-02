@@ -26,7 +26,7 @@
  * shipped defaults once the cached copy passes API_MAX_STALE_MS.
  */
 
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
 const SHELL_CACHE = `pd-shell-${CACHE_VERSION}`;
 const API_CACHE = `pd-api-${CACHE_VERSION}`;
 const ASSET_CACHE = `pd-asset-${CACHE_VERSION}`;
@@ -38,7 +38,7 @@ const API_MAX_STALE_MS = 24 * 60 * 60 * 1000; // 1 day
 // tab to look right offline. The big icons are for the install prompt,
 // which the browser fetches and caches off the manifest itself — and
 // precaching one would put 63 KB on every visitor's first load.
-const SHELL_URLS = ["/", "/index.html", "/manifest.webmanifest", "/favicon-32.png"];
+const SHELL_URLS = ["/", "/index.html", "/manifest.webmanifest", "/favicon-32.png?v=2"];
 
 /* ---------------- install: precache the shell ---------------- */
 self.addEventListener("install", (event) => {

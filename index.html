@@ -7,11 +7,18 @@
          downscaling a single 48px icon to 16px resamples it into mush,
          and 16px is the size a tab actually renders. No SVG icon is
          offered, because browsers prefer SVG whenever one is listed and
-         it would win over every PNG here. -->
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+         it would win over every PNG here.
+
+         The ?v=N on every href is load-bearing: browsers cache a favicon
+         far more stubbornly than a normal asset, often ignoring a fresh
+         deploy entirely because the URL didn't change. Bump the number
+         whenever gen-favicon.mjs regenerates these files (and the
+         matching ones in manifest.webmanifest and sw.js's SHELL_URLS),
+         or visitors keep the old icon indefinitely. -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Two theme-colors: the browser chrome should match the paper behind
