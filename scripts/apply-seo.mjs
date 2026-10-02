@@ -41,11 +41,11 @@ const DIST = path.join(ROOT, "dist");
 const INDEX = path.join(DIST, "index.html");
 
 /**
- * Only `/` is publicly reachable. /resume and /status sit behind
- * RequireAuth and /admin is the editor, so listing any of them would
- * point crawlers at a login wall and invite soft-404s.
+ * `/` and `/credits` are publicly reachable. /resume and /status sit
+ * behind RequireAuth and /admin is the editor, so listing any of those
+ * would point crawlers at a login wall and invite soft-404s.
  */
-const PUBLIC_ROUTES = ["/"];
+const PUBLIC_ROUTES = ["/", "/credits"];
 const PRIVATE_ROUTES = ["/admin", "/resume", "/status"];
 
 function resolveOrigin() {

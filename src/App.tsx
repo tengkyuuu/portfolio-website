@@ -29,6 +29,7 @@ import { TabLoader } from "./components/TabLoader";
 import { TabSkeleton } from "./components/TabSkeleton";
 import { useDelayedLoading, useTabReady } from "./lib/tab-ready";
 import { AdminPage } from "./pages/AdminPage";
+import { CreditsPage } from "./pages/CreditsPage";
 import { ResumePage } from "./pages/ResumePage";
 import { StatusPage } from "./pages/StatusPage";
 
@@ -348,6 +349,9 @@ function PortfolioDoc() {
 export default function App() {
   const path = window.location.pathname;
   if (path === "/admin") return <AdminPage />;
+  // Public on purpose, unlike /resume and /status below: a disclosure
+  // page that visitors can't reach without logging in isn't a disclosure.
+  if (path === "/credits") return <CreditsPage />;
   if (path === "/resume")
     return (
       <RequireAuth>

@@ -384,7 +384,10 @@ export function Assistant() {
           </form>
 
           <div className="border-t border-rule bg-ribbon px-3 py-1 font-ui text-[9px] uppercase tracking-[0.14em] text-ink-subtle">
-            Blue is the assistant for this portfolio
+            Blue is the assistant for this portfolio ·{" "}
+            <a href="/credits" className="hover:text-word-blue hover:underline">
+              Image credits
+            </a>
           </div>
         </div>
       )}

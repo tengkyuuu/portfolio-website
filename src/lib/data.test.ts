@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import {
   certs,
   defaultContact,
+  imageCredits,
   nowGroups,
   nowUpdated,
   processStages,
@@ -12,6 +13,7 @@ import {
   timeline,
 } from "./data";
 import { getSkillMeta, skillLogoUrl } from "./skill-catalog";
+import { BLUE_MEMES } from "./blue";
 
 /**
  * Integrity checks over the hand-edited content in data.ts.
@@ -174,6 +176,40 @@ describe("credentials", () => {
     for (const c of certs) {
       expect(c.title.trim()).toBeTruthy();
       expect(c.issuer.trim(), `${c.title} issuer`).toBeTruthy();
+    }
+  });
+});
+
+describe("image credits", () => {
+  // These exist because found-online art is easy to add and easy to
+  // forget to disclose. If an image ships, it has to have an entry here;
+  // if an entry's file goes missing, that's a broken /credits page
+  // nobody would notice without this.
+  it("points every credited image at a file that exists", () => {
+    for (const c of imageCredits) {
+      expect(isLocal(c.src), `${c.src} should be a local path`).toBe(true);
+      expect(existsSync(publicPath(c.src)), `missing ${c.src} (${c.usedAs})`).toBe(true);
+    }
+  });
+
+  it("says where every image was found, and names the artist or says unknown", () => {
+    for (const c of imageCredits) {
+      expect(c.usedAs.trim(), `${c.src} usedAs`).toBeTruthy();
+      expect(c.source.trim(), `${c.src} source`).toBeTruthy();
+      // artist is `string | null` by type, not optional — this catches an
+      // accidental "" slipping in, which would render as a blank credit
+      // rather than the honest "Artist unknown" the page falls back to.
+      if (c.artist !== null) expect(c.artist.trim(), `${c.src} artist`).toBeTruthy();
+    }
+  });
+
+  it("credits every image actually used as Blue's reactions or launcher", () => {
+    // blueMood()'s fallback silently swallows an unknown mood key, so a
+    // reaction added to BLUE_MEMES without a matching credit here would
+    // ship invisibly uncredited rather than fail anything.
+    const creditedSrcs = new Set(imageCredits.map((c) => c.src));
+    for (const meme of Object.values(BLUE_MEMES)) {
+      expect(creditedSrcs.has(meme.src), `${meme.src} is missing from imageCredits`).toBe(true);
     }
   });
 });

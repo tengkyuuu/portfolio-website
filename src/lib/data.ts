@@ -774,3 +774,82 @@ export const defaultContact: ContactContent = {
       { label: "Location", value: "Dapitan City, PH", href: "#", icon: "location_on" },
     ],
   };
+
+/* ─── IMAGE CREDITS ────────────────────────────────────────────────────
+   A handful of images on this site weren't drawn by me — Blue's reaction
+   stickers and its launcher mark were found online (Pinterest), and I
+   don't know who the original artist is. CTTO: credit to the original
+   creator, whoever that turns out to be. Rendered on /credits, and
+   data.test.ts checks every `src` here resolves to a real file, so this
+   can't silently drift from what's actually shipped. */
+
+export type ImageCredit = {
+  src: string;
+  alt: string;
+  /** Where on the site this image actually appears. */
+  usedAs: string;
+  /** Where it was found. Not necessarily where it originated. */
+  source: string;
+  /** The original artist, if known. Null means genuinely unknown — say
+   *  so rather than inventing a name or leaving the field blank. */
+  artist: string | null;
+};
+
+export const imageCredits: ImageCredit[] = [
+  {
+    src: "/blue/coffee-blue.jpg",
+    alt: "Blue holding a cup of coffee",
+    usedAs: "Chat assistant — \"Coffee break\" reaction",
+    source: "Pinterest",
+    artist: null,
+  },
+  {
+    src: "/blue/working-blue.jpg",
+    alt: "Blue wearing glasses and working at a laptop",
+    usedAs: "Chat assistant — \"Working\" reaction",
+    source: "Pinterest",
+    artist: null,
+  },
+  {
+    src: "/blue/searching-blue.jpg",
+    alt: "Blue studying a sheet of paper",
+    usedAs: "Chat assistant — \"Investigating\" reaction",
+    source: "Pinterest",
+    artist: null,
+  },
+  {
+    src: "/blue/needmoney-blue.jpg",
+    alt: "Blue in ragged clothes beside an empty bowl",
+    usedAs: "Chat assistant — \"Need a little funding\" reaction",
+    source: "Pinterest",
+    artist: null,
+  },
+  {
+    src: "/blue/like-blue.jpg",
+    alt: "Blue smiling and giving a thumbs-up",
+    usedAs: "Chat assistant — \"Love that\" reaction",
+    source: "Pinterest",
+    artist: null,
+  },
+  {
+    src: "/blue/cry-blue.jpg",
+    alt: "Blue crying",
+    usedAs: "Chat assistant — \"Feeling it\" reaction",
+    source: "Pinterest",
+    artist: null,
+  },
+  {
+    src: "/blue/corporate-blue.jpg",
+    alt: "Blue wearing a tie and carrying a shoulder bag",
+    usedAs: "Chat assistant — \"Business mode\" reaction",
+    source: "Pinterest",
+    artist: null,
+  },
+  {
+    src: "/blue-logo.png",
+    alt: "A blue flower-shaped mark, used as Blue's launcher icon",
+    usedAs: "Chat assistant — launcher button",
+    source: "Pinterest",
+    artist: null,
+  },
+];
