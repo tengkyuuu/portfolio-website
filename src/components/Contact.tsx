@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Check,
   Copy,
+  Download,
   Mail,
   MapPin,
   MessageSquare,
@@ -102,6 +103,9 @@ export function Contact() {
                 )}{" "}
                 Copy email
               </button>
+              <a className="doc-button" href="/james-vincent-calunsag-resume.pdf" download="James-Vincent-Calunsag-Resume.pdf" type="application/pdf">
+                <Download size={14} aria-hidden="true" /> Download résumé
+              </a>
             </div>
           )}
           {copyStatus && (

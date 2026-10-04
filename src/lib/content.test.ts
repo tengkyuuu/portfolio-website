@@ -110,6 +110,23 @@ describe("normalizeContent (via a partial cached payload)", () => {
     expect(c.certs).toEqual(reread.DEFAULT_CONTENT.certs);
     expect(c.timeline).toEqual(reread.DEFAULT_CONTENT.timeline);
   });
+
+  it("adds shipped evidence to an older published project without replacing its edits", async () => {
+    const mod = await freshModule();
+    mod.saveContent(structuredClone(mod.DEFAULT_CONTENT));
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) as string);
+    const stormfresh = stored.projects.find((p: { id: string }) => p.id === "stormfresh-erp");
+    delete stormfresh.contribution;
+    delete stormfresh.result;
+    stormfresh.blurb = "Published custom introduction";
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+
+    const reread = await freshModule();
+    const project = reread.getContent().projects.find((p) => p.id === "stormfresh-erp")!;
+    expect(project.blurb).toBe("Published custom introduction");
+    expect(project.contribution).toContain("management dashboard");
+    expect(project.result).toContain("source records");
+  });
 });
 
 describe("saveSection / resetSection", () => {

@@ -6,6 +6,7 @@ import { ChapterHeading } from "./ui/ChapterHeading";
 import { chapterNumber } from "./Nav";
 import { InteractiveFigure } from "./InteractiveFigure";
 import { PaperSheet } from "./PaperSheet";
+import { ShmSimulator } from "./ShmSimulator";
 
 const kindLabel: Record<Project["kind"], string> = {
   embedded: "Embedded",
@@ -220,6 +221,8 @@ function ProjectEntry({ project }: { project: Project }) {
         </figcaption>
       </figure>
 
+      {project.id === "shm" && <ShmSimulator />}
+
       {/* Optional metrics table */}
       {project.metrics && project.metrics.length > 0 && (
         <div className="mb-6 border border-rule rounded-sm p-4 md:p-5 bg-row-alt">
@@ -283,6 +286,23 @@ function ProjectEntry({ project }: { project: Project }) {
         <p className="font-doc text-[15px] leading-[1.7] text-ink-muted">
           {project.blurb}
         </p>
+      )}
+
+      {(project.contribution || project.result) && (
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 border-t border-rule pt-5">
+          {project.contribution && (
+            <div>
+              <h3 className="font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue mb-1.5">Contribution</h3>
+              <p className="font-doc text-[14px] leading-[1.6] text-ink-muted">{project.contribution}</p>
+            </div>
+          )}
+          {project.result && (
+            <div>
+              <h3 className="font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue mb-1.5">Evidence you can inspect</h3>
+              <p className="font-doc text-[14px] leading-[1.6] text-ink-muted">{project.result}</p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Tech stack */}

@@ -6,6 +6,9 @@ Built with React, TypeScript, and Tailwind v4.
 
 The cover combines an interactive portrait with featured project screenshots.
 Projects have a filterable visual index and directly linkable case studies.
+The SHM case study includes a labelled sensor-alert simulation. The Blog and
+Gallery ship three grounded build notes and three interface studies. Visitors
+can download a one-page public résumé PDF from the cover or Contact tab.
 The ribbon offers editorial/modern reading styles, highlights, five Office
 themes, focus mode, search, sharing, and PDF export of the current section.
 On mobile, a section picker and dismissible navigation pane keep the document
@@ -28,6 +31,10 @@ npm run dev
 
 Open http://localhost:5173. The dev server also mounts a small content API (see
 [Admin](#admin) below) on the same port.
+
+After editing the shipped résumé facts in `src/lib/data.ts`, regenerate the
+public download with `npm run resume:public` and commit the PDF in `public/`.
+The private `/resume` builder remains available for role-specific drafts.
 
 ## Build
 

@@ -7,6 +7,7 @@
     "dev": "vite",
     "spotify:connect": "node scripts/connect-spotify.mjs",
     "build": "tsc -b && vite build && npm run postbuild",
+    "resume:public": "npm run build && node scripts/generate-public-resume.mjs",
     "postbuild": "node scripts/apply-seo.mjs && node scripts/collect-metrics.mjs && node scripts/emit-content-defaults.mjs",
     "preview": "vite preview",
     "start": "node server/index.mjs",

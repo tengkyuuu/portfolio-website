@@ -10,6 +10,7 @@
  */
 
 import { deleteRemoteContent, fetchRemoteContent, pushContent } from "./api";
+import { editorialDesigns, editorialPosts } from "./editorial";
 import { getAdminToken } from "./auth";
 import {
   projects as defaultProjects,
@@ -139,11 +140,7 @@ export type ActivityContent = {
   updatedAt: string;
 };
 
-/**
- * Posts and designs ship empty. Both are written from the admin; nothing
- * here should invent a post or a piece of work to fill the space. A tab
- * with nothing in it stays off the ribbon (see visibleTabs in Nav.tsx).
- */
+/** These published pieces document projects already present in this portfolio. */
 export const DEFAULT_CONTENT: SiteContent = {
   activity: { status: "", note: "", meme: "coffee", memeAlt: "", updatedAt: "" },
   hero: defaultHero,
@@ -153,9 +150,11 @@ export const DEFAULT_CONTENT: SiteContent = {
   certs: defaultCerts,
   timeline: defaultTimeline,
   contact: defaultContact,
-  posts: [],
-  designs: [],
+  posts: editorialPosts,
+  designs: editorialDesigns,
 };
+
+const defaultProjectById = new Map(defaultProjects.map((project) => [project.id, project]));
 
 function shallowMerge<T extends object>(defaults: T, override?: Partial<T>): T {
   if (!override) return defaults;
@@ -174,7 +173,12 @@ function normalizeContent(stored: Partial<SiteContent>): SiteContent {
       specs: stored.about?.specs ?? DEFAULT_CONTENT.about.specs,
     },
     skills: stored.skills ?? DEFAULT_CONTENT.skills,
-    projects: stored.projects ?? DEFAULT_CONTENT.projects,
+    projects: stored.projects?.map((project) => {
+      const shipped = defaultProjectById.get(project.id);
+      return shipped
+        ? { ...project, contribution: project.contribution ?? shipped.contribution, result: project.result ?? shipped.result }
+        : project;
+    }) ?? DEFAULT_CONTENT.projects,
     certs: stored.certs ?? DEFAULT_CONTENT.certs,
     timeline: stored.timeline ?? DEFAULT_CONTENT.timeline,
     contact: {

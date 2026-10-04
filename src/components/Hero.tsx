@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   Code2,
   Cpu,
+  Download,
   MapPin,
   MousePointer2,
   PenTool,
@@ -60,6 +61,9 @@ export function Hero() {
               Let’s talk <ArrowRight size={15} />
             </a>
           </div>
+          <a className="doc-text-link mt-3" href="/james-vincent-calunsag-resume.pdf" download="James-Vincent-Calunsag-Resume.pdf" type="application/pdf">
+            <Download size={15} aria-hidden="true" /> Download résumé (PDF)
+          </a>
           <div className="cover-location">
             <MapPin size={13} />
             <span>{hero.location}</span>

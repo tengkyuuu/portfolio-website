@@ -31,6 +31,9 @@ export type Project = {
   figCaption?: string;
   challenge?: string;
   solution?: string;
+  /** Specific contribution and observable result for the featured case studies. */
+  contribution?: string;
+  result?: string;
   metrics?: Metric[];
   /** Tech stack, shown as a labelled chip row. */
   stack?: string[];
@@ -69,6 +72,10 @@ export const projects: Project[] = [
       "Bridges flex constantly, but dangerous structural movement is hard to catch by eye. Continuous, remote monitoring meant cheap sensor nodes that could sample motion reliably and surface a clear safe/unsafe signal in real time.",
     solution:
       "ESP32-based sensor nodes sample acceleration, velocity, and deflection and stream them live to a web dashboard. It classifies movement against safe limits, shows per-node readings and history, and auto-clears alerts once motion settles.",
+    contribution:
+      "The engineering work connects three sensor readings to a per-node dashboard and a clear safe/unsafe alert state.",
+    result:
+      "The linked demo shows current readings, history, and the alert behavior. The interactive example below uses invented readings so visitors can test that behavior without a bridge sensor.",
     gallery: [
       {
         src: "/projects/shm-landing.webp",
@@ -109,6 +116,10 @@ export const projects: Project[] = [
       "A poultry business bought live birds, dressed them, and sold the output — but the money lived in spreadsheets. Flock grow-out, commission payroll, and monthly P&L each sat in a separate workbook, several carrying arithmetic defects nobody had caught. Profit was only knowable after month-end reconciliation, and approving a purchase order meant whoever happened to sign the paper.",
     solution:
       "One of five engineers on the build. I owned the management dashboard and reporting layer — gain, balance, and trend figures recomputed live from source rows rather than stored, so the numbers can't drift out of sync — and the role model, pushed down into Postgres row-level security so drafts stay private to their author and only Management approves or deletes. The interface language across the app is mine as well.",
+    contribution:
+      "One of five engineers. I owned the management dashboard, reporting layer, Postgres role rules, and the app's interface language.",
+    result:
+      "Gain, balance, and trend figures are calculated from source records; management permissions are enforced in Postgres rather than only in the interface.",
     gallery: [
       {
         src: "/projects/poias-dashboard.webp",
@@ -152,6 +163,10 @@ export const projects: Project[] = [
       "A bank that has not opened yet still has to collect real names, phone numbers, and emails from the public, and show an earned-wage product it cannot yet run — every screen risks implying a service already exists. The client also settled a four-colour brand mid-build whose primary teal is light enough that white text on it fails AA outright, so the palette could not simply be dropped in.",
     solution:
       "Honesty is enforced mechanically rather than by review: a contrast suite pins every shipping colour pair, with inverted guards that fail if light text lands on the brand teal or teal is used as body copy. Unbuilt products get working, fixture-driven screens that state their own blocker instead of dead-ending, and the companion Expo app swaps a five-slot tab bar for one floating menu across thirteen destinations.",
+    contribution:
+      "I implemented contrast checks for the brand palette, fixture-driven prelaunch screens, and the companion app's navigation system.",
+    result:
+      "The recorded web suite covers 19 contrast pairs and 235 tests across 35 files; the mobile interface uses six font sizes instead of sixteen.",
     metrics: [
       {
         label: "Contrast pairs under test",

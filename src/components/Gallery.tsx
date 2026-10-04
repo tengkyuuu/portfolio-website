@@ -67,13 +67,13 @@ export function Gallery() {
             <>
               <ChapterHeading
                 number={chapterNumber("gallery")}
-                eyebrow="GRAPHIC DESIGN"
+                eyebrow="SELECTED DESIGN"
                 title={
                   <>
                     Made to be <em>looked at.</em>
                   </>
                 }
-                description="Posters, marks, and pieces made for a screen. Open any one to see it full size."
+                description="Interfaces and graphic work, shown with the decision behind each piece. Open one to inspect it."
               >
                 <Images />
               </ChapterHeading>

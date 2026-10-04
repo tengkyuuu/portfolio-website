@@ -44,7 +44,8 @@ describe("Nav", () => {
     expect(select.querySelectorAll("option")).toHaveLength(visibleTabs().length);
   });
 
-  it("keeps Blog and Gallery off the ribbon until they have something in them", () => {
+  it("keeps Blog and Gallery off the ribbon when all work is unpublished", () => {
+    saveContent({ ...DEFAULT_CONTENT, posts: [], designs: [] });
     renderNav();
     expect(screen.queryByRole("button", { name: /^Blog$/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Gallery$/ })).not.toBeInTheDocument();
