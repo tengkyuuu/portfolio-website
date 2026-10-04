@@ -18,7 +18,7 @@ References: [Spotify authorization code flow](https://developer.spotify.com/docu
 
 **Admin → My status** saves an activity label, optional note, and one of the Blue images or a custom uploaded meme. The profile uses `Asia/Manila` (Philippine Standard Time, UTC+8), independent of the visitor's timezone. The activity timestamp records a manual update; it is not inferred online presence.
 
-The coffee image is Blue's circular chat button. Other memes appear in opened interactions. Gemini returns both the answer and a reaction from seven allowed names; unknown choices fall back to coffee. Replies from a human admin are labelled James and do not receive AI reactions.
+The coffee image is Blue's circular chat button. Other memes appear in opened interactions. The selected model returns both the answer and a reaction from seven allowed names; unknown choices fall back to coffee. Replies from a human admin are labelled James and do not receive AI reactions. See [chat provider setup](chat-setup.md) for Gemini and Groq configuration.
 
 Run [migration 008](../supabase/migrations/008_blue_reactions.sql) in Supabase to retain reactions in chat history. Until it is applied, chat still saves plain replies and shows the selected reaction during the current visit. The migration adds one optional column and leaves existing messages intact.
 

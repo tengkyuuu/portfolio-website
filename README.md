@@ -116,7 +116,8 @@ and is not used by the static deploy.
 
 Open **Admin → My status** to set your current activity and meme. The JV button
 in the upper-right title bar opens your status, Philippine time, and Spotify.
-Blue uses the coffee avatar and Gemini-selected reactions inside chat.
+Blue uses the coffee avatar and model-selected reactions inside chat. It supports
+Gemini and Groq; see [chat provider setup](docs/chat-setup.md) to switch providers.
 
 See [setup instructions](docs/spotify-setup.md) for the Spotify connection helper
 (`npm run spotify:connect`), deployment variables, and chat reaction migration.

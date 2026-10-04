@@ -17,28 +17,35 @@ import crypto from "node:crypto";
  * outputs..." — after a clean build, with CI green. See .vercelignore.
  *
  * Human takeover: once James replies, the session flips to mode='human' and
- * this endpoint stops calling Gemini for it entirely — no double-answering
+ * this endpoint stops calling the model for it entirely — no double-answering
  * and no spend on a conversation a person has picked up.
  *
  * Guardrails:
  *   • Grounding: the system prompt embeds a text summary of site_content
  *     (images stripped) and instructs the model to refuse anything it
- *     can't source from it. max_tokens 400, temperature 0.3.
+ *     can't source from it. Bounded output tokens, temperature 0.3.
  *   • Rate limits via activity_log rows (action=chat.message): 15 per
  *     10 min per salted IP hash, 300 per day globally — bounds worst-case
  *     API spend even under abuse. Message content is NOT logged.
- *   • Gemini called with raw fetch (no SDK) — keeps the function
+ *   • Providers called with raw fetch (no SDK) — keeps the function
  *     self-contained, which we've learned Vercel bundles reliably.
  */
 
-/**
- * Overridable by env so a model rename never needs a code change. List what
- * your key can actually reach with:
- *   curl -H "x-goog-api-key: $GEMINI_API_KEY"  *     https://generativelanguage.googleapis.com/v1beta/models
- */
-// 3.6-flash was answering "experiencing high demand" to every request for
-// minutes at a time; Gemini's own deprecation notices point at 3.8-flash.
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+/** Provider and model selection stays server-side and is env-overridable. */
+type ChatProvider = "gemini" | "groq";
+type ChatConfig = { provider: ChatProvider; apiKey: string; model: string };
+
+/** Explicit selection avoids silently sending visitor conversations elsewhere. */
+export function chatConfig(): ChatConfig | null {
+  const provider = process.env.CHAT_PROVIDER?.trim().toLowerCase() || "gemini";
+  if (provider !== "gemini" && provider !== "groq") return null;
+  const apiKey = process.env[provider === "groq" ? "GROQ_API_KEY" : "GEMINI_API_KEY"]?.trim();
+  if (!apiKey) return null;
+  const model = provider === "groq"
+    ? process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-20b"
+    : process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
+  return { provider, apiKey, model };
+}
 
 /**
  * Reasoning tokens are billed against maxOutputTokens on Gemini 2.5+, and
@@ -81,6 +88,67 @@ const BLUE_OUTPUT = {
     }, required: ["reply", "reaction"],
   },
 };
+
+/** Kept in this function file so Vercel does not need another API bundle. */
+export async function callBlueModel(config: ChatConfig, prompt: string, messages: ChatMessage[]): Promise<Response> {
+  if (config.provider === "groq") {
+    const endpoint = "https://api.groq.com/openai/v1/chat/completions";
+    const request = (structured: boolean) => fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json", Authorization: `Bearer ${config.apiKey}` },
+      signal: AbortSignal.timeout(25000),
+      body: JSON.stringify({
+        model: config.model,
+        messages: [{ role: "system", content: prompt }, ...messages],
+        temperature: 0.3,
+        // GPT-OSS spends completion tokens on reasoning before its final JSON.
+        max_completion_tokens: 2048,
+        ...(config.model.startsWith("openai/gpt-oss-") ? { reasoning_effort: "low", include_reasoning: false } : {}),
+        response_format: structured ? {
+          type: "json_schema",
+          json_schema: {
+            name: "blue_reply", strict: true,
+            schema: { ...BLUE_OUTPUT.responseJsonSchema, additionalProperties: false },
+          },
+        } : { type: "json_object" },
+      }),
+    });
+    let upstream = await request(true);
+    // Some Groq model deployments accept JSON mode but reject strict schemas.
+    // Retry once in the provider's broader JSON mode before surfacing an error.
+    if (!upstream.ok && upstream.status === 400) {
+      await upstream.body?.cancel();
+      upstream = await request(false);
+    }
+    return upstream;
+  }
+  const callGemini = (suppressThinking: boolean) => fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": config.apiKey },
+      signal: AbortSignal.timeout(25000),
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: prompt }] },
+        contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+        generationConfig: { ...BLUE_OUTPUT, temperature: 0.3, maxOutputTokens: MAX_TOKENS, ...(suppressThinking ? THINKING_OFF : {}) },
+      }),
+    }
+  );
+  let upstream = await callGemini(thinkingConfigAccepted);
+  // Gemini sometimes rejects thinkingConfig with only a generic 400 message.
+  if (!upstream.ok && upstream.status === 400 && thinkingConfigAccepted) {
+    await upstream.body?.cancel();
+    thinkingConfigAccepted = false;
+    upstream = await callGemini(false);
+  }
+  return upstream;
+}
+
+export function extractGroqReply(result: { choices?: { message?: { content?: unknown } }[] }): string {
+  const content = result.choices?.[0]?.message?.content;
+  return typeof content === "string" ? content.trim() : "";
+}
 
 export function parseBlueReply(raw: string): { reply: string; reaction: string } {
   const clean = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
@@ -431,7 +499,8 @@ async function requireLimit(res: VercelResponse, key: string, limit: number, sec
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
-  const configured = Boolean(process.env.GEMINI_API_KEY) && isStoreConfigured();
+  const config = chatConfig();
+  const configured = Boolean(config) && isStoreConfigured();
 
   if (req.method === "GET") {
     // Admin: the session list behind the Chat panel's badge.
@@ -460,7 +529,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = typeof req.body === "string" ? safeJson(req.body) : (req.body ?? {});
   const action = (body as { action?: unknown } | null)?.action;
 
-  // Admin actions never touch Gemini, so they work even with no API key.
+  // Admin actions never touch the model, so they work even with no API key.
   if (action === "reply" || action === "handback") {
     if (!(await isAdmin(req))) return res.status(401).json({ error: "Unauthorized" });
     if (!isStoreConfigured()) {
@@ -469,7 +538,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return action === "reply" ? adminReply(res, body) : adminHandback(res, body);
   }
 
-  if (!configured) {
+  if (!configured || !config) {
     return res.status(503).json({ error: "The assistant isn't configured on this deployment." });
   }
 
@@ -483,7 +552,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = await getSupabase();
     const ipHash = hashIp(clientIp(req.headers));
 
-    // Reserve capacity before storing visitor content or calling Gemini.
+    // Reserve capacity before storing visitor content or calling the model.
     // Human takeover and failed upstream calls consume capacity too.
     if (!(await requireLimit(res, `chat:ip:${ipHash ?? "unknown"}`, PER_IP_PER_10MIN, 600))) return;
     if (!(await requireLimit(res, "chat:global", GLOBAL_PER_DAY, 86400))) return;
@@ -524,53 +593,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const published = (data as { content: unknown } | null)?.content ?? null;
     const summary = summarizeContent(published ?? (await shippedContent()));
 
-    /* Gemini's request shape differs from Anthropic's in three ways that
-       matter here: the system prompt is its own top-level field, the
-       assistant role is called "model", and text is an array of parts. */
-    const callModel = (suppressThinking: boolean) =>
-      fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-goog-api-key": process.env.GEMINI_API_KEY as string,
-          },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt(summary) }] },
-            contents: messages.map((m) => ({
-              role: m.role === "assistant" ? "model" : "user",
-              parts: [{ text: m.content }],
-            })),
-            generationConfig: {
-              ...BLUE_OUTPUT,
-              temperature: 0.3,
-              maxOutputTokens: MAX_TOKENS,
-              ...(suppressThinking ? THINKING_OFF : {}),
-            },
-          }),
-        }
-      );
-
-    /* Retry on ANY 400, not just one that names the field. Gemini rejected
-       thinkingConfig with the generic "Request contains an invalid argument."
-       — matching on the message missed it and took the assistant down. The
-       fallback is free: a request that's malformed for some other reason
-       fails the second time too and still 502s below. */
-    let upstream = await callModel(thinkingConfigAccepted);
-    if (!upstream.ok && upstream.status === 400 && thinkingConfigAccepted) {
-      thinkingConfigAccepted = false;
-      upstream = await callModel(false);
-    }
+    const upstream = await callBlueModel(config, systemPrompt(summary), messages);
 
     if (!upstream.ok) {
       await upstream.body?.cancel();
+      const detail = config.provider === "groq" ? ` (Groq returned ${upstream.status})` : "";
       return res.status(502).json({
-        error: "The assistant is temporarily unavailable. Please try again later.",
+        error: `The assistant is temporarily unavailable${detail}. Please try again later.`,
       });
     }
 
-    const { reply, reaction } = parseBlueReply(extractReply((await upstream.json()) as GeminiResponse));
+    const result = await upstream.json();
+    const raw = config.provider === "groq" ? extractGroqReply(result) : extractReply(result as GeminiResponse);
+    const { reply, reaction } = parseBlueReply(raw);
 
     // Keep the AI's turn in the transcript so James sees what the visitor
     // was already told before he takes over.
