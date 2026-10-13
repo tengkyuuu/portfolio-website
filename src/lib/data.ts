@@ -492,6 +492,39 @@ export const projects: Project[] = [
     ],
     links: [{ label: "Repo", href: "https://github.com/luffela/DASHBOARD" }],
   },
+  {
+    id: "rallys-transfers",
+    index: "11",
+    title: "Rallys Transfers",
+    // Held back from the intake JSON: "Australian" and the before-state are
+    // inferred; the repo is a private team repo, so no link (owner's call);
+    // no screenshots yet, so no gallery or figCaption. Team project — the
+    // contribution is scoped to the admin web only.
+    blurb:
+      "A chauffeur and limousine transport platform that joins an admin dispatch portal, passenger and driver mobile apps, and partner portals on one Firebase backend, with Stripe payments and Twilio calling.",
+    tags: ["Next.js", "Flutter", "Firebase", "TypeScript"],
+    stack: [
+      "Next.js App Router (React, TypeScript, Tailwind)",
+      "Flutter with Riverpod and go_router (passenger, driver, crew apps)",
+      "Firebase Cloud Functions (Node 22, TypeScript)",
+      "Cloud Firestore with custom security rules and admin claims",
+      "Stripe (flutter_stripe, @stripe/react-stripe-js)",
+      "Twilio (SMS and voice) and Google Maps / Places",
+      "Anthropic SDK for AI email generation",
+      "Playwright, Vitest and Firebase emulator tests",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-11",
+    year: "2026",
+    page: "12",
+    challenge:
+      "Chauffeur bookings arrive from hotels, airlines, corporate accounts and walk-in customers, each with different pricing, invoicing and approval rules. Dispatchers have to assign drivers, track flights, handle crew transfers and chase compliance paperwork, while passengers expect live tracking and instant confirmations. The team benchmarked against Limo Anywhere to find the gaps.",
+    solution:
+      "One Firebase project backs every surface: a Next.js admin portal with dispatch, CRM, pricing and payouts, role-specific portals for hotels, airlines, fleets and corporates, and Flutter apps for passengers and drivers. Business rules live in TypeScript Cloud Functions, and Firestore rules with admin claims enforce access. A Playwright, Vitest and emulator test suite guards the booking flow.",
+    contribution:
+      "Built the admin web portal's UI and its CRM feature, as one of several owners on a team project spanning the admin web, the Flutter apps and the Cloud Functions backend.",
+    links: [],
+  },
 ];
 
 export type SkillGroup = {
