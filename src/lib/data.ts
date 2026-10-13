@@ -498,8 +498,8 @@ export const projects: Project[] = [
     title: "Rallys Transfers",
     // Held back from the intake JSON: "Australian" and the before-state are
     // inferred; the repo is a private team repo, so no link (owner's call);
-    // no screenshots yet, so no gallery or figCaption. Team project — the
-    // contribution is scoped to the admin web only.
+    // Team project — the contribution is scoped to the admin web only. The
+    // screenshots are the admin portal running on demo data.
     blurb:
       "A chauffeur and limousine transport platform that joins an admin dispatch portal, passenger and driver mobile apps, and partner portals on one Firebase backend, with Stripe payments and Twilio calling.",
     tags: ["Next.js", "Flutter", "Firebase", "TypeScript"],
@@ -517,12 +517,28 @@ export const projects: Project[] = [
     ref: "REF: JVC-2026-11",
     year: "2026",
     page: "12",
+    figCaption:
+      "FIG 11.1: Rallys Transfers — the admin portal on demo data: the operations dashboard, the dispatch board and the CRM lead pipeline.",
     challenge:
       "Chauffeur bookings arrive from hotels, airlines, corporate accounts and walk-in customers, each with different pricing, invoicing and approval rules. Dispatchers have to assign drivers, track flights, handle crew transfers and chase compliance paperwork, while passengers expect live tracking and instant confirmations. The team benchmarked against Limo Anywhere to find the gaps.",
     solution:
       "One Firebase project backs every surface: a Next.js admin portal with dispatch, CRM, pricing and payouts, role-specific portals for hotels, airlines, fleets and corporates, and Flutter apps for passengers and drivers. Business rules live in TypeScript Cloud Functions, and Firestore rules with admin claims enforce access. A Playwright, Vitest and emulator test suite guards the booking flow.",
     contribution:
       "Built the admin web portal's UI and its CRM feature, as one of several owners on a team project spanning the admin web, the Flutter apps and the Cloud Functions backend.",
+    gallery: [
+      {
+        src: "/projects/rallys-transfers-dashboard.png",
+        alt: "Rallys Transfers admin dashboard in light mode with a maroon-accented left sidebar. Needs Attention cards show mostly zeros with 4 in progress, today's bookings read 8, and a chauffeur schedule lists four chauffeurs with their vehicles and status.",
+      },
+      {
+        src: "/projects/rallys-transfers-dispatch.png",
+        alt: "Rallys Transfers dispatch board in dark mode: a table of eight upcoming rides with pickup times, status, pickup and drop-off, vehicle, chauffeur, passenger and price. Four rides are unassigned and four are assigned and on the way.",
+      },
+      {
+        src: "/projects/rallys-transfers-crm.png",
+        alt: "Rallys Transfers CRM pipeline in light mode: tabs for Overview, Contacts, Pipeline, Quotes and Campaign, a $41,000 pipeline total, and a kanban with six stage columns from New Lead to Booking Confirmed holding seven lead cards.",
+      },
+    ],
     links: [],
   },
 ];
