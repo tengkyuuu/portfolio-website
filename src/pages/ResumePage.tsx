@@ -131,6 +131,7 @@ export function ResumePage() {
       <ResumeToolbar
         role={draft.role}
         template={draft.template}
+        content={filtered}
         onDownload={() => window.print()}
         onSave={saveDraft}
         saveStatus={saveStatus}

@@ -3,13 +3,16 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Check,
+  ClipboardCopy,
   Download,
   Link,
   LockKeyhole,
   Save,
 } from "lucide-react";
+import type { SiteContent } from "../../lib/content";
 import type { ResumeRole } from "../../lib/resume-roles";
 import type { ResumeTemplateId } from "../../lib/resume-builder";
+import { resumePlainText } from "./shared";
 export type { ResumeTemplateId } from "../../lib/resume-builder";
 
 export const TEMPLATES = [
@@ -28,12 +31,16 @@ export const TEMPLATES = [
 export function ResumeToolbar({
   role,
   template,
+  content,
   onDownload,
   onSave,
   saveStatus,
 }: {
   role: ResumeRole;
   template: ResumeTemplateId;
+  /** The already role-filtered content currently in the preview — what
+   *  "Copy as text" serializes. Not the unfiltered site content. */
+  content: SiteContent;
   onDownload: () => void;
   onSave: () => void;
   saveStatus: string;
@@ -41,17 +48,28 @@ export function ResumeToolbar({
   const [copyStatus, setCopyStatus] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timer.current), []);
+  function flashStatus(message: string) {
+    setCopyStatus(message);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopyStatus(""), 3500);
+  }
   async function copyLink() {
     const url = new URL(window.location.href);
     url.search = new URLSearchParams({ style: template, role }).toString();
     try {
       await navigator.clipboard.writeText(url.toString());
-      setCopyStatus("Style and role link copied");
+      flashStatus("Style and role link copied");
     } catch {
-      setCopyStatus("Couldn’t copy. Use the address bar.");
+      flashStatus("Couldn’t copy. Use the address bar.");
     }
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopyStatus(""), 3500);
+  }
+  async function copyText() {
+    try {
+      await navigator.clipboard.writeText(resumePlainText(content));
+      flashStatus("Résumé copied as plain text");
+    } catch {
+      flashStatus("Couldn’t copy. Clipboard access was blocked.");
+    }
   }
   return (
     <header className="resume-builder-header no-print">
@@ -69,6 +87,17 @@ export function ResumeToolbar({
           <button onClick={onSave}>
             <Save size={14} />
             <span>Save draft</span>
+          </button>
+          <button
+            onClick={() => void copyText()}
+            title="Copies the plain-text version — what application portals like Workday or Greenhouse want pasted into their résumé box, not a PDF."
+          >
+            {copyStatus === "Résumé copied as plain text" ? (
+              <Check size={14} />
+            ) : (
+              <ClipboardCopy size={14} />
+            )}
+            <span>Copy as text</span>
           </button>
           <button className="resume-export" onClick={onDownload}>
             <Download size={14} />
@@ -91,7 +120,7 @@ export function ResumeToolbar({
             onClick={() => void copyLink()}
             title="Copies the template and role settings. Draft edits stay on this device."
           >
-            {copyStatus.startsWith("Style") ? (
+            {copyStatus === "Style and role link copied" ? (
               <Check size={13} />
             ) : (
               <Link size={13} />
