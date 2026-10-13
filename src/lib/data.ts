@@ -444,6 +444,54 @@ export const projects: Project[] = [
       { label: "Live", href: "https://aperture-123144439483.asia-southeast1.run.app" },
     ],
   },
+  {
+    id: "pavetrack",
+    index: "10",
+    title: "PAVEtrack",
+    blurb:
+      "A web dashboard for civil engineers that turns a week of CCTV vehicle counts into AADT, cumulative ESAL and a recommended pavement thickness, replacing manual spreadsheet design calculations for road planning.",
+    // Scoped to what the linked repo (DASHBOARD) actually contains. The
+    // vehicle-detection pipeline shown in the second gallery image is real
+    // and a teammate's work, but its code lives in an untracked parent
+    // folder in neither DASHBOARD nor the older PAVEtrack deploy repo — so
+    // it's described in prose below, not claimed as a stack dependency a
+    // visitor could check out and not find.
+    tags: ["Python", "Streamlit", "pandas"],
+    stack: [
+      "Python",
+      "Streamlit",
+      "pandas",
+      "Custom CSS design system",
+      "Folium (GIS heatmap utility)",
+      "Playwright (UI smoke test)",
+    ],
+    kind: "web",
+    ref: "REF: JVC-2026-10",
+    year: "2026",
+    page: "11",
+    figCaption:
+      "FIG 10.1: PAVEtrack — dashboard with a sample traffic file loaded, showing AADT, ESAL, and a 160 mm recommended pavement thickness for Galas Feeder Port.",
+    challenge:
+      "Designing a road pavement needs a trustworthy traffic load figure, but engineers get it by hand-counting vehicles from CCTV footage and pushing the totals through separate AADT, ESAL and thickness calculations by hand. That is slow and easy to get wrong. The project began as a university thesis for Galas Feeder Port, which also had to show how well an automated vehicle-detection pipeline matched manual counts.",
+    solution:
+      "Each pavement-design stage became one small Python module: the CSV reader, AADT, cumulative ESAL growth series, and flexible or rigid thickness from CBR. A Streamlit shell wraps them with input validation, plain-language errors, and a sample CSV. A companion Roboflow-trained detector counts vehicles directly from CCTV footage and was validated against manual counts — that pipeline lives outside this repository, in the thesis team's video-processing scripts.",
+    // Team thesis project; dashboard is this contributor's half. No
+    // AGENTS.md-equivalent naming teammates exists here, so none are
+    // named — only the division of work is stated.
+    contribution:
+      "Built this dashboard as part of a university thesis team — the CSV-to-AADT-to-ESAL calculation engine and the Streamlit interface, while a teammate built the CCTV vehicle-detection pipeline that feeds it.",
+    gallery: [
+      {
+        src: "/projects/pavetrack-dashboard-results.png",
+        alt: "PAVEtrack dashboard with a sample traffic file loaded — an input panel on the left, and on the right AADT, ESAL figures, a 160 mm pavement thickness recommendation, and a traffic composition bar chart.",
+      },
+      {
+        src: "/projects/pavetrack-vehicle-detection.jpg",
+        alt: "CCTV frame from Galas Feeder Port with automated vehicle detection: an orange box and counting line on a passing bus, and smaller detection boxes on nearby motorcycles.",
+      },
+    ],
+    links: [{ label: "Repo", href: "https://github.com/luffela/DASHBOARD" }],
+  },
 ];
 
 export type SkillGroup = {
