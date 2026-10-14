@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defaultContact, defaultHero } from "../lib/data";
@@ -262,5 +264,61 @@ describe("service worker shell", () => {
         `${url} is precached but not in public/`
       ).toBe(true);
     }
+  });
+});
+
+describe("build-time stamping (scripts/apply-seo.mjs)", () => {
+  const ORIGIN = "https://example.test";
+  const dist = mkdtempSync(path.join(tmpdir(), "seo-dist-"));
+  copyFileSync(path.join(ROOT, "index.html"), path.join(dist, "index.html"));
+  execFileSync(process.execPath, [path.join(ROOT, "scripts", "apply-seo.mjs")], {
+    env: { ...process.env, SEO_DIST: dist, SITE_URL: ORIGIN },
+    stdio: "pipe",
+  });
+  const read = (file: string) =>
+    readFileSync(path.join(dist, file), "utf8").replace(/\s*\n\s*/g, " ");
+  const canonical = (doc: string) => /<link rel="canonical" href="([^"]*)"/.exec(doc)?.[1];
+  const ogUrl = (doc: string) =>
+    /<meta\s+property="og:url"\s+content="([^"]*)"/.exec(doc)?.[1];
+
+  it("canonicalises the home page to the origin root", () => {
+    expect(canonical(read("index.html"))).toBe(`${ORIGIN}/`);
+  });
+
+  it("gives /credits its own canonical instead of the home page's", () => {
+    // vercel.json rewrites every path to index.html, so /credits used to be
+    // served a head whose canonical said "/". Google reads that as "this is
+    // a duplicate of the home page" and drops /credits from the index even
+    // though the sitemap lists it. A static file at credits/index.html
+    // wins over the rewrite and carries its own head.
+    const doc = read("credits/index.html");
+    expect(canonical(doc)).toBe(`${ORIGIN}/credits`);
+    expect(ogUrl(doc)).toBe(`${ORIGIN}/credits`);
+    expect(/<title>([^<]*)<\/title>/.exec(doc)?.[1]).not.toBe(
+      /<title>([^<]*)<\/title>/.exec(read("index.html"))?.[1]
+    );
+  });
+
+  it("emits a document for every public route the sitemap lists", () => {
+    const sitemap = readFileSync(path.join(dist, "sitemap.xml"), "utf8");
+    const routes = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map(([, loc]) =>
+      loc.replace(ORIGIN, "")
+    );
+    for (const route of routes) {
+      if (route === "/") continue;
+      expect(
+        existsSync(path.join(dist, route, "index.html")),
+        `${route} is in the sitemap but has no document of its own`
+      ).toBe(true);
+    }
+  });
+
+  it("keeps the credits title inside what Google will show", () => {
+    const title = /<title>([^<]*)<\/title>/.exec(read("credits/index.html"))?.[1] ?? "";
+    expect(title.length).toBeLessThanOrEqual(62);
+  });
+
+  it("cleans up", () => {
+    rmSync(dist, { recursive: true, force: true });
   });
 });

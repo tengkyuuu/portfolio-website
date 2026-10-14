@@ -31,13 +31,14 @@
  * records that file's size.
  */
 
-import { readFileSync, writeFileSync, statSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
-const DIST = path.join(ROOT, "dist");
+// SEO_DIST lets the test run this against a scratch copy of index.html.
+const DIST = process.env.SEO_DIST ?? path.join(ROOT, "dist");
 const INDEX = path.join(DIST, "index.html");
 
 /**
@@ -114,6 +115,53 @@ if (origin) {
       "leaving relative tags and skipping sitemap.xml. " +
       "Social cards will not render until this is set."
   );
+}
+
+/**
+ * Per-route documents. vercel.json rewrites every non-API path to
+ * /index.html, so without this /credits is served the home page's head:
+ * title, description and a canonical pointing at "/". Google reads that
+ * canonical as "this page is a duplicate of the home page" and folds it
+ * in, even though the sitemap lists /credits as its own URL. A static
+ * file at dist/credits/index.html wins over the rewrite, so the route
+ * gets its own head and the SPA still boots from the same bundle.
+ */
+const ROUTE_META = {
+  "/credits": {
+    title: "Image Credits — James Vincent Calunsag",
+    description:
+      "The handful of images on this site that aren't mine: where Blue's reaction stickers and launcher icon came from, and how the original artist can claim credit.",
+  },
+};
+
+for (const [route, meta] of Object.entries(ROUTE_META)) {
+  const dir = path.join(DIST, route.replace(/^\//, ""));
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, "index.html"), forRoute(html, route, meta));
+}
+console.log(`[seo] wrote per-route html for ${Object.keys(ROUTE_META).join(", ")}`);
+
+function forRoute(source, route, { title, description }) {
+  const attr = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  const setMeta = (doc, kind, key, value) =>
+    doc.replace(
+      new RegExp(`(<meta\\s+${kind}="${key}"\\s+content=")[^"]*(")`),
+      (_m, head, tail) => `${head}${attr(value)}${tail}`
+    );
+  let doc = source.replace(/<title>[^<]*<\/title>/, `<title>${attr(title)}</title>`);
+  doc = setMeta(doc, "name", "description", description);
+  doc = setMeta(doc, "property", "og:title", title);
+  doc = setMeta(doc, "property", "og:description", description);
+  doc = setMeta(doc, "name", "twitter:title", title);
+  doc = setMeta(doc, "name", "twitter:description", description);
+  if (origin) {
+    doc = doc.replace(
+      /(<link rel="canonical" href=")[^"]*(")/,
+      (_m, head, tail) => `${head}${origin}${route}${tail}`
+    );
+    doc = setMeta(doc, "property", "og:url", `${origin}${route}`);
+  }
+  return doc;
 }
 
 writeFileSync(path.join(DIST, "robots.txt"), robots(origin));
