@@ -1,0 +1,94 @@
+import { chromium } from 'playwright';
+import { build } from 'esbuild';
+import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
+import { mkdir } from 'node:fs/promises';
+await mkdir('.screenshots', { recursive: true });
+import { pathToFileURL } from 'node:url';
+await build({ entryPoints: ['api/inquiries.ts'], outfile: '.screenshots/invitation-template.mjs', bundle: true, packages: 'external', platform: 'node', format: 'esm', logLevel: 'silent' });
+const { invitationEmail } = await import(pathToFileURL(resolve('.screenshots/invitation-template.mjs')).href);
+const browser = await chromium.launch();
+let sendCalls = 0;
+try {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await context.addInitScript(() => {
+    if (window !== window.top) return;
+    sessionStorage.setItem('jvc_admin_auth_v1', '1');
+    sessionStorage.setItem('jvc_admin_token_v1', 'preview-fixture-only');
+    sessionStorage.setItem('jvc_admin_expires_v1', String(Date.now()+3600000));
+    sessionStorage.setItem('jvc_admin_mode_v1', 'server');
+  });
+  await context.route('**/invitations/letter-*', route => route.fulfill({ path: resolve('public/invitations', new URL(route.request().url()).pathname.split('/').pop()) }));
+  await context.route('**/api/**', async route => {
+    const req = route.request(), url = new URL(req.url());
+    if (url.searchParams.get('op') === 'invitations') {
+      if (req.method() === 'GET') return route.fulfill({ json: { configured: true, missing: [], from: 'James Calunsag <contact@example.com>', siteUrl: 'https://portfolio.example' } });
+      const draft = req.postDataJSON();
+      if (!draft.preview) { sendCalls++; throw new Error('Sending is forbidden in this preview check'); }
+      return route.fulfill({ json: { ...invitationEmail(draft, 'https://portfolio.example'), recipients: draft.recipients, subject: draft.subject, from: 'James Calunsag <contact@example.com>', siteUrl: 'https://portfolio.example' } });
+    }
+    if (req.method() !== 'GET') return route.abort();
+    return route.fulfill({ json: url.pathname === '/api/health' ? { ok:true, authConfigured:true, storeConfigured:true } : {} });
+  });
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', err => errors.push(err.message));
+  await page.goto('http://127.0.0.1:5173/admin#invitations');
+  await page.getByRole('button', { name: 'Preview invitation' }).waitFor();
+  await page.getByLabel(/Recipients/).fill('preview@example.com');
+  await page.waitForTimeout(4500);
+  await page.screenshot({ path: '.screenshots/invite-compose-desktop.png', fullPage: true });
+  await page.getByRole('button', { name: 'Preview invitation' }).click();
+  await page.getByRole('heading', { name: 'A look inside their inbox.' }).waitFor();
+  await page.frameLocator('iframe[title="Invitation email preview"]').locator('.invite-motion').evaluate(img => img.decode());
+  await page.screenshot({ path: '.screenshots/invite-preview-desktop.png', fullPage: true });
+  await page.getByRole('button', { name: 'Mobile preview', exact: true }).click();
+  assert.equal(await page.locator('iframe').evaluate(el => Math.round(el.getBoundingClientRect().width)), 375);
+  await page.getByRole('button', { name: 'Show still preview' }).click();
+  await page.frameLocator('iframe').locator('.invite-still').waitFor({ state: 'visible' });
+  await page.setViewportSize({ width:390, height:844 });
+  await page.evaluate(() => scrollTo(0,0));
+  await page.screenshot({ path: '.screenshots/invite-preview-mobile.png', fullPage: true });
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  const frame = page.frames().find(f => f !== page.mainFrame());
+  assert(await frame.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'email overflow');
+  const emailPage = await context.newPage();
+  await emailPage.setViewportSize({ width:600, height:1000 });
+  await emailPage.setContent(invitationEmail({message:'Hi there!\n\nI’d love to invite you to explore my portfolio—a little space for the projects, designs, and ideas I’ve been working on. Take a look around, meet Blue, and let me know what you think.\n\nSee you there,\nJames'}, 'https://portfolio.example').html);
+  await emailPage.waitForTimeout(4200);
+  await emailPage.screenshot({ path: '.screenshots/invitation-email.png', fullPage: true });
+  await emailPage.close();
+  await page.setViewportSize({ width:1440,height:1000 });
+  await page.goto('http://127.0.0.1:5173/#work');
+  await page.getByRole('button', { name: 'Highlight text', exact: true }).click();
+  await page.screenshot({ path: '.screenshots/highlights-idle-desktop.png' });
+  const select = async () => {
+    await page.locator('#proj-flux p').first().scrollIntoViewIfNeeded();
+    await page.locator('#proj-flux p').first().evaluate(el => { const range=document.createRange();range.selectNodeContents(el);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);document.dispatchEvent(new Event('selectionchange')); });
+    await page.waitForTimeout(200);
+  };
+  await select();
+  await page.screenshot({ path: '.screenshots/highlights-selection-desktop.png' });
+  await page.getByRole('button', { name:'Highlight selection',exact:true }).click();
+  assert(await page.evaluate(() => JSON.parse(localStorage.getItem('jvc_text_marks_v1')).marks.length > 0));
+  await select();
+  assert(await page.getByRole('button', {name:'Remove selected',exact:true}).isEnabled());
+  await page.getByRole('button', {name:'Remove selected',exact:true}).click();
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('jvc_text_marks_v1')).marks.length),0);
+  await page.setViewportSize({width:390,height:844});
+  await page.getByRole('button', {name:'Toggle navigation pane',exact:true}).click();
+  await select();
+  await page.screenshot({path:'.screenshots/highlights-selection-mobile.png'});
+  assert(await page.locator('.highlight-tools').evaluate(el => {const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;}));
+  await page.getByRole('button', {name:'Highlight selection',exact:true}).click();
+  await page.evaluate(() => { document.documentElement.classList.add('dark'); document.documentElement.dataset.theme='black'; });
+  await page.screenshot({path:'.screenshots/highlights-mobile-dark.png'});
+  await page.getByRole('button', {name:'Clear all highlights',exact:true}).click();
+  await page.getByRole('button', {name:'Keep them',exact:true}).click();
+  assert(await page.evaluate(() => JSON.parse(localStorage.getItem('jvc_text_marks_v1')).marks.length > 0));
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.highlight-tools').count(),0);
+  assert.equal(sendCalls,0);
+  assert.deepEqual(errors,[]);
+  console.log(JSON.stringify({preview:true, mobile:true, highlightAddErase:true, clearCancellation:true, noEmailsSent:true}));
+} finally { await browser.close(); }

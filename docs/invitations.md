@@ -2,6 +2,12 @@
 
 Open **Admin → Invitations**. Add up to ten addresses, edit the subject and message, then choose **Preview invitation**. The preview uses the same HTML and plain text that the server sends. Recipients are deduplicated, and each gets a separate email.
 
+The invitation includes a blue document-style header and a four-second letter-opening animation that plays once. The CTA and message remain real HTML, so the invitation still works with images blocked. Older clients can display the GIF's first frame; clients supporting reduced-motion media queries use the still PNG instead. The animation is 113 KB and is hosted on the configured `SITE_URL`.
+
+The review step offers desktop/mobile sizing, replay, and a still-image preview. Changing the message returns to compose and requires a new preview before sending. Gmail drafts are under **Prefer a plain-text Gmail draft?** and do not include the design or animation.
+
+To regenerate the artwork, run `python scripts/generate-invitation-art.py` with Pillow installed and commit both files in `public/invitations/`. Run `node scripts/check-invitation-highlights.mjs` with the local dev server running for browser checks; every invitation request in that check is intercepted, and sending is forbidden.
+
 ## Use Gmail now
 
 Without a custom sending domain, preview the invitation and choose **Open in Gmail** for each person. Gmail opens a plain-text draft with the invitation and portfolio link. Select your Gmail account, review it, and send it there. Opening the draft does not send anything.

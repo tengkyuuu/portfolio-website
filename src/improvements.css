@@ -57,11 +57,28 @@
 
 ::highlight(visitor-marks) { background-color: #ffe283; color: #242015; }
 .visitor-highlight-fallback { position: absolute; pointer-events: none; z-index: 20; background: #ffd75e; opacity: .35; mix-blend-mode: multiply; }
-.highlight-tools { position: fixed; z-index: 90; bottom: 42px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 24px); background: var(--color-paper); color: var(--color-ink); border: 1px solid var(--color-rule); box-shadow: 0 8px 30px #0003; padding: 14px 18px; font: 12px/1.5 var(--font-ui); }
-.highlight-tools p { margin-bottom: 8px; }
-.highlight-tools small { color: var(--color-ink-muted); }
-.highlight-tools > div { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.highlight-tools button:disabled { opacity: .45; cursor: not-allowed; }
+.highlight-tools { position: fixed; z-index: 90; bottom: 44px; left: 50%; transform: translateX(-50%); width: 400px; max-width: calc(100vw - 24px); background: var(--color-paper); color: var(--color-ink); box-shadow: 0 6px 32px #0003; border-radius: 12px; font: 12px/1.5 var(--font-ui); overflow: hidden; }
+.highlight-tools.is-anchored { bottom: auto; transform: none; }
+.highlight-toolbar { display: flex; align-items: center; gap: 6px; padding: 10px; min-height: 56px; }
+.highlight-guidance { display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1; }
+.highlight-guidance strong { display: block; font-size: 12px; font-weight: 600; }
+.highlight-guidance div > span { display: block; color: var(--color-ink-muted); font-size: 11px; }
+.highlight-pen { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; background: #ffe283; color: #242015; border-radius: 8px; }
+.highlight-tools button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 8px 10px; border-radius: 6px; font-weight: 500; cursor: pointer; }
+.highlight-tools button:focus-visible { outline: 2px solid var(--color-word-blue); outline-offset: -2px; }
+.highlight-tools button:disabled { opacity: .35; cursor: default; }
+.highlight-tools .highlight-action { background: #ffe283; color: #242015; font-weight: 600; }
+.highlight-utilities { display: flex; align-items: center; margin-left: auto; gap: 2px; }
+.highlight-utilities button { width: 32px; padding: 7px; color: var(--color-ink-muted); }
+.highlight-count { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--color-ink-muted); padding: 0 5px; }
+.highlight-footnote { display: flex; gap: 5px; align-items: center; padding: 7px 12px; border-top: 1px solid var(--color-rule); color: var(--color-ink-muted); font-size: 10px; }
+.highlight-footnote > span { margin-left: auto; }
+.highlight-confirm { padding: 4px; width: 100%; }
+.highlight-confirm strong, .highlight-confirm > span { display: block; }
+.highlight-confirm > span { margin-top: 3px; color: var(--color-ink-muted); }
+.highlight-confirm > div { display: flex; gap: 6px; margin-top: 12px; }
+@media (hover:hover) and (pointer:fine) { .highlight-tools button:not(:disabled):hover { background: var(--color-ribbon-hover); color: var(--color-ink); } .highlight-tools .highlight-action:hover { background: #f5d368; color: #242015; } }
+@media (max-width:600px) { .highlight-tools { bottom: 42px; } .highlight-footnote > span { display: none; } .highlight-guidance div > span { max-width: 25ch; } }
 @media print { ::highlight(visitor-marks) { background: transparent; color: inherit; } }
 
 .featured-project { display: block; }

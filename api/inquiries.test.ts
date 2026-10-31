@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { fakeReq, fakeRes, createFakeSupabase, type FakeDb } from "../src/test/fake-supabase";
@@ -47,7 +48,7 @@ describe("invitations", () => {
     const res = await call({ ...draft, preview: true, message: '<img src=x onerror="alert(1)"> & Hello' });
     expect(res.statusCode).toBe(200);
     expect((res.body as { html: string }).html).toContain("&lt;img");
-    expect((res.body as { html: string }).html).not.toContain("<img");
+    expect((res.body as { html: string }).html).not.toContain("<img src=x");
     expect(fetch).not.toHaveBeenCalled();
   });
   it("keeps recipients private and uses the same idempotency key for retries", async () => {
@@ -86,5 +87,17 @@ describe("invitations", () => {
   });
   it("builds a readable text alternative", () => {
     expect(invitationEmail(draft, "https://example.com").text).toContain(draft.message);
+  });
+  it("ships a short email animation with a still fallback and a real text CTA", () => {
+    const { html } = invitationEmail(draft, "https://example.com");
+    expect(html).toContain('src="https://example.com/invitations/letter-opening-v1.gif"');
+    expect(html).toContain('src="https://example.com/invitations/letter-open-v1.png"');
+    expect(html).toContain("prefers-reduced-motion:reduce");
+    expect(html).toContain("Explore the portfolio");
+    const gif = readFileSync("public/invitations/letter-opening-v1.gif");
+    expect(gif.subarray(0, 3).toString()).toBe("GIF");
+    expect(gif.length).toBeLessThan(300_000);
+    expect(gif.includes(Buffer.from("NETSCAPE2.0"))).toBe(false); // once, not an endless loop
+    expect(readFileSync("public/invitations/letter-open-v1.png").length).toBeGreaterThan(0);
   });
 });

@@ -21,6 +21,7 @@ it("previews first, opens separate Gmail drafts, and preserves the send key when
   fireEvent.click(screen.getByRole("button", { name: "Preview invitation" }));
   const send = await screen.findByRole("button", { name: "Send 2 invitations" });
   expect(screen.getByTitle("Invitation email preview")).toHaveAttribute("sandbox", "");
+  fireEvent.click(screen.getByText("Prefer a plain-text Gmail draft?"));
   const gmail = screen.getAllByRole("link", { name: /Open in Gmail/ });
   expect(gmail).toHaveLength(2);
   expect(new URL(gmail[0].getAttribute("href")!).searchParams.get("to")).toBe("one@example.com");

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Mail, Send, Eye, CheckCircle2, ArrowUpRight } from "lucide-react";
+import { Mail, Send, Eye, CheckCircle2, ArrowUpRight, ArrowLeft, Monitor, Smartphone, RotateCcw, Pause, Play, LoaderCircle } from "lucide-react";
 import { getAdminToken } from "../../lib/auth";
 import { clearStaleAdminAuth } from "../../lib/api";
-import { Button, Card, Field } from "./ui";
+import { Button, Field } from "./ui";
+import "./invitations.css";
 
 type Config = { configured: boolean; missing: string[]; from: string; siteUrl: string };
 type Draft = { recipients: string; subject: string; message: string; requestId: string };
@@ -44,6 +45,11 @@ export function InvitationsPanel() {
   const [error, setError] = useState("");
   const [accepted, setAccepted] = useState<{ email: string; id: string }[]>([]);
   const sending = useRef(false);
+  const previewHeading = useRef<HTMLHeadingElement>(null);
+  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const [still, setStill] = useState(() => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
+  const [replay, setReplay] = useState(0);
+  useEffect(() => { if (preview) previewHeading.current?.focus(); }, [preview]);
   const recipients = [...new Set(draft.recipients.split(/[\s,;]+/).map(value => value.trim().toLowerCase()).filter(Boolean))];
 
   useEffect(() => {
@@ -79,41 +85,48 @@ export function InvitationsPanel() {
     } finally { sending.current = false; setBusy(null); }
   }
 
-  return <>
-    <Card title="A personal invitation" description="Invite someone into your corner of the internet. Each person receives their own email, with a link to your portfolio.">
-      <div className="flex flex-wrap items-center gap-2 font-ui text-xs text-ink-muted mb-5">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-rule px-2.5 py-1"><Mail size={13} />{config?.configured ? "Resend ready" : "Resend setup"}</span>
-        {config?.from && <span>From {config.from}</span>}
-      </div>
-      {config && !config.configured && <div className="border border-rule rounded-lg bg-row-alt p-4 mb-5 font-ui text-xs text-ink-muted space-y-2">
-        <p>Set {config.missing.map(key => <code key={key} className="mr-2 font-semibold text-ink">{key}</code>)} in your server environment, then restart or redeploy.</p>
-        <p>Resend needs a sender on a domain you own. Gmail can be your Reply-To address. You can use the Gmail drafts below while you set up a domain.</p>
-        <a href="https://resend.com/domains" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-word-blue underline">Open Resend <ArrowUpRight size={12} /></a>
+  const previewHtml = preview && still
+    ? preview.html.replace("</head>", '<style>.invite-motion{display:none!important}.invite-still{display:block!important;max-height:none!important;overflow:visible!important}</style></head>')
+    : preview?.html;
+  return <section className="invitation-studio" aria-label="Invitation studio">
+    <header className="invite-intro">
+      <div><h2>A little mail.<br /><em>A proper entrance.</em></h2><p>A personal note, dressed for the occasion. Invite people to the work—and the person behind it.</p></div>
+      <picture><source media="(prefers-reduced-motion: reduce)" srcSet="/invitations/letter-open-v1.png" /><img src="/invitations/letter-opening-v1.gif" alt="" width="600" height="260" /></picture>
+    </header>
+    <ol className="invite-steps" aria-label="Invitation progress">
+      {["Write your note", "Review the email", "Send it personally"].map((label, index) => <li key={label} aria-current={(accepted.length ? 2 : preview ? 1 : 0) === index ? "step" : undefined}><span>{index + 1}</span>{label}</li>)}
+    </ol>
+    <div className="invite-workspace">
+      <div className="invite-connection"><span><Mail size={14} />{config?.configured ? "Resend ready" : config ? "Resend setup" : "Checking sender…"}</span>{config?.from && <small>{config.from}</small>}</div>
+      {config && !config.configured && <div className="invite-setup">
+        <p>Set {config.missing.map(key => <code key={key}>{key} </code>)} on the server to send the designed email.</p>
+        <p>Resend needs a verified sending domain. Gmail drafts are available as a plain-text alternative.</p>
+        <a href="https://resend.com/domains" target="_blank" rel="noreferrer">Set up your sender <ArrowUpRight size={13} /></a>
       </div>}
-      {accepted.length ? <div role="status" className="space-y-4 font-ui">
-        <div className="flex items-center gap-2 text-word-blue"><CheckCircle2 size={22} /><strong>{accepted.length} invitation{accepted.length === 1 ? "" : "s"} accepted by Resend</strong></div>
-        <ul className="text-sm text-ink-muted space-y-1">{accepted.map(item => <li key={item.id}>{item.email}</li>)}</ul>
-        <p className="text-xs text-ink-muted">You can check delivery and bounce details in the Resend dashboard.</p>
+      {accepted.length ? <div role="status" className="invite-success invite-enter">
+        <CheckCircle2 size={38} strokeWidth={1.5} /><h3>Your invitations are on their way.</h3>
+        <p>{accepted.length} invitation{accepted.length === 1 ? "" : "s"} accepted by Resend</p>
+        <ul>{accepted.map(item => <li key={item.id}>{item.email}</li>)}</ul>
+        <p className="invite-fine">Check the Resend dashboard for delivery and bounce details.</p>
         <Button onClick={() => { setAccepted([]); setDraft(freshDraft()); }}>Write another invitation</Button>
-      </div> : <form onSubmit={event => { event.preventDefault(); void submit(false); }} className="space-y-5">
-        <Field label="Recipients" hint="Up to 10 · separate with commas or new lines" required>
-          <textarea className={fieldClass} rows={2} value={draft.recipients} onChange={event => edit("recipients", event.target.value)} placeholder="friend@example.com, collaborator@example.com" maxLength={2600} disabled={!!busy} required />
-        </Field>
+      </div> : preview ? <div className="invite-review invite-enter">
+        <div className="invite-review-heading"><h3 ref={previewHeading} tabIndex={-1}>A look inside their inbox.</h3><Button variant="ghost" disabled={!!busy} onClick={() => setPreview(null)}><ArrowLeft size={14} />Edit note</Button></div>
+        <dl className="invite-addresses"><dt>To</dt><dd>{preview.recipients.join(", ")}</dd><dt>Subject</dt><dd>{preview.subject}</dd></dl>
+        <div className="invite-preview-controls">
+          <div role="group" aria-label="Preview size"><button aria-label="Desktop preview" aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}><Monitor size={15} /><span>Desktop</span></button><button aria-label="Mobile preview" aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}><Smartphone size={15} /><span>Mobile</span></button></div>
+          <div><button aria-label={still ? "Play animation" : "Show still preview"} onClick={() => { setStill(!still); setReplay(n => n + 1); }}>{still ? <Play size={15} /> : <Pause size={15} />}<span>{still ? "Play" : "Still"}</span></button><button aria-label="Replay invitation animation" disabled={still} onClick={() => setReplay(n => n + 1)}><RotateCcw size={15} /><span>Replay</span></button></div>
+        </div>
+        <div className="invite-preview-stage" data-device={device}><iframe key={`${replay}-${still}`} title="Invitation email preview" sandbox="" srcDoc={previewHtml} /></div>
+        <div className="invite-dispatch"><div><strong>Ready to make an entrance?</strong><p>Each person receives their own email. Recipient addresses stay private.</p></div><Button className="invite-primary" variant="primary" disabled={!!busy || !config?.configured} onClick={() => void submit(true)}>{busy === "send" ? <LoaderCircle className="invite-spinner" size={16} /> : <Send size={16} />}{busy === "send" ? "Sending…" : `Send ${preview.recipients.length} invitation${preview.recipients.length === 1 ? "" : "s"}`}</Button></div>
+        <details className="invite-gmail"><summary>Prefer a plain-text Gmail draft?</summary><p>These drafts contain your message and link, without the design or animation. Review and send in Gmail.</p><div>{preview.recipients.map(email => <a key={email} href={`https://mail.google.com/mail/?${new URLSearchParams({ view: "cm", fs: "1", to: email, su: preview.subject, body: preview.text })}`} target="_blank" rel="noreferrer">Open in Gmail · {email}<ArrowUpRight size={12} /></a>)}</div></details>
+      </div> : <form onSubmit={event => { event.preventDefault(); void submit(false); }} className="invite-compose">
+        <div className="invite-compose-heading"><h3>Make it personal.</h3><p>The animation and design are taken care of. These words are yours.</p></div>
+        <Field label="Recipients" hint="Up to 10 · commas or new lines" required><textarea className={fieldClass} rows={2} value={draft.recipients} onChange={event => edit("recipients", event.target.value)} placeholder="friend@example.com, collaborator@example.com" maxLength={2600} disabled={!!busy} required /></Field>
         <Field label="Subject" required><input className={fieldClass} value={draft.subject} onChange={event => edit("subject", event.target.value)} maxLength={150} disabled={!!busy} required /></Field>
-        <Field label="Your message" required><textarea className={fieldClass + " leading-relaxed"} rows={8} value={draft.message} onChange={event => edit("message", event.target.value)} maxLength={3000} disabled={!!busy} required /></Field>
-        <div className="flex flex-wrap items-center gap-3"><Button type="submit" disabled={!!busy || !config?.siteUrl || recipients.length === 0 || recipients.length > 10}><Eye size={15} />{busy === "preview" ? "Preparing preview…" : "Preview invitation"}</Button><span className="font-ui text-xs text-ink-subtle">{recipients.length} recipient{recipients.length === 1 ? "" : "s"} · sent individually</span></div>
+        <Field label="Your message" required><textarea className={fieldClass + " invite-message"} rows={8} value={draft.message} onChange={event => edit("message", event.target.value)} maxLength={3000} disabled={!!busy} required /></Field>
+        <div className="invite-compose-footer"><span>{recipients.length ? `${recipients.length} recipient${recipients.length === 1 ? "" : "s"}` : "Add someone to your guest list."}<small>Nothing sends until you review it.</small></span><Button className="invite-primary" variant="primary" type="submit" disabled={!!busy || !config?.siteUrl || recipients.length === 0 || recipients.length > 10}>{busy === "preview" ? <LoaderCircle className="invite-spinner" size={16} /> : <Eye size={16} />}{busy === "preview" ? "Preparing preview…" : "Preview invitation"}</Button></div>
       </form>}
-      {error && <p role="alert" className="mt-4 font-ui text-sm text-red-600 dark:text-red-300">{error}</p>}
-    </Card>
-    {preview && <Card title="Ready to send?" description="Review the email and recipients below.">
-      <dl className="font-ui text-xs text-ink-muted grid grid-cols-[60px_1fr] gap-2 mb-4"><dt>To</dt><dd className="break-words">{preview.recipients.join(", ")}</dd><dt>From</dt><dd>{preview.from}</dd><dt>Subject</dt><dd className="font-semibold text-ink">{preview.subject}</dd></dl>
-      <iframe title="Invitation email preview" sandbox="" srcDoc={preview.html} className="w-full h-[520px] border border-rule rounded-lg bg-white" />
-      <div className="mt-5 flex flex-wrap items-center gap-3"><Button disabled={!!busy || !config?.configured} onClick={() => void submit(true)}><Send size={14} />{busy === "send" ? "Sending…" : `Send ${preview.recipients.length} invitation${preview.recipients.length === 1 ? "" : "s"}`}</Button><span className="font-ui text-xs text-ink-subtle">An invitation to visit your website.</span></div>
-      <div className="mt-6 border-t border-rule pt-4 font-ui">
-        <h3 className="text-sm font-semibold text-ink">Send with Gmail</h3>
-        <p className="text-xs text-ink-muted mt-1 mb-3">Open a plain-text draft for each person. Choose your Gmail account, review it, and send there.</p>
-        <div className="flex flex-wrap gap-2">{preview.recipients.map(email => <a key={email} className="inline-flex items-center gap-1.5 text-xs rounded-lg border border-rule px-3 py-2 text-word-blue hover:bg-row-alt" href={`https://mail.google.com/mail/?${new URLSearchParams({ view: "cm", fs: "1", to: email, su: preview.subject, body: preview.text })}`} target="_blank" rel="noreferrer">Open in Gmail · {email}<ArrowUpRight size={12} /></a>)}</div>
-      </div>
-    </Card>}
-  </>;
+      {error && <p role="alert" className="invite-error">{error}</p>}
+    </div>
+  </section>;
 }

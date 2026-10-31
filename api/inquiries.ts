@@ -237,7 +237,34 @@ function escapeEmail(value: string): string {
 
 export function invitationEmail(invite: Invitation, siteUrl: string) {
   const url = escapeEmail(siteUrl);
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#edf0f5;color:#283246;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:32px 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:auto;background:white;border:1px solid #dbe1eb"><tr><td style="background:#244b87;padding:18px 28px;color:white;font-size:13px;font-weight:bold">W &nbsp; Portfolio.docx</td></tr><tr><td style="padding:34px 28px"><p style="font-size:10px;letter-spacing:2px;color:#2d5592">YOU'RE INVITED</p><h1 style="font-family:Georgia,serif;font-size:32px;font-weight:normal;margin:18px 0 24px">Come have a look around.</h1><p style="font-size:15px;line-height:1.8;margin-bottom:28px">${escapeEmail(invite.message).replace(/\r?\n/g, "<br>")}</p><a href="${url}" style="display:inline-block;background:#2d5592;color:white;padding:13px 20px;text-decoration:none;border-radius:4px;font-size:13px;font-weight:bold">Explore the portfolio →</a><p style="font-size:11px;color:#6b7280;margin-top:30px">Projects, design, and the person behind the work.</p><p style="font-size:11px;overflow-wrap:anywhere"><a style="color:#2d5592" href="${url}">${url}</a></p></td></tr></table></td></tr></table></body></html>`;
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@media only screen and (max-width:480px){.invite-pad{padding-left:24px!important;padding-right:24px!important}.invite-title{font-size:34px!important}.invite-outer{padding:12px 8px!important}}
+@media (prefers-reduced-motion:reduce){.invite-motion{display:none!important}.invite-still{display:block!important;max-height:none!important;overflow:visible!important}}
+</style></head>
+<body style="margin:0;background:#edf0f5;color:#283246;font-family:Arial,Helvetica,sans-serif">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">A personal invitation from James. Projects, design, and the story behind the work.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="invite-outer" align="center" style="padding:32px 16px">
+<!--[if mso]><table role="presentation" width="600"><tr><td><![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:auto;background:#ffffff">
+<tr><td class="invite-pad" bgcolor="#244b87" style="padding:24px 40px;color:#ffffff;border-bottom:1px solid #5074a8">
+<table role="presentation" width="100%"><tr><td style="font-size:14px;font-weight:bold;color:#ffffff">W &nbsp; Portfolio.docx</td><td align="right" style="font-size:12px;color:#dce7f7">From James, to you.</td></tr></table>
+</td></tr>
+<tr><td class="invite-pad" bgcolor="#244b87" style="padding:34px 40px 0;color:#ffffff"><h1 class="invite-title" style="font-family:Georgia,serif;font-size:44px;line-height:1.12;letter-spacing:-1px;font-weight:normal;margin:0;color:#ffffff">Consider this<br>your personal invite.</h1></td></tr>
+<tr><td bgcolor="#244b87" style="font-size:0;line-height:0">
+<img class="invite-motion" src="${url}/invitations/letter-opening-v1.gif" width="600" height="260" alt="An open envelope holding a Portfolio.docx document, with a paper plane beside it." style="display:block;width:100%;max-width:600px;height:auto;border:0">
+<div class="invite-still" style="display:none;max-height:0;overflow:hidden;mso-hide:all"><img src="${url}/invitations/letter-open-v1.png" width="600" height="260" alt="An open envelope holding a Portfolio.docx document." style="display:block;width:100%;max-width:600px;height:auto;border:0"></div>
+</td></tr>
+<tr><td class="invite-pad" style="padding:36px 40px 40px">
+<p style="font-size:16px;line-height:1.8;margin:0 0 28px">${escapeEmail(invite.message).replace(/\r?\n/g, "<br>")}</p>
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#244b87" style="border-radius:4px;mso-padding-alt:16px 24px"><a href="${url}" style="display:inline-block;background:#244b87;color:#ffffff;padding:16px 24px;text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold">Explore the portfolio &nbsp; &#8599;</a></td></tr></table>
+<p style="font-family:Georgia,serif;font-size:20px;line-height:1.5;color:#244b87;margin:30px 0 8px">A few projects. A lot of curiosity.</p>
+<p style="font-size:12px;line-height:1.7;color:#58667d;margin:0">Full-stack development &middot; Design &middot; AI-driven engineering</p>
+</td></tr>
+<tr><td class="invite-pad" style="padding:22px 40px;border-top:1px solid #dbe1eb"><p style="font-size:11px;line-height:1.8;color:#58667d;margin:0">Sent personally by James Calunsag.<br><a style="color:#244b87;text-decoration:underline;overflow-wrap:anywhere" href="${url}">${url}</a></p></td></tr>
+</table><!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table></body></html>`;
   return { html, text: `You're invited to Portfolio.docx\n\n${invite.message}\n\nExplore the portfolio: ${siteUrl}` };
 }
 
