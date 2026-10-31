@@ -16,14 +16,14 @@ describe("Process", () => {
     render(<Process />);
     const first = screen.getByRole("button", { name: new RegExp(processStages[0].title) });
     expect(first).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText(processStages[0].detail)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: new RegExp(processStages[0].title) })).toHaveTextContent(processStages[0].detail);
   });
 
   it("keeps the rest collapsed, showing their summary instead", () => {
     render(<Process />);
     const second = screen.getByRole("button", { name: new RegExp(processStages[1].title) });
     expect(second).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText(processStages[1].detail)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: new RegExp(processStages[1].title) })).not.toBeInTheDocument();
     expect(within(second).getByText(processStages[1].summary)).toBeInTheDocument();
   });
 
@@ -34,8 +34,8 @@ describe("Process", () => {
 
     await user.click(second);
     expect(second).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText(processStages[1].detail)).toBeInTheDocument();
-    expect(screen.queryByText(processStages[0].detail)).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: new RegExp(processStages[1].title) })).toHaveTextContent(processStages[1].detail);
+    expect(screen.queryByRole("region", { name: new RegExp(processStages[0].title) })).not.toBeInTheDocument();
   });
 
   it("collapses a stage when its own header is clicked again", async () => {
@@ -45,7 +45,7 @@ describe("Process", () => {
 
     await user.click(first);
     expect(first).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText(processStages[0].detail)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: new RegExp(processStages[0].title) })).not.toBeInTheDocument();
   });
 
   it("links an open stage to its artifact on GitHub", async () => {

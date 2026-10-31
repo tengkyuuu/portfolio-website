@@ -10,12 +10,9 @@
  *   3) ASSETS — cache-first with a 30-day expiry for JS/CSS/font/image
  *               responses (both same-origin and Devicon/Google Fonts CDNs).
  *
- * CACHE_VERSION is bumped BY HAND. The browser only reinstalls this worker
- * when these bytes change, so a deploy that doesn't touch this file leaves
- * every existing cache in place. Bump it whenever the caching rules change
- * or a cached response needs purging from the field; installing then
- * purges the old caches on activate and open tabs get a "new version
- * available" prompt (see registerSW in main.tsx).
+ * CACHE_VERSION is stamped by Vite for every build. New deployments always
+ * install a new worker and purge old caches; no manual version bump needed.
+ * The page checks release.json and takes new builds automatically.
  *
  * Why API is network-first: /api/content feeds syncFromServer, which
  * overwrites the visitor's local content cache. Under
@@ -26,7 +23,7 @@
  * shipped defaults once the cached copy passes API_MAX_STALE_MS.
  */
 
-const CACHE_VERSION = "v10";
+const CACHE_VERSION = "__PORTFOLIO_BUILD_ID__";
 const SHELL_CACHE = `pd-shell-${CACHE_VERSION}`;
 const API_CACHE = `pd-api-${CACHE_VERSION}`;
 const ASSET_CACHE = `pd-asset-${CACHE_VERSION}`;
@@ -82,6 +79,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (!["http:", "https:"].includes(url.protocol)) return;
 
+  if (url.origin === self.location.origin && ["/release.json", "/metrics.json", "/sw.js"].includes(url.pathname)) return;
+
   // Admin writes (POST/PUT/DELETE) already skipped above; also don't
   // intercept the login endpoint — it must always hit fresh.
   if (url.pathname === "/api/health" || url.pathname === "/api/login" || url.pathname.startsWith("/api/inquir")) {
@@ -108,7 +107,11 @@ self.addEventListener("fetch", (event) => {
     url.origin === self.location.origin ||
     ["https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"].includes(url.origin);
   if (isAsset) {
-    event.respondWith(cacheFirstTTL(req, ASSET_CACHE, ASSET_TTL_MS));
+    // Only fingerprinted bundles and third-party assets are cache-first.
+    // Images, PDFs and JSON at stable URLs must reflect the current release.
+    event.respondWith(url.origin === self.location.origin && !url.pathname.startsWith("/assets/")
+      ? networkFirstAPI(req, ASSET_CACHE, ASSET_TTL_MS)
+      : cacheFirstTTL(req, ASSET_CACHE, ASSET_TTL_MS));
     return;
   }
   // else: let the browser handle it normally

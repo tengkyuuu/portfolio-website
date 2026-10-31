@@ -1,14 +1,13 @@
+import { PUBLIC_RESUME_URL } from "../lib/public-resume";
 import {
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
   Code2,
-  Cpu,
+  ListChecks,
   Download,
   MapPin,
-  MousePointer2,
   PenTool,
-  Sparkles,
 } from "lucide-react";
 import { useLocalizedContent } from "../lib/localized-content";
 import { renderInline, renderParagraphs } from "../lib/inline";
@@ -21,7 +20,7 @@ export function Hero() {
   const { hero, projects } = useLocalizedContent();
   const names = hero.name.split(" ");
   const featured = projects
-    .filter((project) => project.gallery?.length || project.image)
+    .filter((project) => project.kind !== "embedded" && (project.gallery?.length || project.image))
     .slice(0, 3);
 
   return (
@@ -61,7 +60,7 @@ export function Hero() {
               Let’s talk <ArrowRight size={15} />
             </a>
           </div>
-          <a className="doc-text-link mt-3" href="/james-vincent-calunsag-resume.pdf" download="James-Vincent-Calunsag-Resume.pdf" type="application/pdf">
+          <a className="doc-text-link mt-3" href={PUBLIC_RESUME_URL} download="James-Vincent-Calunsag-Resume.pdf" type="application/pdf">
             <Download size={15} aria-hidden="true" /> Download résumé (PDF)
           </a>
           <div className="cover-location">
@@ -77,45 +76,23 @@ export function Hero() {
           </div>
         </div>
         <div className="cover-visual">
-          <span className="portrait-annotation">
-            the human behind the work <span>↴</span>
-          </span>
-          <div className="portrait-object" aria-label={`${hero.name} portrait`}>
-            <span className="selection-handle handle-tl" />
-            <span className="selection-handle handle-tr" />
-            <span className="selection-handle handle-bl" />
-            <span className="selection-handle handle-br" />
+          <div className="portrait-object" tabIndex={0} role="img" aria-label={`${hero.name}; focus or hover to reveal sunglasses`}>
             <PortraitPhoto name={hero.name} />
-            <span className="portrait-caption">
-              <span>Engineer. Designer. Curious human.</span>
-              <Sparkles size={15} />
-            </span>
           </div>
-          <div className="portrait-sticker" aria-hidden="true">
-            <span>✳</span>
-            <small>
-              BUILT WITH
-              <br />
-              CURIOSITY
-            </small>
-          </div>
-          <span className="portrait-hint">
-            <MousePointer2 size={13} /> hover the photo
-          </span>
         </div>
       </div>
       <div className="cover-disciplines">
         <a href="#stack">
-          <Cpu size={17} />
-          <span>Hardware that works.</span>
+          <ListChecks size={17} />
+          <span>Product planning.</span>
         </a>
         <a href="#stack">
           <Code2 size={17} />
-          <span>Software that connects.</span>
+          <span>Full-stack development.</span>
         </a>
         <a href="#stack">
           <PenTool size={17} />
-          <span>Design that feels right.</span>
+          <span>Interface design.</span>
         </a>
       </div>
       {featured.length > 0 && (

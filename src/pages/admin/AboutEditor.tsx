@@ -112,7 +112,7 @@ export function AboutEditor() {
                   <Input
                     value={spec.value}
                     onChange={(v) => updateSpec(i, "value", v)}
-                    placeholder="Value (e.g. Computer Engineer)"
+                    placeholder="Value (e.g. Software Developer)"
                   />
                 </Row>
                 <IconButton

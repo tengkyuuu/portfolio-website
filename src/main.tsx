@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import "./workspace.css";
+import "./improvements.css";
 import { initLanguage } from "./lib/i18n";
 import { initPwa } from "./lib/pwa";
 import { applyTheme, getStoredTheme } from "./lib/theme";

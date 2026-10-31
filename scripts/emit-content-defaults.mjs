@@ -52,6 +52,9 @@ try {
     certs: d.certs,
     timeline: d.timeline,
     contact: d.defaultContact,
+    processStages: d.processStages,
+    nowGroups: d.nowGroups,
+    legacyBranding: JSON.parse(await readFile(resolve(root, "src/lib/legacy-branding.json"), "utf8")),
   };
 
   for (const [key, value] of Object.entries(content)) {

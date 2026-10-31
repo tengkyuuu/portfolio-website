@@ -27,6 +27,7 @@ export type Project = {
   links: { label: string; href: string }[];
   ref?: string;
   year?: string;
+  /** Legacy imports only. Physical page numbers are derived from layout. */
   page?: string;
   figCaption?: string;
   challenge?: string;
@@ -65,7 +66,6 @@ export const projects: Project[] = [
     kind: "embedded",
     ref: "REF: JVC-2026-01",
     year: "2026",
-    page: "02",
     figCaption:
       "FIG 1.1: SHM — real-time monitoring landing page and the live per-node deflection dashboard.",
     challenge:
@@ -109,15 +109,14 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-02",
     year: "2026",
-    page: "03",
     figCaption:
       "FIG 2.1: Stormfresh — management dashboard, marketing landing page, and the invitation-only workspace sign-in.",
     challenge:
       "A poultry business bought live birds, dressed them, and sold the output — but the money lived in spreadsheets. Flock grow-out, commission payroll, and monthly P&L each sat in a separate workbook, several carrying arithmetic defects nobody had caught. Profit was only knowable after month-end reconciliation, and approving a purchase order meant whoever happened to sign the paper.",
     solution:
-      "One of five engineers on the build. I owned the management dashboard and reporting layer — gain, balance, and trend figures recomputed live from source rows rather than stored, so the numbers can't drift out of sync — and the role model, pushed down into Postgres row-level security so drafts stay private to their author and only Management approves or deletes. The interface language across the app is mine as well.",
+      "One of four engineers on the build. I owned the management dashboard and reporting layer — gain, balance, and trend figures recomputed live from source rows rather than stored, so the numbers can't drift out of sync — and the role model, pushed down into Postgres row-level security so drafts stay private to their author and only Management approves or deletes. The interface language across the app is mine as well.",
     contribution:
-      "One of five engineers. I owned the management dashboard, reporting layer, Postgres role rules, and the app's interface language.",
+      "One of four engineers. I owned the management dashboard, reporting layer, Postgres role rules, and the app's interface language.",
     result:
       "Gain, balance, and trend figures are calculated from source records; management permissions are enforced in Postgres rather than only in the interface.",
     gallery: [
@@ -156,7 +155,6 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-03",
     year: "2026",
-    page: "04",
     figCaption:
       "FIG 3.1: Flux — the pre-launch hero and the digital-card section of the marketing site.",
     challenge:
@@ -166,27 +164,7 @@ export const projects: Project[] = [
     contribution:
       "I implemented contrast checks for the brand palette, fixture-driven prelaunch screens, and the companion app's navigation system.",
     result:
-      "The recorded web suite covers 19 contrast pairs and 235 tests across 35 files; the mobile interface uses six font sizes instead of sixteen.",
-    metrics: [
-      {
-        label: "Contrast pairs under test",
-        pre: "0",
-        post: "19",
-        delta: "+19",
-      },
-      {
-        label: "App font sizes in use",
-        pre: "16",
-        post: "6",
-        delta: "−10",
-      },
-      {
-        label: "Web test suite",
-        pre: "—",
-        post: "235 tests / 35 files",
-        delta: "—",
-      },
-    ],
+      "The interface makes prelaunch states explicit, protects readable contrast, and brings a consistent navigation and type system to the companion app.",
     gallery: [
       {
         src: "/projects/flux-1.png",
@@ -223,7 +201,6 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-04",
     year: "2026",
-    page: "05",
     figCaption:
       "FIG 4.1: Rallys Equities — homepage hero in light mode, with a live KSE-100 index card showing a price chart, sub-indices, and a five-stock ticker.",
     challenge:
@@ -261,7 +238,6 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-05",
     year: "2026",
-    page: "06",
     figCaption:
       "FIG 5.1: MYKTECH — the WebGL gradient hero with the outlined-and-gradient headline over a pale studio backdrop.",
     challenge:
@@ -297,7 +273,6 @@ export const projects: Project[] = [
     kind: "mobile",
     ref: "REF: JVC-2026-06",
     year: "2026",
-    page: "07",
     figCaption:
       "FIG 6.1: Physiopaño companion app — live session view with the real-time well-being ring and sensor readouts.",
     challenge:
@@ -333,7 +308,6 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-07",
     year: "2026",
-    page: "08",
     figCaption:
       "FIG 7.1: Admin portal — marketing landing page and Firebase-backed research sign-in.",
     challenge:
@@ -372,7 +346,6 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-08",
     year: "2026",
-    page: "09",
     figCaption:
       "FIG 8.1: FameCRM — agency landing page, sign-in, and the per-creator analytics dashboard.",
     challenge:
@@ -416,7 +389,6 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-09",
     year: "2026",
-    page: "10",
     figCaption:
       "FIG 9.1: Aperture — the sign-in gate's privacy pitch, and the home view's mode picker and running session list.",
     challenge:
@@ -468,7 +440,6 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-10",
     year: "2026",
-    page: "11",
     figCaption:
       "FIG 10.1: PAVEtrack — dashboard with a sample traffic file loaded, showing AADT, ESAL, and a 160 mm recommended pavement thickness for Galas Feeder Port.",
     challenge:
@@ -516,7 +487,6 @@ export const projects: Project[] = [
     kind: "web",
     ref: "REF: JVC-2026-11",
     year: "2026",
-    page: "12",
     figCaption:
       "FIG 11.1: Rallys Transfers — the admin portal on demo data: the operations dashboard, the dispatch board and the CRM lead pipeline.",
     challenge:
@@ -722,53 +692,57 @@ export type ProcessStage = {
 
 export const processStages: ProcessStage[] = [
   {
-    n: "01",
-    title: "Write the spec before the prompt",
-    summary:
-      "A new project entry starts as a filled-in contract, not a conversation.",
-    detail:
-      "Documenting a repo means pasting a fixed prompt into it that returns one JSON object with a rigid shape — field-by-field rules, hard limits on invention, and a mandatory \"uncertain\" array listing everything the model inferred rather than confirmed. The uncertainty list is the point: it tells me exactly which claims to go and verify before any of it reaches the site.",
-    artifact: { label: "docs/project-intake-prompt.md", path: "docs/project-intake-prompt.md" },
+    "n": "01",
+    "title": "Understand the project",
+    "summary": "Opus + me: define the problem before choosing a solution.",
+    "detail": "I review the existing project with Opus, clarify who it serves, and document constraints and unknowns. We agree on the scope and what evidence would show that the work is successful."
   },
   {
-    n: "02",
-    title: "Put the conventions where the agent reads them",
-    summary: "Standing rules live in CLAUDE.md, not in my memory of them.",
-    detail:
-      "Anything I would otherwise repeat every session — the deployment limits, which file is the source of truth for content, what a commit message has to explain — is written down in the file Claude Code loads automatically. A convention that only exists in chat history gets violated the next session.",
-    artifact: { label: "CLAUDE.md", path: "CLAUDE.md" },
+    "n": "02",
+    "title": "Write the PRD",
+    "summary": "Opus: turn the brief into requirements and acceptance criteria.",
+    "detail": "I use Opus to write PRD.md with users, goals, workflows, requirements, non-goals, and acceptance criteria. I review the decisions and resolve important ambiguity before implementation begins."
   },
   {
-    n: "03",
-    title: "Keep the plan in the open",
-    summary: "A tiered backlog, with shipped work marked shipped.",
-    detail:
-      "Features are graded by payoff against scope before anything is built, and the list records what actually landed. It stops the same idea being relitigated, and it makes the next thing to build a lookup rather than a decision.",
-    artifact: { label: "ROADMAP.md", path: "ROADMAP.md" },
+    "n": "03",
+    "title": "Set the engineering rules",
+    "summary": "Opus: plan the architecture and maintain CLAUDE.md.",
+    "detail": "I work with Opus on the system boundaries, data flow, repository conventions, and testing approach. CLAUDE.md records the commands, security rules, and constraints the implementation agent needs to follow.",
+    "artifact": {
+      "label": "CLAUDE.md",
+      "path": "CLAUDE.md"
+    }
   },
   {
-    n: "04",
-    title: "Commits explain the cause, not the change",
-    summary: "The diff shows what moved. The message says why it had to.",
-    detail:
-      "A subject line plus a body that states the problem, the mechanism behind it, and the reasoning for this fix over the alternatives. Six months later the diff is still readable but the reason is gone, and the reason is the expensive part to reconstruct.",
+    "n": "04",
+    "title": "Define the design system",
+    "summary": "Opus: document tokens, components, states, and responsive behavior.",
+    "detail": "I use Opus to write DESIGN.md around the existing product direction: typography, colors, spacing, component states, accessibility, and key screen patterns. I review the design decisions before they become code."
   },
   {
-    n: "05",
-    title: "Turn every incident into a test",
-    summary: "Bugs that cost a day get a guard so they cannot cost another.",
-    detail:
-      "The suite is weighted toward things that have actually gone wrong here: a cache that hid freshly deployed content, project numbering that silently collided, a deployment cap that fails after the build succeeds so the log stays green. Each one is now a failing test before it is a broken site.",
-    artifact: { label: "api/limits.test.ts", path: "api/limits.test.ts" },
+    "n": "05",
+    "title": "Plan and approve the implementation",
+    "summary": "Opus plans the tasks; I approve the handoff.",
+    "detail": "Opus writes IMPLEMENTATION_PLAN.md with dependency-ordered tasks, affected files, risks, and acceptance checks. I check it against the PRD, CLAUDE.md, and design system, then approve the plan before Sonnet starts."
   },
   {
-    n: "06",
-    title: "CI is the checkpoint, not the reviewer",
-    summary: "Machines gate the merge; I decide what ships.",
-    detail:
-      "Every push runs typecheck and the full suite and blocks on red, then publishes counts, coverage and Lighthouse scores to a dashboard on this site. Automation tells me the state of the build. It does not get to tell me the work is done.",
-    artifact: { label: ".github/workflows/tests.yml", path: ".github/workflows/tests.yml" },
+    "n": "06",
+    "title": "Build in small steps",
+    "summary": "Sonnet: implement the approved plan, one verifiable task at a time.",
+    "detail": "Sonnet implements each task using the planning documents, runs the relevant checks, and records progress. I inspect the changes as we go. New architectural decisions or scope changes return to Opus for a revised plan before implementation continues."
   },
+  {
+    "n": "07",
+    "title": "Verify the product",
+    "summary": "Sonnet + me: test behavior and inspect the actual experience.",
+    "detail": "I check the result against the PRD with Sonnet, including important user paths, responsive layouts, keyboard access, and regressions. Passing tests support the review; I also inspect the running product and the final diff."
+  },
+  {
+    "n": "08",
+    "title": "Review and release",
+    "summary": "I decide what ships and verify the deployed result.",
+    "detail": "After the final review, I check the build and release status and confirm the intended version reached production. Lessons and constraints go back into the project documents so the next change starts with accurate context."
+  }
 ];
 
 /* ─── NOW ─────────────────────────────────────────────────────────────
@@ -782,41 +756,15 @@ export type NowGroup = {
 };
 
 /** Month this list was last reviewed. Shown verbatim on the tab. */
-export const nowUpdated = "August 2026";
+export const nowUpdated = "October 2026";
 
 export const nowGroups: NowGroup[] = [
-  {
-    label: "Learning",
-    icon: "school",
-    items: [
-      {
-        name: "React Native",
-        note: "Moving from Flutter's widget tree to a JS-driven native runtime, and learning where that trade actually bites.",
-      },
-      {
-        name: "Reanimated 3",
-        note: "Animations that run on the UI thread instead of the JS one — the shared-value and worklet model.",
-      },
-      {
-        name: "TanStack Query",
-        note: "Treating server state as a cache with rules rather than something to hand-roll into component state.",
-      },
-    ],
-  },
-  {
-    label: "Building",
-    icon: "construction",
-    items: [
-      {
-        name: "This document",
-        note: "A portfolio built as a Word file. Live chat, a grounded assistant, and a status dashboard that reports its own test and Lighthouse scores.",
-      },
-      {
-        name: "Client frontends",
-        note: "Freelance SaaS and marketing work — design system through to deployment.",
-      },
-    ],
-  },
+  { label: "Building", icon: "construction", items: [
+    { name: "My own orchestrator software", note: "An ongoing personal software project." },
+  ] },
+  { label: "Learning", icon: "school", items: [
+    { name: "Multi-agent programming", note: "Learning how to work with multiple programming agents." },
+  ] },
 ];
 
 /* ─── DEFAULT HERO / ABOUT / CONTACT ──────────────────────────────────
@@ -829,14 +777,14 @@ export const nowGroups: NowGroup[] = [
 export const defaultHero: HeroContent = {
     eyebrow: "Portfolio · 2026 Edition",
     name: "James Vincent Calunsag",
-    role: "Computer Engineer · Embedded · Frontend · Design",
+    role: "AI-Driven Computer Engineer · Full-Stack Development & Design",
     email: "jamescalunsag13@gmail.com",
     website: "https://jamescalunsag.online/",
     location: "Dapitan City, PH",
     available: true,
     availableText: "Available for work",
     tagline:
-      "The ability to <em>adapt</em> is what makes a good <em>engineer</em>.",
+      "I build full-stack software and thoughtful interfaces, combining engineering, design, and AI-assisted development.",
     abstract:
       "This document is a working portfolio: a record of selected projects, credentials, and ways to get in touch. It is laid out the way I think — like a Word document: structured, hierarchical, deliberate about typography.\n\nUse the ribbon above to navigate. Each tab is its own page.",
     showContents: true,
@@ -844,26 +792,26 @@ export const defaultHero: HeroContent = {
 
 export const defaultAbout: AboutContent = {
     paragraphs:
-      "I'm a **Computer Engineer** who works where hardware meets software — ESP32 firmware and PCBs on one side, production React and brand systems on the other. I think from the silicon up and care about the surface: *powerful under the hood, calm on top.*",
+      "I'm James, a **computer engineer** focused on full-stack development and design. I use AI throughout my workflow—from defining requirements and planning the system to implementing, testing, and refining the experience.\n\nI'm currently building my own orchestrator software and learning multi-agent programming.",
     highlights: [
-      "Embedded systems — firmware, sensors, PCB design",
-      "Frontend engineering — React, TypeScript, responsive UI",
-      "Graphic & product design — branding, UI/UX, Figma",
-      "Systems thinking across the hardware–software seam",
+      "Product planning — requirements, architecture, implementation plans",
+      "Full-stack development — React, TypeScript, connected systems",
+      "Interface design — design systems, responsive UI, accessibility",
+      "AI-assisted workflows — Opus for planning, Sonnet for implementation",
     ],
     specs: [
-      { label: "Role", value: "Computer Engineer" },
-      { label: "Focus", value: "Embedded · Frontend · Design" },
-      { label: "Currently", value: "BSCpE, JRMSU Dapitan" },
+      { label: "Role", value: "AI-Driven Computer Engineer" },
+      { label: "Focus", value: "Full-stack development · Interface & product design" },
+      { label: "Currently", value: "Building my own orchestrator software" },
       { label: "Location", value: "Dapitan City, PH" },
-      { label: "Tooling", value: "ESP32 · React · Figma" },
+      { label: "Tooling", value: "React · TypeScript · Claude · Figma" },
       { label: "Open to", value: "Freelance · Internships" },
     ],
   };
 
 export const defaultContact: ContactContent = {
     intro:
-      "Open to freelance, internships, and collaborations across embedded, frontend, and design. The fastest way to reach me is [email](mailto:jamescalunsag13@gmail.com) — I read everything.",
+      "Have a software project in mind? Let's talk about the product, the interface, and what it needs to do. Open to freelance, internships, and collaborations. The fastest way to reach me is [email](mailto:jamescalunsag13@gmail.com).",
     channels: [
       {
         label: "Email",

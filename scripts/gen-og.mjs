@@ -1,12 +1,11 @@
 /**
  * One-off generator for the social preview image (public/og.png, 1200×630).
  * Run locally with:  node --experimental-vm-modules scripts/gen-og.mjs
- * (requires @resvg/resvg-js; install transiently with `npm i --no-save @resvg/resvg-js`)
+ * (uses the project's existing Playwright installation)
  *
  * The output PNG is committed to the repo, so this script doesn't run on Vercel.
  */
-import { Resvg } from "@resvg/resvg-js";
-import fs from "node:fs";
+import { chromium } from "playwright";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -42,11 +41,11 @@ const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http
 
   <!-- role -->
   <text x="140" y="280" font-family="Arial, 'Segoe UI', sans-serif" font-size="26"
-        font-weight="600" fill="#2b579a">Computer Engineer · Embedded · Frontend · Design</text>
+        font-weight="600" fill="#2b579a">AI-Driven Computer Engineer</text>
 
   <!-- tagline -->
   <text x="140" y="360" font-family="Georgia, serif" font-size="30" font-style="italic" fill="#434750">
-    The ability to adapt is what makes a good engineer.
+    Full-Stack Development &amp; Design
   </text>
 
   <!-- doc footer line -->
@@ -59,13 +58,13 @@ const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http
   <!-- status strip -->
   <rect x="0" y="${H - 24}" width="${W}" height="24" fill="#2b579a"/>
   <text x="20" y="${H - 7}" font-family="Arial, 'Segoe UI', sans-serif" font-size="13"
-        fill="#ffffff">Page 1 of 6</text>
+        fill="#ffffff">Portfolio · 2026</text>
 </svg>`;
 
-const resvg = new Resvg(svg, {
-  fitTo: { mode: "width", value: W },
-  font: { loadSystemFonts: true },
-  background: "#e6e6e6",
-});
-fs.writeFileSync(OUT, resvg.render().asPng());
-console.log("Wrote", OUT);
+const browser = await chromium.launch();
+try {
+  const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+  await page.setContent(`<body style="margin:0">${svg}</body>`);
+  await page.screenshot({ path: OUT });
+  console.log("Wrote", OUT);
+} finally { await browser.close(); }

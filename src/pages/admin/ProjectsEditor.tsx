@@ -25,7 +25,6 @@ function blankProject(index: number): Project {
     links: [],
     ref: `REF: JVC-${new Date().getFullYear()}-${idx}`,
     year: String(new Date().getFullYear()),
-    page: idx,
     figCaption: "",
     challenge: "",
     solution: "",
@@ -284,13 +283,7 @@ function ProjectForm({
               placeholder="2025"
             />
           </Field>
-          <Field label="TOC page">
-            <Input
-              value={project.page ?? ""}
-              onChange={(v) => onChange({ page: v })}
-              placeholder="02"
-            />
-          </Field>
+          <p className="font-ui text-[11px] text-ink-muted">Contents page numbers are calculated automatically from the document layout.</p>
         </Row>
       </Row>
 

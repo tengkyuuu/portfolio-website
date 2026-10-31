@@ -1,0 +1,35 @@
+{
+  "hero": {
+    "role": "Computer Engineer · Embedded · Frontend · Design",
+    "tagline": "The ability to <em>adapt</em> is what makes a good <em>engineer</em>."
+  },
+  "about": {
+    "paragraphs": "I'm a **Computer Engineer** who works where hardware meets software — ESP32 firmware and PCBs on one side, production React and brand systems on the other. I think from the silicon up and care about the surface: *powerful under the hood, calm on top.*",
+    "highlights": [
+      "Embedded systems — firmware, sensors, PCB design",
+      "Frontend engineering — React, TypeScript, responsive UI",
+      "Graphic & product design — branding, UI/UX, Figma",
+      "Systems thinking across the hardware–software seam"
+    ],
+    "specs": {
+      "Role": "Computer Engineer",
+      "Focus": "Embedded · Frontend · Design",
+      "Currently": "BSCpE, JRMSU Dapitan",
+      "Tooling": "ESP32 · React · Figma"
+    }
+  },
+  "contact": {
+    "intro": "Open to freelance, internships, and collaborations across embedded, frontend, and design. The fastest way to reach me is [email](mailto:jamescalunsag13@gmail.com) — I read everything."
+  },
+  "previous": {
+    "hero": {
+      "role": "AI-Driven Software Developer",
+      "tagline": "I turn ideas into useful software through clear planning, thoughtful interfaces, and AI-assisted development."
+    },
+    "about": {
+      "paragraphs": "I'm James, a **software developer** with a background in computer engineering. I use AI throughout my workflow—from defining requirements and planning the system to implementing, testing, and refining the experience.\n\nI'm currently building my own orchestrator software and learning multi-agent programming.",
+      "role": "AI-Driven Software Developer",
+      "focus": "Software · Product · Interface design"
+    }
+  }
+}

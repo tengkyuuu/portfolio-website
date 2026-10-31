@@ -1,42 +1,21 @@
 import { useEffect, useState } from "react";
 import {
-  applyUpdate,
   hasInstallPrompt,
   INSTALL_EVENT,
   requestInstall,
-  UPDATE_EVENT,
 } from "../lib/pwa";
 
-/**
- * Floating stack of one-time PWA affordances:
- *
- *   • Update-available chip — shows the moment a new service worker has
- *     finished installing and is waiting. Click "Refresh" to activate.
- *   • Install chip — shows once we've captured a beforeinstallprompt.
- *     Click "Install" to trigger the browser's A2HS flow.
- *
- * Both live in the same corner (bottom-left) so they never fight the
- * Word status bar. They're `no-print` and hidden in focus mode by
- * caller placement.
- */
-
+/** Optional installation prompt. Site updates are applied automatically. */
 export function PwaChips() {
-  const [updateReady, setUpdateReady] = useState(false);
   const [installReady, setInstallReady] = useState(hasInstallPrompt());
-  const [dismissedUpdate, setDismissedUpdate] = useState(false);
   const [dismissedInstall, setDismissedInstall] = useState(false);
 
   useEffect(() => {
-    const onUpdate = (e: Event) => {
-      setUpdateReady(Boolean((e as CustomEvent<boolean>).detail));
-    };
     const onInstall = (e: Event) => {
       setInstallReady(Boolean((e as CustomEvent<boolean>).detail));
     };
-    window.addEventListener(UPDATE_EVENT, onUpdate);
     window.addEventListener(INSTALL_EVENT, onInstall);
     return () => {
-      window.removeEventListener(UPDATE_EVENT, onUpdate);
       window.removeEventListener(INSTALL_EVENT, onInstall);
     };
   }, []);
@@ -55,17 +34,6 @@ export function PwaChips() {
             if (outcome !== "accepted") setDismissedInstall(true);
           }}
           onDismiss={() => setDismissedInstall(true)}
-        />
-      )}
-      {updateReady && !dismissedUpdate && (
-        <Chip
-          icon="sync"
-          tone="accent"
-          title="Update available"
-          body="A new version of Portfolio.docx is ready."
-          actionLabel="Refresh"
-          onAction={applyUpdate}
-          onDismiss={() => setDismissedUpdate(true)}
         />
       )}
     </div>

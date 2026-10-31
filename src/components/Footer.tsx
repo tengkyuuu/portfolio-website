@@ -46,7 +46,7 @@ export function Footer({
       setSpeaking(false);
       return;
     }
-    const text = document.getElementById("paper-doc")?.innerText ?? "";
+    const text = Array.from(document.querySelectorAll<HTMLElement>("#paper-doc .sheet-flow-content")).map((flow) => flow.innerText).join("\n");
     if (!text.trim()) return;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.onend = () => setSpeaking(false);
@@ -78,7 +78,7 @@ export function Footer({
     const recount = () => {
       const paper = document.getElementById("paper-doc");
       if (!paper) return;
-      const text = paper.innerText || "";
+      const text = Array.from(paper.querySelectorAll<HTMLElement>(".sheet-flow-content")).map((flow) => flow.innerText).join("\n") || paper.innerText || "";
       const words = text.trim().split(/\s+/).filter(Boolean).length;
       setWordCount(words);
     };

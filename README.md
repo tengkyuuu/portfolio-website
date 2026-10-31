@@ -43,6 +43,26 @@ npm run build      # tsc -b && vite build  →  dist/
 npm run preview    # serve the production build locally
 ```
 
+## Automatic production releases
+
+Push or merge to GitHub `main` to release through Vercel. No release tag,
+dashboard promotion, or visitor update button is needed. The **Verify production
+release** GitHub Action checks the actual custom domain against the pushed commit
+and fails if it remains on an older build for 15 minutes.
+
+Each build stamps a unique version into the JavaScript, service worker, and
+`release.json`. Open public tabs check every 60 seconds and on returning to the
+tab, then reload automatically. New visits fetch the current page and assets.
+Offline visitors catch up once connected. Admin/résumé workspaces and unfinished
+public messages are protected from an automatic reload that would erase drafts.
+
+Live admin edits already publish automatically and reach open public tabs via
+Realtime, with a 30-second polling fallback. Local admin content is stored in
+ignored `server/data/`; it is separate from Git and must be explicitly published
+to production. Deployments preserve the live Gallery, Blog, and other admin edits;
+published content overrides repository defaults. Change that content in the live
+admin or include a targeted content migration when updating defaults in code.
+
 ## Editing content
 
 There are two ways to change what the site shows:

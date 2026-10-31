@@ -6,6 +6,8 @@ const db: FakeDb = {};
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({ ...createFakeSupabase(db), rpc }) }));
 import handler, { callBlueModel, chatConfig, extractGroqReply } from "./chat";
+import legacyBranding from "../src/lib/legacy-branding.json";
+import { defaultHero, defaultAbout } from "../src/lib/data";
 
 const answer = { reply: "James builds embedded projects.", reaction: "working" };
 const groqResponse = () => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(answer), reasoning: "private reasoning" } }] }));
@@ -56,6 +58,18 @@ describe("chat provider selection", () => {
 });
 
 describe("Groq chat integration", () => {
+  it("grounds legacy published copy in the approved software identity without writing the row", async () => {
+    const published = { hero: { name: "James", role: legacyBranding.hero.role }, about: { paragraphs: legacyBranding.about.paragraphs } };
+    db.site_content = [{ id: "default", content: published }];
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ hero: defaultHero, about: defaultAbout, legacyBranding })))
+      .mockResolvedValueOnce(groqResponse());
+    expect((await call("POST", { messages })).statusCode).toBe(200);
+    const request = JSON.parse(String(vi.mocked(fetch).mock.calls[1][1]?.body));
+    expect(request.messages[0].content).toContain("AI-Driven Computer Engineer");
+    expect(request.messages[0].content).toContain("own orchestrator software");
+    expect(db.site_content[0].content).toEqual(published);
+  });
   it("grounds the request, keeps conversation roles, and saves the reply and reaction", async () => {
     const history = [{ role: "user", content: "Hi" }, { role: "assistant", content: "Hello" }, ...messages];
     const res = await call("POST", { messages: history, sessionId });

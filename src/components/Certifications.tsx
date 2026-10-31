@@ -1,6 +1,10 @@
+import { useState } from "react";
+import type { Cert } from "../lib/content";
+import { PreviewDialog } from "./PreviewDialog";
+import { safeHref } from "../lib/inline";
+import previews from "../lib/certificate-previews.json";
 import { useLocalizedContent } from "../lib/localized-content";
 import { useI18n } from "../lib/i18n";
-import { CertStack } from "./CertStack";
 import { Award } from "lucide-react";
 import { ChapterHeading } from "./ui/ChapterHeading";
 import { chapterNumber } from "./Nav";
@@ -8,9 +12,7 @@ import { chapterNumber } from "./Nav";
 export function Certifications() {
   const { t } = useI18n();
   const { certs, timeline } = useLocalizedContent();
-  const awards = certs.filter((c) => !c.image);
-  const courseCerts = certs.filter((c) => c.image);
-  const courseIssuer = courseCerts[0]?.issuer ?? "Online courses";
+  const [selected, setSelected] = useState<Cert | null>(null);
 
   return (
     <section className="space-y-10">
@@ -59,50 +61,35 @@ export function Certifications() {
         <h2 className="font-ui text-[13px] font-bold uppercase tracking-[0.12em] text-word-blue section-rule pb-1.5 mb-4">
           {t("section.certificationsAwards")}
         </h2>
-        <ul className="credentials-awards font-doc text-[15px] divide-y divide-rule">
-          {awards.map((c) => {
-            const isLink = Boolean(c.href && c.href !== "#");
-            return (
-              <li
-                key={c.title + c.issuer}
-                className="flex items-baseline justify-between gap-4 py-2.5"
-              >
-                <div className="min-w-0 flex-1">
-                  <a
-                    href={c.href ?? "#"}
-                    target={isLink ? "_blank" : undefined}
-                    rel={isLink ? "noreferrer" : undefined}
-                    className={
-                      "font-semibold text-ink" +
-                      (isLink
-                        ? " hover:text-word-blue hover:underline underline-offset-2"
-                        : " pointer-events-none")
-                    }
-                  >
-                    {c.title}
-                  </a>
-                  <span className="text-ink-muted text-[14px]">
-                    {" "}
-                    — {c.issuer}
-                  </span>
-                </div>
-                {c.date && (
-                  <span className="font-ui text-[12px] text-ink-subtle uppercase tracking-wider tabular-nums shrink-0">
-                    {c.date}
-                  </span>
-                )}
-              </li>
-            );
-          })}
+        <ul className="certificate-list">
+          {certs.map((cert) => (
+            <li key={cert.title + cert.issuer}>
+              {cert.image || (safeHref(cert.href) && cert.href !== "#") ? (
+                <button type="button" onClick={() => setSelected(cert)} aria-haspopup="dialog">
+                  <span><strong>{cert.title}</strong><small>{cert.issuer}{cert.date && ` · ${cert.date}`}</small></span>
+                  <span className="certificate-preview-label">Preview</span>
+                </button>
+              ) : <div><strong>{cert.title}</strong><small>{cert.issuer}{cert.date && ` · ${cert.date}`}</small></div>}
+            </li>
+          ))}
         </ul>
-
-        {/* Sololearn course certs — inline scroll-to-view card deck */}
-        {courseCerts.length > 0 && (
-          <div className="mt-6">
-            <CertStack certs={courseCerts} issuer={courseIssuer} />
-          </div>
-        )}
+        {selected && <CertificatePreview cert={selected} onClose={() => setSelected(null)} />}
       </div>
     </section>
   );
+}
+
+function CertificatePreview({ cert, onClose }: { cert: Cert; onClose: () => void }) {
+  const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(0);
+  const image = safeHref(cert.image);
+  const pages = image ? [image] : (previews as Record<string, string[]>)[cert.href || ""] || [];
+  const original = safeHref(cert.href || cert.image);
+  return <PreviewDialog title={cert.title} onClose={onClose}>
+    <p className="preview-meta">{cert.issuer}{cert.date && ` · ${cert.date}`}</p>
+    {pages.length > 0 && !failed && loaded < pages.length && <p role="status">Loading certificate…</p>}
+    {failed || pages.length === 0 ? <p role="status">A preview is unavailable. You can open the original certificate below.</p> :
+      <div className="certificate-pages">{pages.map((src, i) => <img key={src} src={src} alt={`${cert.title}, page ${i + 1} of ${pages.length}`} onLoad={() => setLoaded((n) => n + 1)} onError={() => setFailed(true)} />)}</div>}
+    {original && <a className="doc-button" href={original} download target="_blank" rel="noopener noreferrer">Open original certificate</a>}
+  </PreviewDialog>;
 }

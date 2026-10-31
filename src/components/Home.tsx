@@ -15,7 +15,7 @@ import { PaperSheet } from "./PaperSheet";
  * the last place anyone would look for it. It is the evidence behind the
  * claims the cover page makes, so it goes directly after them.
  *
- * Each block gets a content-sized sheet. The continuation sheet only
+ * Each block gets a paginated sheet. The continuation sheet only
  * appears when GitHub supplies repository or commit details.
  */
 export function Home({ page }: { page: number }) {

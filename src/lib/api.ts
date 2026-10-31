@@ -79,7 +79,7 @@ export async function serverLogin(
 /** Published content from the server, or null if none / no server. */
 export async function fetchRemoteContent(): Promise<Partial<SiteContent> | null> {
   try {
-    const res = await fetch("/api/content");
+    const res = await fetch("/api/content", { cache: "no-store" });
     if (!res.ok) return null;
     return (await res.json()) as Partial<SiteContent>;
   } catch {

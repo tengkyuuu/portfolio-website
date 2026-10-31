@@ -4,6 +4,28 @@ import tailwindcss from "@tailwindcss/vite";
 import { securityHeaders } from "./server/security-headers.mjs";
 import { apiApp } from "./server/app.mjs";
 import { vercelApi } from "./server/vercel-dev.mjs";
+import { randomUUID } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// One identity shared by the running JS, the worker and the release manifest.
+// It changes on every build, including redeploys of the same Git commit.
+const buildId = randomUUID();
+function releaseBuild(): Plugin {
+  let outDir: string;
+  return {
+    name: "release-build",
+    apply: "build",
+    configResolved(config) { outDir = resolve(config.root, config.build.outDir); },
+    closeBundle() {
+      const worker = resolve(outDir, "sw.js");
+      const source = readFileSync(worker, "utf8");
+      if (!source.includes("__PORTFOLIO_BUILD_ID__")) throw new Error("Missing worker build marker");
+      writeFileSync(worker, source.replace("__PORTFOLIO_BUILD_ID__", buildId));
+      writeFileSync(resolve(outDir, "release.json"), JSON.stringify({ id: buildId }));
+    },
+  };
+}
 
 /** Mount the content API into the dev server so `npm run dev` serves
  *  /api/* on the same port — no separate backend process needed. */
@@ -26,10 +48,15 @@ function contentApi(): Plugin {
 
 export default defineConfig({
   // Defuse legacy hosting settings too; VITE_* values otherwise become public.
-  define: { "import.meta.env.VITE_ADMIN_PASSWORD_HASH": "undefined" },
+  define: {
+    "import.meta.env.VITE_ADMIN_PASSWORD_HASH": "undefined",
+    "import.meta.env.VITE_ADMIN_PASSWORD": "undefined",
+    "import.meta.env.VITE_BUILD_ID": JSON.stringify(buildId),
+  },
   plugins: [
     react(),
     tailwindcss(),
+    releaseBuild(),
     contentApi(),
     // After contentApi, so a route with a local mirror keeps it; only what
     // app.mjs falls through on reaches the real handler. /api/github has no

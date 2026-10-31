@@ -1,3 +1,4 @@
+import { renderInline } from "../lib/inline";
 import { useState } from "react";
 import { useLocalizedProcessStages } from "../lib/localized-content";
 
@@ -32,11 +33,9 @@ export function Process() {
       </div>
 
       <p className="font-doc text-[15px] leading-[1.7] text-ink-muted mb-3">
-        I build with an AI agent in the loop, which changes the job rather
-        than removing it. Generating code stops being the constraint;
-        deciding what should exist, and proving it works, becomes the whole
-        job. What follows is how I actually run that — every stage points at
-        a file in this repository.
+        I use Opus to turn a brief into a clear PRD, project rules, design system,
+        and implementation plan. Once that plan is reviewed, I use Sonnet to
+        build in small steps, check the results, and refine the product.
       </p>
 
       <p className="font-doc italic text-[13px] text-ink-subtle mb-5">
@@ -54,6 +53,7 @@ export function Process() {
               <h3>
                 <button
                   onClick={() => setOpen(isOpen ? null : stage.n)}
+                  id={`stage-trigger-${stage.n}`}
                   aria-expanded={isOpen}
                   aria-controls={`stage-${stage.n}`}
                   className="w-full flex items-baseline gap-3 text-left px-3 py-2.5 hover:bg-word-blue-light focus:outline-none focus-visible:bg-word-blue-light transition-colors"
@@ -85,9 +85,9 @@ export function Process() {
               </h3>
 
               {isOpen && (
-                <div id={`stage-${stage.n}`} className="px-3 pb-3 pl-[38px]">
+                <div id={`stage-${stage.n}`} role="region" aria-labelledby={`stage-trigger-${stage.n}`} className="px-3 pb-3 pl-[38px]">
                   <p className="font-doc text-[14.5px] leading-[1.7] text-ink">
-                    {stage.detail}
+                    {renderInline(stage.detail)}
                   </p>
                   {stage.artifact && (
                     <a
@@ -115,12 +115,9 @@ export function Process() {
 
       <div className="mt-6 border-l-[3px] border-word-blue bg-row-alt/60 px-4 py-3">
         <p className="font-doc text-[14px] leading-[1.7] text-ink-muted">
-          The through-line: an agent will happily produce something
-          plausible and wrong, and it will do it fast. Every stage above
-          exists to make that expensive — a spec it has to fill in rather
-          than improvise, conventions it reads before starting, tests that
-          encode what already broke once, and a pipeline that has to go
-          green before I look at it.
+          When a task uncovers an architectural decision or a change in scope,
+          I return to Opus, update the planning documents, and review the change
+          before Sonnet continues. I make the final decision about what ships.
         </p>
       </div>
     </section>

@@ -39,7 +39,7 @@ export const RESUME_ROLES: RoleMeta[] = [
     id: "all",
     label: "All disciplines",
     english: "All",
-    headline: "Computer Engineer · Embedded · Frontend · Design",
+    headline: "AI-Driven Computer Engineer · Full-Stack Development & Design",
     skillGroups: [],
     relevantStack: [],
   },

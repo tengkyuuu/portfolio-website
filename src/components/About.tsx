@@ -19,7 +19,7 @@ import { chapterNumber } from "./Nav";
  * <section> so each keeps its own h2 — nesting them would have left
  * several h2s claiming the same level inside one section.
  *
- * Each subject gets its own content-sized sheet with sequential numbering.
+ * Each subject gets its own paginated sheet with sequential numbering.
  */
 export function About({ page }: { page: number }) {
   const { t } = useI18n();

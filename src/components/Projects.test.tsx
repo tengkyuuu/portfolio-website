@@ -1,37 +1,29 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Projects } from "./Projects";
-import * as content from "../lib/content";
-
-vi.mock("./InteractiveFigure", () => ({
-  InteractiveFigure: ({ children }: { children: React.ReactNode }) => children,
-}));
+import { getContent } from "../lib/content";
 
 describe("Projects browsing", () => {
-  it("filters the visual index without breaking deep links to other case studies", async () => {
-    const user = userEvent.setup();
-    const site = content.getContent();
-    const projects = [
-      site.projects.find((project) => project.kind === "web")!,
-      site.projects.find((project) => project.kind !== "web")!,
-    ];
-    vi.spyOn(content, "getContent").mockReturnValue({ ...site, projects });
+  it("opens with a text-only contents list linking every case study", () => {
     render(<Projects />);
-    const filters = screen.getByLabelText("Filter projects");
-    await user.click(within(filters).getByRole("button", { name: /^Web/ }));
-    const cards = screen.getAllByRole("link", { name: /^Explore / });
-    expect(cards).toHaveLength(
-      projects.filter((project) => project.kind === "web").length,
-    );
-    for (const project of projects) {
+    const contents = screen.getByRole("navigation", { name: "Project contents" });
+    expect(contents.querySelector("img")).toBeNull();
+    expect(within(contents).queryByRole("button")).toBeNull();
+    for (const project of getContent().projects) {
+      expect(within(contents).getByRole("link", { name: `Explore ${project.title}` })).toHaveAttribute("href", `#proj-${project.id}`);
       expect(document.getElementById(`proj-${project.id}`)).toBeInTheDocument();
     }
-    await user.click(
-      within(filters).getByRole("button", { name: /^All work/ }),
-    );
-    expect(screen.getAllByRole("link", { name: /^Explore / })).toHaveLength(
-      projects.length,
-    );
+  });
+  it("mounts SHM controls only after an explicit request", async () => {
+    const user = userEvent.setup();
+    render(<Projects />);
+    expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+    const launch = screen.getByRole("button", { name: "Try the alert logic" });
+    await user.click(launch);
+    expect(screen.getByRole("dialog", { name: "SHM alert simulation" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close preview" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(launch).toHaveFocus();
   });
 });

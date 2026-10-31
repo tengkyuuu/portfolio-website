@@ -348,7 +348,7 @@ export function Nav({
               onClick={onToggleHighlights}
             >
               <Highlighter size={22} />
-              <span>Highlights</span>
+              <span>Highlight text</span>
             </button>
             <div className="relative" data-ribbon-popover>
               <button

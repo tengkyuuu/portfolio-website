@@ -38,7 +38,7 @@ export function HeroEditor() {
             <Input
               value={value.role}
               onChange={(v) => update({ ...value, role: v })}
-              placeholder="Computer Engineer · Embedded · Frontend · Design"
+              placeholder="AI-Driven Computer Engineer · Full-Stack Development & Design"
             />
           </Field>
         </div>

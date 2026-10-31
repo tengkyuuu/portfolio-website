@@ -341,7 +341,20 @@ function plain(s: unknown): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function summarizeContent(c: any): string {
+function summarizeContent(c: any, shipped?: any): string {
+  // Match the public site's targeted legacy-copy migration. Keep new admin
+  // wording and custom contact details; never overwrite the published row.
+  if (shipped?.legacyBranding && c) {
+    const legacy = shipped.legacyBranding;
+    c = { ...c,
+      hero: { ...c.hero,
+        role: [legacy.hero.role, legacy.previous?.hero.role].includes(c.hero?.role) ? shipped.hero.role : c.hero?.role,
+        tagline: [legacy.hero.tagline, legacy.previous?.hero.tagline].includes(c.hero?.tagline) ? shipped.hero.tagline : c.hero?.tagline,
+      },
+      about: { ...c.about, paragraphs: [legacy.about.paragraphs, legacy.previous?.about.paragraphs].includes(c.about?.paragraphs) ? shipped.about.paragraphs : c.about?.paragraphs,
+        highlights: JSON.stringify(c.about?.highlights) === JSON.stringify(legacy.about.highlights) ? shipped.about.highlights : c.about?.highlights },
+    };
+  }
   const lines: string[] = [];
   const hero = c?.hero ?? {};
   lines.push(`NAME: ${hero.name ?? "James Vincent Calunsag"}`);
@@ -371,7 +384,7 @@ function summarizeContent(c: any): string {
         `${p.title}${p.year ? ` (${p.year})` : ""}${p.kind ? ` [${p.kind}]` : ""}: ${plain(p.blurb)}`,
       ];
       if (p.challenge) bits.push(`Challenge: ${plain(p.challenge)}`);
-      if (p.solution) bits.push(`Solution: ${plain(p.solution)}`);
+      if (p.solution) bits.push(`Solution: ${p.id === "stormfresh-erp" ? plain(p.solution).replace(/five engineers/g, "four engineers") : plain(p.solution)}`);
       if (Array.isArray(p.stack) && p.stack.length) bits.push(`Stack: ${p.stack.join(", ")}`);
       if (p.demoUrl) bits.push(`Live demo: ${p.demoUrl}`);
       lines.push("  - " + bits.join(" "));
@@ -402,7 +415,9 @@ function summarizeContent(c: any): string {
   lines.push(
     "  - Contact form: the Contact tab on the site (messages go straight to James's inbox)"
   );
-  lines.push("  - Résumé: /resume on the site (role-specific + ATS versions)");
+  lines.push("  - Public ATS résumé: /james-vincent-calunsag-resume.pdf (Home and Contact download)");
+  const workflow = shipped?.processStages ?? c?.processStages;
+  if (Array.isArray(workflow)) lines.splice(8, 0, "WORKFLOW: " + workflow.map((stage: { title: string; summary: string }) => `${stage.title}: ${stage.summary}`).join(" | "));
 
   return lines.join("\n").slice(0, 9000);
 }
@@ -591,7 +606,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq("id", "default")
       .maybeSingle();
     const published = (data as { content: unknown } | null)?.content ?? null;
-    const summary = summarizeContent(published ?? (await shippedContent()));
+    const existing = published as { hero?: { role?: string }; about?: { paragraphs?: string } } | null;
+    const legacyCopy = ["Computer Engineer · Embedded · Frontend · Design", "AI-Driven Software Developer"].includes(existing?.hero?.role || "") || existing?.about?.paragraphs?.includes("who works where hardware meets software");
+    const shipped = !published || legacyCopy ? await shippedContent() : null;
+    const summary = summarizeContent(published ?? shipped, shipped);
 
     const upstream = await callBlueModel(config, systemPrompt(summary), messages);
 

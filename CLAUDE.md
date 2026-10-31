@@ -47,9 +47,10 @@ copy erase another's work — don't bring it back.
 
 ## Content and data
 
-- Projects are numbered `01`, `02`, … in array order, and `ref`, `page`
-  and the `FIG N.1:` caption must agree with that index. `data.test.ts`
-  enforces all of it.
+- Projects are numbered `01`, `02`, … in array order; `ref` and the
+  `FIG N.1:` caption agree with that index. Physical page numbers are
+  calculated by `PaperSheet` after responsive pagination and are never
+  stored in project content. Legacy `page` fields are ignored.
 - Every local image path must resolve to a real file in `public/`.
 - Every gallery image needs real alt text describing what is visibly on
   screen, not what the project is for.
@@ -100,9 +101,16 @@ copy erase another's work — don't bring it back.
 
 ## Deployment
 
-- Push to `main` deploys via Vercel. `.github/workflows/tests.yml` gates it
-  and publishes results to `/api/tests`; `lighthouse.yml` publishes scores
-  to `/api/lighthouse`. Both surface on `/status`.
+- Push to `main` deploys and promotes via Vercel's Git integration.
+  `.github/workflows/production.yml` verifies that the custom domain serves
+  the pushed commit. Tests and security checks run independently; they are
+  not a deployment gate unless configured as required checks on the host.
+  `tests.yml` publishes results to `/api/tests`; `lighthouse.yml` publishes
+  scores to `/api/lighthouse`. Both surface on `/status`.
+- Vite stamps a unique build ID into the client, worker and `release.json`.
+  Public tabs detect releases within 60 seconds and refresh automatically;
+  never reintroduce a manual update button or hand-maintained cache version.
+  Preserve unfinished messages and admin/résumé drafts from automatic reloads.
 - After a push, verify the deploy actually promoted — check
   `/metrics.json`, which reports the commit the live build came from.
   A green CI run is not evidence that production changed.

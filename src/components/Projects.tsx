@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { FlowText } from "../lib/flow-text";
+import { useEffect, useState } from "react";
 import { type Project, type ProjectImage } from "../lib/content";
 import { useLocalizedContent } from "../lib/localized-content";
-import { ArrowLeft, ArrowUpRight, FolderOpen } from "lucide-react";
+import { ArrowLeft, FolderOpen } from "lucide-react";
 import { ChapterHeading } from "./ui/ChapterHeading";
 import { chapterNumber } from "./Nav";
 import { InteractiveFigure } from "./InteractiveFigure";
 import { PaperSheet } from "./PaperSheet";
-import { ShmSimulator } from "./ShmSimulator";
+import { ShmPreview } from "./ShmPreview";
 
 const kindLabel: Record<Project["kind"], string> = {
   embedded: "Embedded",
@@ -221,7 +222,7 @@ function ProjectEntry({ project }: { project: Project }) {
         </figcaption>
       </figure>
 
-      {project.id === "shm" && <ShmSimulator />}
+      {project.id === "shm" && <ShmPreview />}
 
       {/* Optional metrics table */}
       {project.metrics && project.metrics.length > 0 && (
@@ -270,7 +271,7 @@ function ProjectEntry({ project }: { project: Project }) {
               Challenge
             </h3>
             <p className="font-doc text-[15px] leading-[1.7] text-ink-muted">
-              {project.challenge ?? project.blurb}
+              <FlowText text={project.challenge ?? project.blurb} />
             </p>
           </div>
           <div>
@@ -278,13 +279,13 @@ function ProjectEntry({ project }: { project: Project }) {
               Solution
             </h3>
             <p className="font-doc text-[15px] leading-[1.7] text-ink-muted">
-              {project.solution ?? project.blurb}
+              <FlowText text={project.solution ?? project.blurb} />
             </p>
           </div>
         </div>
       ) : (
         <p className="font-doc text-[15px] leading-[1.7] text-ink-muted">
-          {project.blurb}
+          <FlowText text={project.blurb} />
         </p>
       )}
 
@@ -293,13 +294,13 @@ function ProjectEntry({ project }: { project: Project }) {
           {project.contribution && (
             <div>
               <h3 className="font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue mb-1.5">Contribution</h3>
-              <p className="font-doc text-[14px] leading-[1.6] text-ink-muted">{project.contribution}</p>
+              <p className="font-doc text-[14px] leading-[1.6] text-ink-muted"><FlowText text={project.contribution} /></p>
             </div>
           )}
           {project.result && (
             <div>
               <h3 className="font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue mb-1.5">Evidence you can inspect</h3>
-              <p className="font-doc text-[14px] leading-[1.6] text-ink-muted">{project.result}</p>
+              <p className="font-doc text-[14px] leading-[1.6] text-ink-muted"><FlowText text={project.result} /></p>
             </div>
           )}
         </div>
@@ -351,97 +352,44 @@ function ProjectEntry({ project }: { project: Project }) {
 
 export function Projects() {
   const { projects } = useLocalizedContent();
-  const [filter, setFilter] = useState<Project["kind"] | "all">("all");
-  const kinds = [...new Set(projects.map((project) => project.kind))];
-  const visible = projects.filter(
-    (project) => filter === "all" || project.kind === filter,
-  );
-
-  // Cover sheet is page 1; each project gets its own A4 sheet after it.
+  const [pageNumbers, setPageNumbers] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const update = () => {
+      const next: Record<string, number> = {};
+      document.querySelectorAll<HTMLElement>("[data-sheet-group]").forEach((group) => {
+        const anchor = group.querySelector<HTMLElement>(".project-detail-anchor");
+        if (anchor) next[anchor.id] = Number(group.dataset.startPage || 1);
+      });
+      setPageNumbers((old) => JSON.stringify(old) === JSON.stringify(next) ? old : next);
+    };
+    document.addEventListener("document-pagination", update);
+    update();
+    return () => document.removeEventListener("document-pagination", update);
+  }, []);
   const pageOf = (i: number) => i + 2;
 
   return (
     <>
       <PaperSheet pageNumber={1}>
-        <ChapterHeading
-          number={chapterNumber("work")}
-          eyebrow="SELECTED WORK"
-          title={
-            <>
-              Ideas, made <em>real.</em>
-            </>
-          }
-          description="From circuit boards to browser tabs. A collection of things I’ve designed, built, and learned from."
-        >
-          <FolderOpen />
-        </ChapterHeading>
-        <div className="project-filterbar" aria-label="Filter projects">
-          <button
-            aria-pressed={filter === "all"}
-            onClick={() => setFilter("all")}
-          >
-            All work <span>{projects.length}</span>
-          </button>
-          {kinds.map((kind) => (
-            <button
-              key={kind}
-              aria-pressed={filter === kind}
-              onClick={() => setFilter(kind)}
-            >
-              {kindLabel[kind]}
-              <span>
-                {projects.filter((project) => project.kind === kind).length}
-              </span>
-            </button>
-          ))}
-          <p role="status">{visible.length} projects</p>
-        </div>
-        <div className="project-gallery">
-          {visible.map((project) => (
-            <a
-              key={project.id}
-              href={`#proj-${project.id}`}
-              className="project-index-card"
-              aria-label={`Explore ${project.title}`}
-            >
-              <div className="project-index-figure">
-                {projectImages(project)[0] ? (
-                  <img
-                    src={projectImages(project)[0].src}
-                    alt={projectImages(project)[0].alt || project.title}
-                    loading="lazy"
-                  />
-                ) : (
-                  <span>{project.title}</span>
-                )}
-              </div>
-              <div className="project-index-meta">
-                <div>
-                  <small>
-                    {project.index} / {kindLabel[project.kind]}
-                    {project.year && ` / ${project.year}`}
-                  </small>
-                  <h2>{project.title}</h2>
-                </div>
-                <ArrowUpRight size={19} />
-              </div>
-              <p>{project.blurb}</p>
-              <div className="project-index-tags">
-                {project.tags.slice(0, 3).map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
+        <ChapterHeading number={chapterNumber("work")} eyebrow="SELECTED WORK" title="Projects" description="Contents"><FolderOpen /></ChapterHeading>
+        <nav aria-label="Project contents" className="project-contents">
+          {projects.map((project) => (
+            <a key={project.id} href={`#proj-${project.id}`} aria-label={`Explore ${project.title}`}>
+              <span className="contents-index">{project.index}</span>
+              <span className="contents-title">{project.title}<small>{kindLabel[project.kind]}</small></span>
+              <span className="contents-leader" aria-hidden="true" />
+              <span className="contents-page" aria-label={`Page ${pageNumbers[`proj-${project.id}`] || pageOf(Number(project.index) - 1)}`}>{pageNumbers[`proj-${project.id}`] || pageOf(Number(project.index) - 1)}</span>
             </a>
           ))}
-        </div>
+        </nav>
       </PaperSheet>
 
-      {/* One A4 sheet per project */}
+      {/* Each case study starts on a fresh sheet; overflow continues. */}
       {projects.map((p, i) => (
         <PaperSheet key={p.id} pageNumber={pageOf(i)}>
           <div id={`proj-${p.id}`} className="project-detail-anchor">
             <a href="#work" className="project-back-link no-print">
-              <ArrowLeft size={13} /> Back to all projects
+              <ArrowLeft size={13} /> Back to contents
             </a>
             <ProjectEntry project={p} />
           </div>

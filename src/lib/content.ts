@@ -1,3 +1,4 @@
+import { migratePortfolioContent } from "./content-migration";
 /**
  * Single source of truth for editable site content.
  *
@@ -163,7 +164,7 @@ function shallowMerge<T extends object>(defaults: T, override?: Partial<T>): T {
 
 /** Fill any missing sections of a partial payload with the defaults. */
 function normalizeContent(stored: Partial<SiteContent>): SiteContent {
-  return {
+  return migratePortfolioContent({
     activity: shallowMerge(DEFAULT_CONTENT.activity, stored.activity),
     hero: shallowMerge(DEFAULT_CONTENT.hero, stored.hero),
     about: {
@@ -189,7 +190,7 @@ function normalizeContent(stored: Partial<SiteContent>): SiteContent {
     // A snapshot published before these existed simply has none.
     posts: Array.isArray(stored.posts) ? stored.posts : DEFAULT_CONTENT.posts,
     designs: Array.isArray(stored.designs) ? stored.designs : DEFAULT_CONTENT.designs,
-  };
+  });
 }
 
 /** In-memory copy — survives a full localStorage (quota exceeded) and is the

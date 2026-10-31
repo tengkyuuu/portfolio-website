@@ -11,7 +11,7 @@ export const editorialPosts: BlogPost[] = [
       "The reporting choice behind Stormfresh: keep purchases, sales, and expenses as the source of truth, then calculate the management view from them.",
     body: `A dashboard is easy to trust when the numbers look tidy. It is much harder to trust when each total has been copied into several places and can drift from the transactions underneath it.
 
-Stormfresh replaced a poultry operation's separate spreadsheets for purchases, dressing output, invoices, commissions, and monthly profit. I worked on the management dashboard and reporting layer as one of five engineers. The decision that shaped the interface was to calculate gain, balance, and trends from source records instead of storing another set of totals for the dashboard to display.
+Stormfresh replaced a poultry operation's separate spreadsheets for purchases, dressing output, invoices, commissions, and monthly profit. I worked on the management dashboard and reporting layer as one of four engineers. The decision that shaped the interface was to calculate gain, balance, and trends from source records instead of storing another set of totals for the dashboard to display.
 
 That meant the visible figures could be traced back to the records that produced them. It also made the role model part of the data layer: Postgres row-level security keeps drafts private to their author, while Management controls approval and deletion. A disabled button alone would not have been enough protection.
 
@@ -30,11 +30,11 @@ The [case study](#proj-stormfresh-erp) shows the dashboard and the scope of my w
       "Flux's primary teal could not carry white text at accessible contrast. The answer was a set of rules the build could enforce.",
     body: `A brand colour can look confident on a mood board and still fail as a button. Flux's primary teal was too light for white text at AA contrast, so applying the palette literally would have made core calls to action harder to read.
 
-I treated the colour system as a build constraint. The web test suite checks 19 shipping colour pairs. Inverted guards fail if light text is placed on the brand teal or teal becomes body copy. That keeps the rule in place when someone edits a screen later, without depending on a reviewer remembering every combination.
+I treated the colour system as a build constraint. The web test suite checks the shipping colour pairs. Inverted guards fail if light text is placed on the brand teal or teal becomes body copy. That keeps the rule in place when someone edits a screen later, without depending on a reviewer remembering every combination.
 
 The same project had a product-truth problem: this was a prelaunch bank, and its screens could not imply that unavailable services already worked. Fixture-driven states show the intended flow while naming the current blocker. The app navigation was also condensed from five fixed tabs into a floating menu for thirteen destinations.
 
-The [Flux case study](#proj-flux) records the technical scope: 19 contrast pairs, a 235-test web suite across 35 files, and six app font sizes in place of sixteen. Those are implementation counts, not claims about customer conversion or launch results.`,
+The [Flux case study](#proj-flux) shows the interface, the contrast rules, and my contribution to making prelaunch states explicit.`,
     tags: ["Accessibility", "Design systems", "Case study"],
     cover: "/projects/flux-1.png",
     coverAlt: "Flux landing page with a green bank card and prelaunch waitlist call to action.",
@@ -68,7 +68,7 @@ export const editorialDesigns: Design[] = [
     image: "/projects/poias-dashboard.webp",
     alt: "Dark green Stormfresh dashboard with gain, balance, and sales figures arranged beside module navigation.",
     caption:
-      "A reporting screen for a poultry operation. The hierarchy puts gain and its component figures together; the underlying totals come from source records. Built as part of a five-engineer team.",
+      "A reporting screen for a poultry operation. The hierarchy puts gain and its component figures together; the underlying totals come from source records. Built as part of a four-engineer team.",
     category: "Interface",
     tools: ["React", "Supabase", "Recharts"],
     year: "2026",

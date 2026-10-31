@@ -161,7 +161,7 @@ export function renderMarkdown(src: string): ReactNode[] {
       case "code":
         return (
           <pre key={i} data-lang={b.lang || undefined}>
-            <code>{b.code}</code>
+            <code>{b.code.split("\n").map((line, n, lines) => <span className="flow-code-line" key={n}>{line}{n < lines.length - 1 ? "\n" : ""}</span>)}</code>
           </pre>
         );
       case "image":

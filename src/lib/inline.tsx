@@ -1,3 +1,4 @@
+import { flowFragments } from "./flow-text";
 import type { ReactNode } from "react";
 
 /**
@@ -119,7 +120,7 @@ export function renderInline(text: string): ReactNode[] {
     lastIndex = m.index + token.length;
   }
   if (lastIndex < text.length) out.push(text.slice(lastIndex));
-  return out;
+  return flowFragments(out);
 }
 
 /** Splits multi-paragraph text on blank lines and renders inline emphasis in each. */

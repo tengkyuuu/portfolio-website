@@ -1,3 +1,4 @@
+import { TextHighlights } from "./components/TextHighlights";
 import { useEffect, useMemo, useState } from "react";
 import { CONTENT_EVENT, syncFromServer } from "./lib/content";
 import { useI18n } from "./lib/i18n";
@@ -104,7 +105,7 @@ function PortfolioDoc() {
   const [outlineOpen, setOutlineOpen] = useState(
     () => window.innerWidth >= 1100,
   );
-  const [highlights, setHighlights] = useState(true);
+  const [highlights, setHighlights] = useState(false);
   const [readingStyle, setReadingStyle] = useState<"classic" | "modern">(
     "classic",
   );
@@ -169,7 +170,7 @@ function PortfolioDoc() {
     1,
     shownTabs.findIndex((t) => t.id === active) + 1,
   );
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const activeMeta = useMemo(
     () => tabs.find((tab) => tab.id === active),
     [active],
@@ -202,8 +203,7 @@ function PortfolioDoc() {
       className={
         "portfolio-workspace min-h-screen bg-workspace text-ink " +
         (outlineOpen && !focusMode ? "has-outline " : "") +
-        (focusMode ? "is-focused " : "") +
-        (highlights ? "show-highlights" : "")
+        (focusMode ? "is-focused " : "")
       }
       data-reading-style={readingStyle}
     >
@@ -271,7 +271,7 @@ function PortfolioDoc() {
             <span />
           </div>
         )}
-        {/* Each chapter owns its content-sized sheets. This wrapper is also
+        {/* Each chapter owns its paginated sheets. This wrapper is also
             the source for word count and read-aloud. */}
         <div
           key={`${active}-v${contentVersion}`}
@@ -329,6 +329,7 @@ function PortfolioDoc() {
       {!focusMode && <PwaChips />}
       {!focusMode && <Assistant />}
       <SearchPalette />
+      <TextHighlights key={`${active}-${language}-${contentVersion}`} scope={`${active}:${language}`} enabled={highlights} onClose={() => setHighlights(false)} />
 
       {/* Focus mode: all chrome is hidden, so float a way back out */}
       {focusMode && (

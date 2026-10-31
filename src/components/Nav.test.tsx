@@ -127,7 +127,7 @@ describe("Nav", () => {
     await user.click(
       screen.getByRole("button", { name: "Toggle navigation pane" }),
     );
-    await user.click(screen.getByRole("button", { name: "Highlights" }));
+    await user.click(screen.getByRole("button", { name: "Highlight text" }));
     await user.click(
       screen.getByRole("button", { name: "Modern reading style" }),
     );

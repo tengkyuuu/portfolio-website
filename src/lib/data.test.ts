@@ -60,13 +60,8 @@ describe("projects", () => {
     }
   });
 
-  it("assigns each project the page after the cover sheet", () => {
-    // Projects.tsx computes the real page as index + 2; the stored `page`
-    // is only metadata, but a stale value is confusing in the admin.
-    projects.forEach((p, i) => {
-      if (!p.page) return;
-      expect(p.page, `${p.id} page`).toBe(String(i + 2).padStart(2, "0"));
-    });
+  it("leaves physical page numbers to the responsive pagination layer", () => {
+    for (const project of projects) expect(project.page).toBeUndefined();
   });
 
   it("points every local image at a file that exists", () => {

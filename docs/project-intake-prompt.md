@@ -12,7 +12,7 @@ A copy-paste prompt for gathering everything the **Admin → Projects** editor n
 
 The JSON mirrors the `Project` type in [src/lib/data.ts:14](../src/lib/data.ts#L14), which is what [ProjectsEditor.tsx](../src/pages/admin/ProjectsEditor.tsx) writes.
 
-Fields deliberately **left out** of the prompt because they depend on position in the portfolio list, not on the project itself: `id`, `index`, `ref`, `page`. Those get assigned here.
+Fields deliberately **left out** of the prompt because they depend on position in the portfolio list, not on the project itself: `id`, `index`, `ref`. Those get assigned here. Physical `page` numbers are computed from the responsive document layout, never entered as project data.
 
 ---
 
