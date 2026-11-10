@@ -3,7 +3,7 @@ import { DEFAULT_CONTENT } from "./content";
 import { migratePortfolioContent } from "./content-migration";
 import legacy from "./legacy-branding.json";
 import { locateQuote, selectionMarks } from "./highlights";
-import { pagePlacement } from "./pagination";
+import { fitScale, pageOffset, pagePlacement } from "./pagination";
 import { publicResumeContent } from "./public-resume";
 
 describe("content upgrade", () => {
@@ -39,6 +39,24 @@ describe("page boundaries", () => {
   });
   it("leaves oversized blocks for semantic fragmentation instead of endlessly shifting them", () => {
     expect(pagePlacement(100, 2000, 1123, 28, 37, 64)).toBe(0);
+  });
+  it("shrinks a case study only as far as one sheet requires", () => {
+    // Height falls with scale; the sheet holds 1000.
+    const fits = (natural: number) => (scale: number) => natural * scale <= 1000;
+    expect(fitScale(fits(900), 0.8)).toBe(1);
+    const scale = fitScale(fits(1100), 0.8);
+    expect(scale).toBeLessThanOrEqual(1000 / 1100);
+    expect(scale).toBeGreaterThan(0.89);
+  });
+  it("leaves content at full size when no acceptable scale fits one sheet", () => {
+    expect(fitScale((scale) => 1500 * scale <= 1000, 0.8)).toBe(1);
+  });
+  it("places sheets left to right, then onto the next row", () => {
+    // Three to a row; sheets are 794 wide and 1123 tall with a 28px gap.
+    expect(pageOffset(0, 3, 822, 1151)).toEqual({ x: 0, y: 0 });
+    expect(pageOffset(2, 3, 822, 1151)).toEqual({ x: 1644, y: -2302 });
+    expect(pageOffset(3, 3, 822, 1151)).toEqual({ x: 0, y: -2302 });
+    expect(pageOffset(4, 3, 822, 1151)).toEqual({ x: 822, y: -3453 });
   });
 });
 

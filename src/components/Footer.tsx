@@ -11,7 +11,7 @@ type FooterProps = {
   onEnterFocus: () => void;
 };
 
-const ZOOM_MIN = 50;
+const ZOOM_MIN = 30;
 const ZOOM_MAX = 200;
 
 export function Footer({

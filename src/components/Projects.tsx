@@ -203,7 +203,7 @@ function ProjectEntry({ project }: { project: Project }) {
   return (
     <section>
       {/* Title row */}
-      <div className="flex flex-wrap justify-between items-baseline gap-x-4 gap-y-1 border-b border-rule mb-5 pb-1.5">
+      <div className="flex flex-wrap justify-between items-baseline gap-x-4 gap-y-1 border-b border-rule mb-4 pb-1.5">
         <h2 className="font-doc text-[22px] md:text-[24px] font-bold text-word-blue leading-tight">
           Project {project.index}: {project.title}
         </h2>
@@ -213,11 +213,11 @@ function ProjectEntry({ project }: { project: Project }) {
       </div>
 
       {/* Figure — screenshots plus optional live-demo / video view tabs */}
-      <figure className="mb-6">
+      <figure className="mb-4">
         <InteractiveFigure project={project}>
           <ProjectFigure project={project} />
         </InteractiveFigure>
-        <figcaption className="mt-2 text-center font-doc italic text-[12px] text-ink-subtle">
+        <figcaption className="mt-1.5 text-center font-doc italic text-[12px] text-ink-subtle">
           {figCaption}
         </figcaption>
       </figure>
@@ -226,20 +226,20 @@ function ProjectEntry({ project }: { project: Project }) {
 
       {/* Optional metrics table */}
       {project.metrics && project.metrics.length > 0 && (
-        <div className="mb-6 border border-rule rounded-sm p-4 md:p-5 bg-row-alt">
+        <div className="mb-4 border border-rule rounded-sm px-4 py-2 bg-row-alt">
           <table className="w-full border-collapse font-ui text-[13px]">
             <thead>
               <tr className="border-b-2 border-word-blue text-ink">
-                <th className="text-left font-bold py-2 pr-3 uppercase text-[11px] tracking-wider">
+                <th className="text-left font-bold py-1.5 pr-3 uppercase text-[11px] tracking-wider">
                   Metric
                 </th>
-                <th className="text-left font-bold py-2 px-3 uppercase text-[11px] tracking-wider">
+                <th className="text-left font-bold py-1.5 px-3 uppercase text-[11px] tracking-wider">
                   Pre
                 </th>
-                <th className="text-left font-bold py-2 px-3 uppercase text-[11px] tracking-wider">
+                <th className="text-left font-bold py-1.5 px-3 uppercase text-[11px] tracking-wider">
                   Post
                 </th>
-                <th className="text-left font-bold py-2 pl-3 uppercase text-[11px] tracking-wider text-word-blue">
+                <th className="text-left font-bold py-1.5 pl-3 uppercase text-[11px] tracking-wider text-word-blue">
                   Δ
                 </th>
               </tr>
@@ -250,10 +250,10 @@ function ProjectEntry({ project }: { project: Project }) {
                   key={m.label}
                   className="border-b border-rule last:border-0"
                 >
-                  <td className="py-2.5 pr-3">{m.label}</td>
-                  <td className="py-2.5 px-3 tabular-nums">{m.pre}</td>
-                  <td className="py-2.5 px-3 tabular-nums">{m.post}</td>
-                  <td className="py-2.5 pl-3 font-bold text-word-blue tabular-nums">
+                  <td className="py-1.5 pr-3">{m.label}</td>
+                  <td className="py-1.5 px-3 tabular-nums">{m.pre}</td>
+                  <td className="py-1.5 px-3 tabular-nums">{m.post}</td>
+                  <td className="py-1.5 pl-3 font-bold text-word-blue tabular-nums">
                     {m.delta}
                   </td>
                 </tr>
@@ -265,70 +265,70 @@ function ProjectEntry({ project }: { project: Project }) {
 
       {/* Challenge / Solution two-column when available, blurb-only otherwise */}
       {hasCaseStudy ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           <div>
-            <h3 className="font-ui text-[12px] font-bold uppercase tracking-[0.18em] text-ink border-l-[3px] border-word-blue pl-3 mb-2.5">
+            <h3 className="font-ui text-[12px] font-bold uppercase tracking-[0.18em] text-ink border-l-[3px] border-word-blue pl-3 mb-2">
               Challenge
             </h3>
-            <p className="font-doc text-[15px] leading-[1.7] text-ink-muted">
+            <p className="font-doc text-[14px] leading-[1.62] text-ink-muted">
               <FlowText text={project.challenge ?? project.blurb} />
             </p>
           </div>
           <div>
-            <h3 className="font-ui text-[12px] font-bold uppercase tracking-[0.18em] text-ink border-l-[3px] border-word-blue pl-3 mb-2.5">
+            <h3 className="font-ui text-[12px] font-bold uppercase tracking-[0.18em] text-ink border-l-[3px] border-word-blue pl-3 mb-2">
               Solution
             </h3>
-            <p className="font-doc text-[15px] leading-[1.7] text-ink-muted">
+            <p className="font-doc text-[14px] leading-[1.62] text-ink-muted">
               <FlowText text={project.solution ?? project.blurb} />
             </p>
           </div>
         </div>
       ) : (
-        <p className="font-doc text-[15px] leading-[1.7] text-ink-muted">
+        <p className="font-doc text-[14px] leading-[1.62] text-ink-muted">
           <FlowText text={project.blurb} />
         </p>
       )}
 
       {(project.contribution || project.result) && (
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 border-t border-rule pt-5">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 border-t border-rule pt-3.5">
           {project.contribution && (
             <div>
-              <h3 className="font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue mb-1.5">Contribution</h3>
-              <p className="font-doc text-[14px] leading-[1.6] text-ink-muted"><FlowText text={project.contribution} /></p>
+              <h3 className="font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue mb-1">Contribution</h3>
+              <p className="font-doc text-[13.5px] leading-[1.58] text-ink-muted"><FlowText text={project.contribution} /></p>
             </div>
           )}
           {project.result && (
             <div>
-              <h3 className="font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue mb-1.5">Evidence you can inspect</h3>
-              <p className="font-doc text-[14px] leading-[1.6] text-ink-muted"><FlowText text={project.result} /></p>
+              <h3 className="font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue mb-1">Evidence you can inspect</h3>
+              <p className="font-doc text-[13.5px] leading-[1.58] text-ink-muted"><FlowText text={project.result} /></p>
             </div>
           )}
         </div>
       )}
 
-      {/* Tech stack */}
+      {/* Tech stack — label and chips share a row so the list stays with
+          the write-up instead of costing a block of its own. */}
       {project.stack && project.stack.length > 0 && (
-        <div className="mt-7">
-          <h3 className="font-ui text-[12px] font-bold uppercase tracking-[0.18em] text-ink border-l-[3px] border-word-blue pl-3 mb-3">
+        <div className="mt-4 flex items-baseline gap-x-4 gap-y-2 border-t border-rule pt-3.5">
+          <h3 className="shrink-0 font-ui text-[11px] font-bold uppercase tracking-wider text-word-blue">
             Tech Stack
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap gap-1.5">
             {project.stack.map((s) => (
-              <span
+              <li
                 key={s}
-                className="inline-flex items-center gap-1.5 font-ui text-[12px] font-medium text-ink border border-rule rounded-sm px-2.5 py-1 bg-row-alt"
+                className="font-ui text-[11.5px] font-medium leading-[1.5] text-ink border border-rule rounded-sm px-2 py-px bg-row-alt"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-word-blue" />
                 {s}
-              </span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
 
       {/* Links */}
       {project.links.length > 0 && (
-        <div className="mt-7 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           {project.links.map((l) => (
             <a
               key={l.label}
@@ -384,20 +384,22 @@ export function Projects() {
         </nav>
       </PaperSheet>
 
-      {/* Each case study starts on a fresh sheet; overflow continues. */}
+      {/* Each case study gets a sheet of its own. */}
       {projects.map((p, i) => (
         <PaperSheet key={p.id} pageNumber={pageOf(i)}>
-          <div id={`proj-${p.id}`} className="project-detail-anchor">
+          {/* data-fit-page: shrunk as far as it takes to keep the whole
+              case study on its own sheet. */}
+          <div id={`proj-${p.id}`} className="project-detail-anchor" data-fit-page="">
             <a href="#work" className="project-back-link no-print">
               <ArrowLeft size={13} /> Back to contents
             </a>
             <ProjectEntry project={p} />
+            {i === projects.length - 1 && (
+              <footer className="mt-5 pt-3 text-center border-t border-rule font-doc italic text-[12px] text-ink-subtle">
+                End of Section — Appendix A: Technical Portfolio Reference
+              </footer>
+            )}
           </div>
-          {i === projects.length - 1 && (
-            <footer className="mt-12 pt-6 text-center border-t border-rule font-doc italic text-[12px] text-ink-subtle">
-              End of Section — Appendix A: Technical Portfolio Reference
-            </footer>
-          )}
         </PaperSheet>
       ))}
     </>

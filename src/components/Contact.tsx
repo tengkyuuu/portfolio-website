@@ -33,7 +33,9 @@ export function Contact() {
     timer.current = setTimeout(() => setCopyStatus(""), 4000);
   }
   return (
-    <section>
+    // data-fit-page: the chapter is a hair taller than one sheet; shrink it
+    // slightly rather than strand the heading alone on page 1.
+    <section data-fit-page="">
       <ChapterHeading
         number={chapterNumber("contact")}
         eyebrow="THE NEXT CHAPTER"

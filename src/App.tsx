@@ -1,5 +1,5 @@
 import { TextHighlights } from "./components/TextHighlights";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { CONTENT_EVENT, syncFromServer } from "./lib/content";
 import { useI18n } from "./lib/i18n";
 import { startContentSync } from "./lib/realtime";
@@ -61,7 +61,7 @@ function useTheme(): [
   return [theme, setTheme];
 }
 
-const ZOOM_MIN = 50;
+const ZOOM_MIN = 30;
 const ZOOM_MAX = 200;
 const ZOOM_STEP = 10;
 
@@ -262,23 +262,23 @@ function PortfolioDoc() {
             </span>
           </div>
         )}
-        {!focusMode && (
-          <div className="document-ruler no-print" aria-hidden="true">
-            <span />
-            {Array.from({ length: 15 }, (_, i) => (
-              <i key={i}>{i === 0 ? "" : i}</i>
-            ))}
-            <span />
-          </div>
-        )}
         {/* Each chapter owns its paginated sheets. This wrapper is also
             the source for word count and read-aloud. */}
         <div
           key={`${active}-v${contentVersion}`}
           id="paper-doc"
-          style={{ zoom: zoom / 100 }}
-          className="paper-enter document-pages flex flex-col gap-6 md:gap-8 text-ink relative"
+          style={{ zoom: zoom / 100, "--doc-zoom": zoom / 100 } as CSSProperties}
+          className="paper-enter document-pages text-ink relative"
         >
+          {!focusMode && (
+            <div className="document-ruler no-print" aria-hidden="true">
+              <span />
+              {Array.from({ length: 15 }, (_, i) => (
+                <i key={i}>{i === 0 ? "" : i}</i>
+              ))}
+              <span />
+            </div>
+          )}
           {ready ? (
             <>
               {/* Page numbers restart within each chapter; the status bar

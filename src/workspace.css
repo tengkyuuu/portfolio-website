@@ -642,18 +642,14 @@ textarea {
   transition: margin-left 0.25s;
   overflow-x: auto;
   min-height: 100vh;
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--color-ink-subtle) 13%, transparent) 0.7px,
-    transparent 0.7px
-  );
-  background-size: 8px 8px;
 }
 .has-outline .document-main {
   margin-left: var(--outline-width);
 }
 .workspace-topline {
   max-width: 1000px;
-  margin: 0 auto 17px;
+  /* Leaves room for the ruler, which hangs above the first sheet. */
+  margin: 0 auto 45px;
   display: flex;
   justify-content: space-between;
   color: var(--color-ink-subtle);
@@ -669,39 +665,68 @@ textarea {
   font-size: 12px;
 }
 .document-ruler {
+  /* Word's ruler measures the page, so it sits on the first sheet and
+     scales with it; only its thickness and type stay screen-sized. */
+  --ruler-unit: calc(1px / var(--doc-zoom, 1));
+  position: absolute;
+  /* Both lines named: an absolute item's `auto` line is the container edge. */
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  inset: auto 0 100%;
   display: flex;
-  height: 18px;
-  max-width: 1000px;
-  margin: 0 auto 10px;
+  height: calc(18 * var(--ruler-unit));
+  margin-bottom: calc(10 * var(--ruler-unit));
   background: var(--color-paper);
-  border: 1px solid var(--color-rule);
+  border: var(--ruler-unit) solid var(--color-rule);
   overflow: hidden;
 }
 .document-ruler > span {
-  width: 5%;
+  /* The sheet's 52px side margins. */
+  width: 6.55%;
   background: var(--color-rule);
 }
 .document-ruler > i {
   flex: 1;
   position: relative;
   text-align: center;
-  font-size: 7px;
+  font-size: calc(7 * var(--ruler-unit));
   font-style: normal;
   color: var(--color-ink-subtle);
-  line-height: 11px;
+  line-height: calc(11 * var(--ruler-unit));
   background: repeating-linear-gradient(
       90deg,
       transparent 0,
-      transparent calc(25% - 1px),
-      var(--color-rule-strong) calc(25% - 1px),
+      transparent calc(25% - var(--ruler-unit)),
+      var(--color-rule-strong) calc(25% - var(--ruler-unit)),
       var(--color-rule-strong) 25%
     )
-    bottom / 100% 4px no-repeat;
+    bottom / 100% calc(4 * var(--ruler-unit)) no-repeat;
 }
 .document-pages {
-  width: min(100%, var(--paper-width));
+  /* Print Layout: as many sheets to a row as the zoom leaves room for.
+     A sheet is A4 wide, or the workspace's width at 100% when that is
+     narrower. Zooming in keeps the sheet's size and scrolls sideways. */
+  --sheet-track: min(
+    var(--paper-width),
+    calc(100% * var(--doc-zoom, 1)),
+    100%
+  );
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--sheet-track));
+  justify-content: center;
+  align-items: start;
+  gap: 28px;
+  width: max(
+    100%,
+    min(var(--paper-width), calc(100% * var(--doc-zoom, 1)))
+  );
   min-width: 0;
   margin: 0 auto;
+}
+.document-pages > .sheet-flow {
+  max-width: none;
+  min-width: 0;
+  margin-inline: 0;
 }
 .document-sheet {
   padding: 37px 52px 22px;
@@ -1484,7 +1509,7 @@ textarea {
   gap: 7px;
   color: var(--color-ink-subtle);
   font-size: 10px;
-  margin-bottom: 22px;
+  margin-bottom: 12px;
 }
 .project-back-link:hover {
   color: var(--color-word-blue);
@@ -1917,15 +1942,11 @@ textarea {
     min-height: calc(min(var(--paper-width), calc(100vw - 24px)) * 1.414357);
   }
   .workspace-topline {
-    margin-bottom: 10px;
+    margin-bottom: 38px;
     font-size: 8px;
   }
   .workspace-topline > span:last-child {
     font-size: 10px;
-  }
-  .document-ruler {
-    height: 15px;
-    margin-bottom: 8px;
   }
   .document-sheet {
     padding: 23px 23px 17px;
@@ -2159,5 +2180,15 @@ textarea {
   .project-back-link,
   .portrait-hint {
     display: none;
+  }
+  .sheet-flow,
+  .sheet-flow-content {
+    width: auto !important;
+  }
+  [data-page-shift] {
+    translate: none !important;
+  }
+  [data-fit-page] {
+    zoom: 1 !important;
   }
 }

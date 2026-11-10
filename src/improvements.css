@@ -2,6 +2,10 @@
 .sheet-flow { position: relative; width: 100%; max-width: 794px; margin-inline: auto; flex: none; }
 .sheet-flow > .paper-surface { position: absolute; inset-inline: 0; min-height: 0; padding: 0; background: var(--color-paper); pointer-events: none; }
 .sheet-flow-content { position: relative; padding: 37px 52px 0; z-index: 1; min-width: 0; }
+/* Sheets side by side: the flow keeps one sheet's width; what remains of its
+   single column below the last row is empty and must not add scroll height. */
+.sheet-flow.is-spread { overflow: clip; overflow-clip-margin: 48px; }
+.sheet-flow.is-spread > .sheet-flow-content { width: var(--sheet-width); }
 .paper-surface .document-page-footer { position: absolute; bottom: 22px; left: 52px; right: 52px; margin: 0; padding-top: 12px; }
 [data-flow-fragment] { display: contents; }
 [data-flow-container] { display: flow-root; }
