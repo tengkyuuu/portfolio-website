@@ -380,46 +380,50 @@ export const projects: Project[] = [
     index: "09",
     title: "Aperture",
     blurb:
-      "A private journaling companion where you think alongside Gemini — entries you seal are encrypted in the browser, so neither the server nor the model can read them, and every AI call is logged where you can audit it.",
-    tags: ["Next.js", "TypeScript", "Firebase", "Gemini API"],
+      "A private journal you think out loud in — an AI asks one question at a time, finished sessions become summaries you can search and question later, sealed entries are encrypted in the browser, and every AI call is listed where you can check it.",
+    tags: ["Next.js", "TypeScript", "Firebase", "Groq"],
     stack: [
-      "Next.js (App Router)",
+      "Next.js 15 (App Router)",
+      "React 19",
       "TypeScript",
       "Firebase Auth (httpOnly session cookies)",
       "Cloud Firestore",
-      "Gemini (@google/genai)",
-      "Cloud Run + Secret Manager",
+      "Groq (gpt-oss-120b / 20b)",
+      "Cloudflare Workers AI (bge-m3 embeddings)",
       "WebCrypto (AES-GCM, PBKDF2)",
       "Tailwind CSS",
+      "Vercel",
     ],
     kind: "web",
     ref: "REF: JVC-2026-09",
     year: "2026",
     figCaption:
-      "FIG 9.1: Aperture — the sign-in gate's privacy pitch, and the home view's mode picker and running session list.",
+      "FIG 9.1: Aperture — sign-in, the Today composer, Insights, and a cited answer from Ask your past (seeded demo account).",
     challenge:
-      "Handing a journal to an AI means handing over the most private writing a person does, and most products ask for that trust without offering any way to check what left the device or who could read it. Journals compound it by being write-only: people stop because what they pour in never comes back, and a search box nobody opens is not an answer.",
+      "Handing a journal to an AI means handing over the most private writing a person does, and most products ask for that trust without offering any way to check what left the device or who could read it. Journals are also write-only: people stop because nothing they pour in ever comes back. Then billing was switched off on every Google Cloud project, which took down Cloud Run, Secret Manager and the Gemini key, and friends opening a shared link couldn't tell what the app was for.",
     solution:
-      "Tenancy is the Firestore path itself, so a cross-user leak needs a bug in the path rather than a forgotten filter, and rules deny client writes outright. Sealed entries are AES-GCM encrypted in the browser under a key never persisted. Echoes closes the write-only loop, surfacing an older entry mid-draft with the mood delta — gated by consent the server enforces, and logged so the feature reading unsent text is the most auditable one in the app.",
-    // These two are the sign-in gate and the home view — not the Echoes /
-    // Privacy Ledger / sealed-entry / Insights shots the intake notes
-    // originally suggested. Real screenshots take precedence; figCaption
-    // above describes what these two actually show rather than what was
-    // proposed. Swap in the remaining shots here if they're captured later.
+      "Tenancy is the Firestore path itself, rules deny client writes outright, and sealed entries are AES-GCM encrypted in the browser under a key that is never stored. Finished sessions become summaries that feed Insights (emotional weather and recurring themes), Ask your past (grounded answers that cite the entries they came from), and Echoes, which surfaces an older entry while you write. The app was moved to Vercel with free-tier Groq models and Cloudflare embeddings, so it runs at $0 with nothing that can bill. A 'Soft paper' redesign gave it one labelled sidebar, a first-run tour and plain-language copy. Every AI call, stopped answers included, is still written to the Security page.",
     gallery: [
       {
-        src: "/projects/aperture-signin.png",
-        alt: "Aperture sign-in screen — dark UI with the pink Aperture wordmark, the headline 'A private place to think,' a Continue with Google button, and three bordered privacy callouts: Yours Alone, Sealed Means Sealed, and Nothing Hidden.",
+        src: "/projects/aperture-signin.webp",
+        alt: "Aperture sign-in page on cream paper — the pink Aperture logo, the headline 'A private place to think.', a short description, a rose 'Continue with Google' button, and three notes: Yours alone, Sealed means sealed, Nothing hidden.",
       },
       {
-        src: "/projects/aperture-home.png",
-        alt: "Aperture home view — a sessions sidebar grouped by month on the left, and on the right 'Hello, James.' above four mode buttons (Reflect, Brainstorm, Untangle, Rubber Duck), a prompt composer, and a Still Open list of two follow-up questions.",
+        src: "/projects/aperture-today.webp",
+        alt: "Aperture Today page — a sidebar with New entry, Today, Insights, Ask your past, Vault, Security and entries grouped by date; on the right 'Hello, Alex.', Reflect, Brainstorm, Untangle and Rubber Duck tabs, an empty writing box, and a 'Still open' question.",
+      },
+      {
+        src: "/projects/aperture-insights.webp",
+        alt: "Aperture Insights page — an 'Emotional weather' bar chart of ten entries coloured heavier, level or lighter, above a 'Themes' network linking words such as work, rest, anxiety, family and decisions.",
+      },
+      {
+        src: "/projects/aperture-ask.webp",
+        alt: "Aperture 'Ask your past' page — the question 'What kept coming up last month?' answered in a paragraph with numbered citations, above a 'Drawn from' list of three dated entries.",
       },
     ],
-    demoUrl: "https://aperture-123144439483.asia-southeast1.run.app",
     links: [
+      { label: "Live", href: "https://aperture-journal-pink.vercel.app" },
       { label: "Repo", href: "https://github.com/tengkyuuu/aperture-journal" },
-      { label: "Live", href: "https://aperture-123144439483.asia-southeast1.run.app" },
     ],
   },
   {
