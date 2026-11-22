@@ -266,73 +266,73 @@ export const projects: Project[] = [
     index: "06",
     title: "Physiopaño App",
     blurb:
-      "Flutter companion app for the Physiopaño wearable — pairs over Bluetooth, streams physiological signals in real time, and turns them into a daily well-being score.",
+      "Android companion app for the Physiopaño wristband — it compares you only with your own usual, offers a two-minute validated check-in when something shifts, and suggests the least intensive support that is safe.",
     tags: ["Flutter", "BLE", "Firebase"],
     stack: [
       "Flutter",
       "Dart",
       "BLE (flutter_blue_plus)",
-      "Firebase Auth",
-      "Cloud Firestore",
-      "Riverpod",
+      "Provider",
+      "Firebase Auth + Firestore",
+      "SQLite (sqflite)",
+      "fl_chart",
     ],
     kind: "mobile",
     ref: "REF: JVC-2026-06",
     year: "2026",
     figCaption:
-      "FIG 6.1: Physiopaño companion app — live session view with the real-time well-being ring and sensor readouts.",
+      "FIG 6.1: Physiopaño app — the Today screen, a change from the person's usual, and a check-in result with the five-step support route (synthetic demo history).",
     challenge:
-      "The Physiopaño wearable produces a continuous stream of physiological data — GSR, PPG, skin temperature, and motion — but raw signals mean nothing to the person wearing it. The companion app had to pair reliably over Bluetooth, stay legible for non-technical users, and keep working when the phone is offline in the field.",
+      "The thesis version classified stress with a Random Forest trained on the WESAD dataset, and on our own sensors it collapsed to 'medium' for almost everyone. A population stress score also says little to the person wearing the band. Rebuilt for the 'Earlier, Safer Mental-Wellbeing Support' hackathon challenge, the app had to notice real change without diagnosing, alarming, or quietly sharing anyone's data.",
     solution:
-      "A Flutter app that pairs with the Physiopaño band over BLE, streams the four sensor channels in real time, and distils them into a single daily well-being score with trends and gentle nudges. Sessions are cached on-device and sync to Firebase when a connection returns, so a dropped signal never loses a reading.",
+      "The classifier was replaced with a personal-baseline engine: per-person, per-time-of-day baselines over 14 days, built only from still, resting readings, that flag a change after three consecutive shifted days. The app then sends one calm note offering a validated two-minute check-in (PHQ-4 or PSS-4). The result suggests a stop on a five-step route from self-help to specialist, and a safety question that skips straight to crisis lines and a human call-back. Sharing is off by default: the person chooses what goes to a care navigator, for 7, 30 or 90 days, and can withdraw with one tap.",
     gallery: [
       {
         src: "/projects/physiopano-app.webp",
-        alt: "Physiopaño mobile app on a phone, showing a green well-being ring, live sensor readouts, and session controls on a dark UI.",
+        alt: "Three Physiopaño app screens on a beige background: a 'Good afternoon.' Today screen with a dark 'Pick up where you left off' card and a Find my band button; a 'Something shifted — A change from your usual' card with a Start my check-in button; and a 'Moderate' PHQ-4 result above a five-stop support route with Primary care highlighted.",
       },
     ],
-    links: [
-      { label: "Repo", href: "#" },
-      { label: "Case study", href: "#" },
-    ],
+    links: [],
   },
   {
     id: "physiopano-admin",
     index: "07",
-    title: "Physiopaño Admin Web Portal",
+    title: "Physiopaño Care Console",
     blurb:
-      "React + TypeScript dashboard behind the Physiopaño wearable — enrol participants, monitor live sessions across devices, and export labelled data to retrain the on-device model.",
+      "The web console where care navigators receive consented referrals from the Physiopaño app, handle urgent call-backs, and follow each hand-off through to its outcome.",
     tags: ["React", "TypeScript", "Firebase"],
     stack: [
-      "React",
+      "React 19",
       "TypeScript",
+      "Vite",
       "Tailwind CSS",
-      "Firebase",
-      "Cloud Functions",
+      "Firebase Auth + Firestore",
+      "Firestore security rules",
       "Recharts",
     ],
     kind: "web",
     ref: "REF: JVC-2026-07",
     year: "2026",
     figCaption:
-      "FIG 7.1: Admin portal — marketing landing page and Firebase-backed research sign-in.",
+      "FIG 7.1: Care console — the navigator landing page and the care queue running on synthetic demo data.",
     challenge:
-      "Behind the wearable sits a research workflow: enrolling participants, watching sessions across many devices, and exporting clean, labelled data to retrain the on-device classifier. Doing that from a phone is hopeless — clinicians and researchers needed a real dashboard.",
+      "When the app suggests support, a person has to be on the other end, and that person may only see what was shared with them. The original admin portal was a research dashboard for watching raw sessions. The hackathon rebuild needed the opposite: a workspace that shows navigators only consented data, surfaces urgent requests first, and drops access the moment someone withdraws consent.",
     solution:
-      "A React + TypeScript portal with role-based auth, a participant roster, and live session monitoring across every paired device. Researchers review and label sessions inline, then export the curated set as training data for the Random Forest model — closing the loop between the field and the firmware.",
+      "The research dashboard became a care navigator console. Urgent call-backs sit in their own lane above a referral queue with care station, hand-off state, due times and each person's sharing window. Navigators accept, call back and record follow-ups, and an Outcomes view tracks whether people actually reached support, with group comparisons hidden below five contributors. Consent is enforced by Firestore security rules with emulator tests, and a public demo route runs on clearly labelled synthetic records.",
     gallery: [
       {
-        src: "/projects/physiopano-admin-landing.webp",
-        alt: "Physiopaño admin portal landing page — 'Listen to what your body is telling you' hero with a live session dashboard preview.",
+        src: "/projects/physiopano-console-landing.webp",
+        alt: "Physiopaño care console landing page — the headline 'Care navigator console.' with 'Sign in to console' and 'Explore the demo' buttons beside a navy card illustrating a referral hand-off checklist.",
       },
       {
-        src: "/projects/physiopano-admin-login.webp",
-        alt: "Physiopaño admin portal sign-in page — 'Stress, made visible.' panel with a live PPG signal beside a Firebase-backed research login form.",
+        src: "/projects/physiopano-console-queue.webp",
+        alt: "Physiopaño care queue in demo mode — counts for waiting, accepted, overdue and urgent requests, one urgent call-back from 'Synthetic E', and a referrals table listing care station, hand-off status and sharing window.",
       },
     ],
+    demoUrl: "https://physiopano-demo.vercel.app/#/demo",
     links: [
-      { label: "Repo", href: "#" },
-      { label: "Live demo", href: "#" },
+      { label: "Live demo", href: "https://physiopano-demo.vercel.app/#/demo" },
+      { label: "Console", href: "https://physiopano-demo.vercel.app" },
     ],
   },
   {
