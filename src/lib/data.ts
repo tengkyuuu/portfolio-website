@@ -222,37 +222,43 @@ export const projects: Project[] = [
   {
     id: "myktech",
     index: "05",
-    title: "MYKTECH — Software Studio Website",
+    title: "MykTech() — Software Studio Website",
     blurb:
-      "An immersive, awwwards-style marketing site for an IT studio — a WebGL hero, scroll-driven storytelling, and a real working contact pipeline.",
-    tags: ["Next.js", "WebGL", "GSAP"],
+      "The studio site for MykTech(), an IT company in Dipolog City — a black, white and gold redesign built around a keycap brand mark, with a working contact pipeline and its own admin CMS.",
+    tags: ["Next.js", "Supabase", "GSAP"],
     stack: [
       "Next.js 15 (App Router)",
       "React 19",
       "TypeScript",
-      "Tailwind CSS",
-      "GSAP + ScrollTrigger",
-      "React Three Fiber",
-      "Lenis smooth scroll",
+      "Tailwind CSS v4",
+      "GSAP + Lenis",
+      "Supabase (CMS + auth)",
+      "Resend",
+      "Gemini API",
+      "Vitest",
     ],
     kind: "web",
     ref: "REF: JVC-2026-05",
     year: "2026",
     figCaption:
-      "FIG 5.1: MYKTECH — the WebGL gradient hero with the outlined-and-gradient headline over a pale studio backdrop.",
+      "FIG 5.1: MykTech() — the home hero and the Services page with the Ignition keycap.",
     challenge:
-      "MYKTECH needed a site that proved a small IT studio ships software with genuine craft — memorable and immersive, yet clean and editorial rather than the usual templated agency look. It also had to work end to end: a functioning lead pipeline, real SEO, and fast, accessible performance on desktop and mobile, all on one maintainable codebase.",
+      "MykTech() needed a site that answers four questions fast — who they are, what they build, whether it's real, and how to start — for local businesses, overseas clients and founders alike. The first version leaned on WebGL and a showreel; it looked impressive but buried the proof, and every content change meant a code change.",
     solution:
-      "A Next.js 15 App Router site on a custom design system — Syne display type with Geist, a slate palette holding one reserved magenta-to-gold accent, and a bespoke gradient K mark. GSAP and ScrollTrigger drive the experience against Lenis smooth scroll: a WebGL gradient-blob hero, horizontally pinned services, and a 160-frame showreel scrubbed onto canvas — every bit of it gated behind prefers-reduced-motion.",
+      "A ground-up v2 redesign on a black, white and gold system, with the Ignition keycap as the brand's signature object. The hero is a curved reel of real project screenshots in CSS 3D (no WebGL), Services is a keycap macropad, and Work carries full case studies, all in English and Filipino routes. Behind it sits a Supabase admin CMS with autosave, history and team invites, a Resend contact pipeline, an optional Gemini site assistant with human takeover, hashed-IP rate limits and a public status page, covered by a Vitest suite.",
     gallery: [
       {
-        src: "/projects/myktech.jpg",
-        alt: "MYKTECH homepage on pale grey — a pill navbar above the headline 'We build software that feels designed', with 'software that' in outlined type and 'designed.' in a pink-to-orange gradient.",
+        src: "/projects/myktech-home.webp",
+        alt: "MykTech() home page on off-white — the headline 'We build software that feels designed.' with 'designed.' in outlined type, above a curved reel of project screenshots and 'See our work' and 'Start a project' buttons.",
+      },
+      {
+        src: "/projects/myktech-services.webp",
+        alt: "MykTech() Services page — the headline 'Everything it takes to go from idea to in production.' beside a black keycap with a gold four-point spark, above the first service row, '01 Web Development'.",
       },
     ],
-    demoUrl: "https://it-company-website-omega.vercel.app/",
     links: [
-      { label: "Live site", href: "https://it-company-website-omega.vercel.app/" },
+      { label: "Live site", href: "https://rallys-tech.vercel.app" },
+      { label: "Repo", href: "https://github.com/tengkyuuu/it-company-website" },
     ],
   },
   {
